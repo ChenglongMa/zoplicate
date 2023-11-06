@@ -1,16 +1,16 @@
 {
-  "name": "zotero-addon-template",
+  "name": "zoplicate",
   "version": "1.0.0",
-  "description": "Zotero Addon Template",
+  "description": "Detect and manage duplicate items in Zotero.",
   "config": {
-    "addonName": "Zotero Addon Template",
-    "addonID": "addontemplate@euclpts.com",
-    "addonRef": "addontemplate",
-    "addonInstance": "AddonTemplate",
-    "prefsPrefix": "extensions.zotero.addontemplate",
-    "releasePage": "https://github.com/windingwind/zotero-addon-template/releases",
-    "updateJSON": "https://raw.githubusercontent.com/windingwind/zotero-addon-template/main/update.json",
-    "updateBetaJSON": "https://raw.githubusercontent.com/windingwind/zotero-addon-template/main/update-beta.json"
+    "addonName": "zoplicate",
+    "addonID": "zoplicate@chenglongma.com",
+    "addonRef": "zoplicate",
+    "addonInstance": "Zoplicate",
+    "prefsPrefix": "extensions.zotero.zoplicate",
+    "releasePage": "https://github.com/ChenglongMa/zoplicate/releases",
+    "updateJSON": "https://raw.githubusercontent.com/ChenglongMa/zoplicate/main/update.json",
+    "updateBetaJSON": "https://raw.githubusercontent.com/ChenglongMa/zoplicate/main/update-beta.json"
   },
   "main": "src/index.ts",
   "scripts": {
@@ -33,14 +33,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/windingwind/zotero-addon-template.git"
+    "url": "git+https://github.com/ChenglongMa/zoplicate.git"
   },
-  "author": "windingwind",
+  "author": "Chenglong Ma",
   "license": "AGPL-3.0-or-later",
   "bugs": {
-    "url": "https://github.com/windingwind/zotero-addon-template/issues"
+    "url": "https://github.com/ChenglongMa/zoplicate/issues"
   },
-  "homepage": "https://github.com/windingwind/zotero-addon-template#readme",
+  "homepage": "https://github.com/ChenglongMa/zoplicate#readme",
   "dependencies": {
     "zotero-plugin-toolkit": "^2.3.6"
   },
@@ -59,6 +59,6 @@
     "release-it": "^16.1.5",
     "replace-in-file": "^7.0.1",
     "typescript": "^5.2.2",
-    "zotero-types": "^1.2.3"
+    "zotero-types": "^1.3.5"
   }
 }
