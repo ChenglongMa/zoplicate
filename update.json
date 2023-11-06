@@ -1,10 +1,10 @@
 {
   "addons": {
-    "addontemplate@euclpts.com": {
+    "zoplicate@chenglongma.com": {
       "updates": [
         {
           "version": "1.0.0",
-          "update_link": "https://github.com/windingwind/zotero-addon-template/releases/latest/download/zotero-addon-template.xpi",
+          "update_link": "https://github.com/ChenglongMa/zoplicate/releases/latest/download/zoplicate.xpi",
           "applications": {
             "zotero": {
               "strict_min_version": "6.999"
