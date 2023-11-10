@@ -9,3 +9,25 @@ prefs-table-title = Title
 prefs-table-detail = Detail
 tabpanel-lib-tab-label = Lib Tab
 tabpanel-reader-tab-label = Reader Tab
+
+# General
+general-cancel = Cancel
+
+# Duplicate Dialog
+du-dialog-title = Found Duplicate Items
+du-dialog-header = The following items have existed in your library. How would you like to process them?
+
+du-dialog-table-title = Title
+du-dialog-table-keep = Keep This
+du-dialog-table-discard = Keep Others
+du-dialog-table-cancel = Keep All
+du-dialog-as-default = Use this action by default
+
+## Buttons
+du-dialog-button-process = Process
+du-dialog-button-go-duplicates = Go to Duplicates
+du-dialog-button-cancel = Cancel
+
+## Messages
+
+
