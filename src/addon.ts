@@ -17,7 +17,10 @@ class Addon {
       columns: Array<ColumnOptions>;
       rows: Array<{ [dataKey: string]: string }>;
     };
-    dialog?: DialogHelper;
+    dialogs: {
+      dialog?: DialogHelper;
+      duplicateMaps?: Map<number, { existingItemIDs: number[]; action: string }>;
+    };
   };
   // Lifecycle hooks
   public hooks: typeof hooks;
@@ -29,6 +32,7 @@ class Addon {
       alive: true,
       env: __env__,
       ztoolkit: createZToolkit(),
+      dialogs: {},
     };
     this.hooks = hooks;
     this.api = {};

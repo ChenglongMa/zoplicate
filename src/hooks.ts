@@ -9,6 +9,8 @@ import { config } from "../package.json";
 import { getString, initLocale } from "./utils/locale";
 import { registerPrefsScripts } from "./modules/preferenceScript";
 import { createZToolkit } from "./utils/ztoolkit";
+import { Notifier } from "./modules/notifier";
+import { Dialog } from "./modules/dialog";
 
 async function onStartup() {
   await Promise.all([
@@ -85,12 +87,12 @@ async function onMainWindowLoad(win: Window): Promise<void> {
 
 async function onMainWindowUnload(win: Window): Promise<void> {
   ztoolkit.unregisterAll();
-  addon.data.dialog?.window?.close();
+  addon.data.dialogs.dialog?.window?.close();
 }
 
 function onShutdown(): void {
   ztoolkit.unregisterAll();
-  addon.data.dialog?.window?.close();
+  addon.data.dialogs.dialog?.window?.close();
   // Remove addon object
   addon.data.alive = false;
   delete Zotero[config.addonInstance];
@@ -98,7 +100,7 @@ function onShutdown(): void {
 
 /**
  * This function is just an example of dispatcher for Notify events.
- * Any operations should be placed in a function to keep this funcion clear.
+ * Any operations should be placed in a function to keep this function clear.
  */
 async function onNotify(
   event: string,
@@ -108,6 +110,12 @@ async function onNotify(
 ) {
   // You can add your code to the corresponding notify type
   ztoolkit.log("notify", event, type, ids, extraData);
+  if (event == "add" && type == "item") {
+    await Notifier.whenAddItems(ids as number[]);
+  }
+  if (event == "select" && type == "item") {
+    ztoolkit.log("select item", event, type, ids, extraData);
+  }
   if (
     event == "select" &&
     type == "tab" &&
@@ -151,10 +159,11 @@ function onShortcuts(type: string) {
   }
 }
 
-function onDialogEvents(type: string) {
+async function onDialogEvents(type: string) {
   switch (type) {
     case "dialogExample":
-      HelperExampleFactory.dialogExample();
+      const itemIds = Zotero.getActiveZoteroPane().getSelectedItems(true);
+      Notifier.whenAddItems(itemIds);
       break;
     case "clipboardExample":
       HelperExampleFactory.clipboardExample();
