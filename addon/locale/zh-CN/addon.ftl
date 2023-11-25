@@ -15,8 +15,8 @@ prefs-title = Zoplicate
 general-cancel = 取消
 
 # Duplicate Dialog
-du-dialog-title = 检测到重复项
-du-dialog-header = 以下项目已存在于您的库中。您想如何处理它们？
+du-dialog-title = 检测到重复条目
+du-dialog-header = 以下条目已存在于您的库中。您想如何处理它们？
 
 du-dialog-table-title = 标题
 du-dialog-table-keep = 保留最新的
@@ -30,5 +30,5 @@ du-dialog-button-go-duplicates = 手动合并
 du-dialog-button-cancel = 取消
 
 ## Messages
-du-progress-text = 正在处理重复项...
-du-progress-done = 所有重复项已处理完成。
+du-progress-text = 正在处理重复条目...
+du-progress-done = 所有重复条目已处理完成。
