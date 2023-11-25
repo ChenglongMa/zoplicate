@@ -16,7 +16,7 @@ export class Notifier {
     const duplicateMaps = ids.reduce((acc, id) => {
       const existingItemIDs: number[] = duplicates.getSetItemsByItemID(id).filter((i: number) => i !== id);
       if (existingItemIDs.length > 0) {
-        acc.set(id, { existingItemIDs, action: Action.CANCEL });
+        acc.set(id, { existingItemIDs, action: defaultAction });
       }
       return acc;
     }, new Map<number, { existingItemIDs: number[]; action: Action }>());

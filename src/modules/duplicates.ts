@@ -17,7 +17,7 @@ export class Duplicates {
         defaultActionOptions?.click();
       },
       unloadCallback: () => {
-        if(this.dialogData.savePreference) {
+        if (this.dialogData.savePreference) {
           setPref("duplicate.default.action", this.dialogData.defaultAction);
         }
         this.dialog = undefined;
@@ -42,7 +42,8 @@ export class Duplicates {
       // const scrollWidth = this.document?.body.scrollWidth || 0;
       // const scrollHeight = this.document?.body.scrollHeight || 0;
       // this.window?.resizeBy(scrollWidth - prevScrollWidth, scrollHeight - prevScrollHeight);
-      // TODO: still not perfect, especially in Chinese language
+      // Temporary solution: enlarge dialog size and then resize to content
+      this.window?.resizeBy(100, 100);
       (this.window as any).sizeToContent();
     } else {
       // If dialog is not opened, create dialog
@@ -60,21 +61,19 @@ export class Duplicates {
   }
 
   static processDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
-
-
     const itemsToTrash: number[] = [];
     const selectedItems: number[] = [];
-    if(duplicateMaps.size === 0) return { itemsToTrash, selectedItems };
+    if (duplicateMaps.size === 0) return { itemsToTrash, selectedItems };
 
-    const popWin = new ztoolkit.ProgressWindow(
-      getString("du-dialog-title"),
-      {
-        closeOnClick: true
-      }).createLine({
+    const popWin = new ztoolkit.ProgressWindow(getString("du-dialog-title"), {
+      closeOnClick: true,
+    })
+      .createLine({
         text: getString("du-progress-text"),
         type: "default",
         progress: 0,
-      }).show();
+      })
+      .show();
 
     for (const [newItemID, { existingItemIDs, action }] of duplicateMaps) {
       if (action === Action.KEEP) {
@@ -146,6 +145,7 @@ export class Duplicates {
     if (this.duplicateMaps) {
       duplicateMaps.forEach((value, key) => {
         value.action = this.duplicateMaps?.get(key)?.action || value.action;
+        value.action = value.action === Action.ASK ? this.dialogData.defaultAction : value.action;
         this.duplicateMaps?.set(key, value);
       });
     } else {
