@@ -141,25 +141,56 @@ export class Duplicates {
     return Array.from(this.duplicateMaps?.keys() || []);
   }
 
-  private updateDuplicateMaps(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
+  private updateDuplicateMaps(newDuplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
     if (this.duplicateMaps) {
-      duplicateMaps.forEach((value, key) => {
+      newDuplicateMaps.forEach((value, key) => {
         value.action = this.duplicateMaps?.get(key)?.action || value.action;
-        value.action = value.action === Action.ASK ? this.dialogData.defaultAction : value.action;
+        value.action = value.action === Action.ASK ? Action.CANCEL : value.action;
         this.duplicateMaps?.set(key, value);
       });
     } else {
-      this.duplicateMaps = duplicateMaps;
+      this.duplicateMaps = newDuplicateMaps;
     }
   }
 
   private resumeRadioCheckStatus() {
+    const actionSet = new Set<Action>();
     this.duplicateMaps?.forEach((value, newItemID) => {
       const action = value.action;
       const id = `act_${action}_${newItemID}`;
       const radio = this.document?.getElementById(id) as HTMLInputElement;
       radio.checked = true;
+      actionSet.add(action);
     });
+
+    const selectAll = actionSet.size === 1;
+    const [defaultAction] = actionSet;
+    this.checkDefaultRadio(selectAll, defaultAction);
+  }
+
+  private checkDefaultRadio(selectAll: boolean, defaultAction: Action) {
+    // Set disabled status of "as default" checkbox
+    const asDefaultDiv = this.document?.getElementById("act_as_default_div");
+    asDefaultDiv && (asDefaultDiv.style.visibility = selectAll ? "visible" : "hidden");
+
+    if (selectAll) {
+      // Update default action
+      this.dialog?.dialogData && (this.dialog.dialogData.defaultAction = defaultAction);
+
+      // Set radio of Column Header to checked
+      const id = `act_${defaultAction}`;
+      const radio = this.document?.getElementById(id) as HTMLInputElement;
+      radio.checked = true;
+    } else {
+      // Set radio of Column Header to unchecked
+      const asDefaultCheckbox = this.document?.getElementById("act_as_default") as HTMLInputElement;
+      asDefaultCheckbox.checked = false;
+      const allRadios = this.document?.getElementsByName("default_action") as NodeListOf<HTMLInputElement>;
+      allRadios &&
+        allRadios.forEach((radio) => {
+          radio.checked = false;
+        });
+    }
   }
 
   private async createDialog() {
@@ -233,7 +264,7 @@ export class Duplicates {
       })
       .addButton(getString("du-dialog-button-apply"), "btn_process", {
         callback: (e) => {
-          const { itemsToTrash, selectedItems } = Duplicates.processDuplicates(this.duplicateMaps!);
+          const { itemsToTrash } = Duplicates.processDuplicates(this.duplicateMaps!);
           itemsToTrash.length && (this.dialogData.resultMessage = "Has trashed all duplicates.");
         },
       })
@@ -252,7 +283,7 @@ export class Duplicates {
 
   private async updateTable(): Promise<TagElementProps> {
     const tableRows = [];
-    for (const [newItemID, { existingItemIDs, action }] of this.duplicateMaps || []) {
+    for (const [newItemID, { existingItemIDs }] of this.duplicateMaps || []) {
       if (existingItemIDs.length === 0) continue;
       const item = await Zotero.Items.getAsync(newItemID);
       const title = item.getField("title");
@@ -320,29 +351,7 @@ export class Duplicates {
               listener: () => {
                 this.updateAction(newItemID, action);
                 const selectAll = Array.from(this.duplicateMaps?.values()!).every((i) => i.action === action);
-
-                // Set disabled status of "as default" checkbox
-                const asDefaultDiv = this.document?.getElementById("act_as_default_div");
-                asDefaultDiv && (asDefaultDiv.style.visibility = selectAll ? "visible" : "hidden");
-
-                if (selectAll) {
-                  // Update default action
-                  this.dialog?.dialogData && (this.dialog.dialogData.defaultAction = action);
-
-                  // Set radio of Column Header to checked
-                  const id = `act_${action}`;
-                  const radio = this.document?.getElementById(id) as HTMLInputElement;
-                  radio.checked = true;
-                } else {
-                  // Set radio of Column Header to unchecked
-                  const asDefaultCheckbox = this.document?.getElementById("act_as_default") as HTMLInputElement;
-                  asDefaultCheckbox.checked = false;
-                  const allRadios = this.document?.getElementsByName("default_action") as NodeListOf<HTMLInputElement>;
-                  allRadios &&
-                    allRadios.forEach((radio) => {
-                      radio.checked = false;
-                    });
-                }
+                this.checkDefaultRadio(selectAll, action);
               },
             },
           ],
