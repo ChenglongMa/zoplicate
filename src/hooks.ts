@@ -10,7 +10,7 @@ import { getString, initLocale } from "./utils/locale";
 import { registerPrefsScripts } from "./modules/preferenceScript";
 import { createZToolkit } from "./utils/ztoolkit";
 import { Notifier } from "./modules/notifier";
-import { Dialog } from "./modules/dialog";
+import { Duplicates } from "./modules/duplicates";
 
 async function onStartup() {
   await Promise.all([

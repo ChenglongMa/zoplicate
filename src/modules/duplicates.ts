@@ -2,12 +2,13 @@ import { getString } from "../utils/locale";
 import { DialogHelper } from "zotero-plugin-toolkit/dist/helpers/dialog";
 import { TagElementProps } from "zotero-plugin-toolkit/dist/tools/ui";
 import { Action } from "../utils/action";
+import { setPref } from "../utils/prefs";
 
-export class Dialog {
+export class Duplicates {
   constructor() {
     this.dialogData = addon.data.dialogs.dialog?.dialogData || {
-      savePreference: false, // TODO: load from preference
-      defaultAction: Action.CANCEL, // TODO: load from preference
+      savePreference: false,
+      defaultAction: Action.CANCEL,
       resultMessage: undefined,
       loadCallback: () => {
         const defaultActionOptions = this.document?.getElementById(
@@ -16,13 +17,16 @@ export class Dialog {
         defaultActionOptions?.click();
       },
       unloadCallback: () => {
+        if(this.dialogData.savePreference) {
+          setPref("duplicate.default.action", this.dialogData.defaultAction);
+        }
         this.dialog = undefined;
         this.duplicateMaps = undefined;
       },
     };
   }
 
-  async foundDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: string }>) {
+  async showDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
     this.updateDuplicateMaps(duplicateMaps);
 
     if (this.dialog) {
@@ -38,6 +42,7 @@ export class Dialog {
       // const scrollWidth = this.document?.body.scrollWidth || 0;
       // const scrollHeight = this.document?.body.scrollHeight || 0;
       // this.window?.resizeBy(scrollWidth - prevScrollWidth, scrollHeight - prevScrollHeight);
+      // TODO: still not perfect, especially in Chinese language
       (this.window as any).sizeToContent();
     } else {
       // If dialog is not opened, create dialog
@@ -54,6 +59,59 @@ export class Dialog {
     }
   }
 
+  static processDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
+
+
+    const itemsToTrash: number[] = [];
+    const selectedItems: number[] = [];
+    if(duplicateMaps.size === 0) return { itemsToTrash, selectedItems };
+
+    const popWin = new ztoolkit.ProgressWindow(
+      getString("du-dialog-title"),
+      {
+        closeOnClick: true
+      }).createLine({
+        text: getString("du-progress-text"),
+        type: "default",
+        progress: 0,
+      }).show();
+
+    for (const [newItemID, { existingItemIDs, action }] of duplicateMaps) {
+      if (action === Action.KEEP) {
+        itemsToTrash.push(...existingItemIDs);
+        selectedItems.push(newItemID);
+      } else if (action === Action.DISCARD) {
+        itemsToTrash.push(newItemID);
+        selectedItems.push(...existingItemIDs);
+      }
+    }
+    popWin.changeLine({
+      text: getString("du-progress-text"),
+      type: "default",
+      progress: 30,
+    });
+
+    if (itemsToTrash.length) {
+      Zotero.Items.trashTx(itemsToTrash);
+    }
+    popWin.changeLine({
+      text: getString("du-progress-text"),
+      type: "default",
+      progress: 80,
+    });
+    if (selectedItems.length) {
+      ZoteroPane.selectItems(selectedItems);
+    }
+
+    popWin.changeLine({
+      text: getString("du-progress-done"),
+      type: "success",
+      progress: 100,
+    });
+
+    return { itemsToTrash, selectedItems };
+  }
+
   private readonly dialogData: { [key: string | number | symbol]: any };
 
   private get dialog(): DialogHelper | undefined {
@@ -64,11 +122,11 @@ export class Dialog {
     addon.data.dialogs.dialog = value;
   }
 
-  private get duplicateMaps(): Map<number, { existingItemIDs: number[]; action: string }> | undefined {
+  private get duplicateMaps(): Map<number, { existingItemIDs: number[]; action: Action }> | undefined {
     return addon.data.dialogs.duplicateMaps;
   }
 
-  private set duplicateMaps(value: Map<number, { existingItemIDs: number[]; action: string }> | undefined) {
+  private set duplicateMaps(value: Map<number, { existingItemIDs: number[]; action: Action }> | undefined) {
     addon.data.dialogs.duplicateMaps = value;
   }
 
@@ -84,7 +142,7 @@ export class Dialog {
     return Array.from(this.duplicateMaps?.keys() || []);
   }
 
-  private updateDuplicateMaps(duplicateMaps: Map<number, { existingItemIDs: number[]; action: string }>) {
+  private updateDuplicateMaps(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
     if (this.duplicateMaps) {
       duplicateMaps.forEach((value, key) => {
         value.action = this.duplicateMaps?.get(key)?.action || value.action;
@@ -173,26 +231,10 @@ export class Dialog {
           },
         ],
       })
-      .addButton(getString("du-dialog-button-process"), "btn_process", {
+      .addButton(getString("du-dialog-button-apply"), "btn_process", {
         callback: (e) => {
-          const itemsToTrash: number[] = [];
-          const selectedItems = [];
-          for (const [newItemID, { existingItemIDs, action }] of this.duplicateMaps || []) {
-            if (action === Action.KEEP) {
-              itemsToTrash.push(...existingItemIDs);
-              selectedItems.push(newItemID);
-            } else if (action === Action.DISCARD) {
-              itemsToTrash.push(newItemID);
-              selectedItems.push(...existingItemIDs);
-            }
-          }
-          if (itemsToTrash.length) {
-            Zotero.Items.trashTx(itemsToTrash);
-            this.dialogData.resultMessage = "Has trashed all duplicates.";
-          }
-          if (selectedItems.length) {
-            ZoteroPane.selectItems(selectedItems);
-          }
+          const { itemsToTrash, selectedItems } = Duplicates.processDuplicates(this.duplicateMaps!);
+          itemsToTrash.length && (this.dialogData.resultMessage = "Has trashed all duplicates.");
         },
       })
       .addButton(getString("du-dialog-button-go-duplicates"), "btn_go_duplicate", {
@@ -248,7 +290,7 @@ export class Dialog {
     };
   }
 
-  private updateAction(newItemID: number, action: string) {
+  private updateAction(newItemID: number, action: Action) {
     const value = this.duplicateMaps?.get(newItemID);
     if (value) {
       value.action = action;
@@ -256,7 +298,7 @@ export class Dialog {
     }
   }
 
-  private createRadioTd(newItemID: number, action: string): TagElementProps {
+  private createRadioTd(newItemID: number, action: Action): TagElementProps {
     return {
       tag: "td",
       namespace: "html",
@@ -283,9 +325,6 @@ export class Dialog {
                 const asDefaultDiv = this.document?.getElementById("act_as_default_div");
                 asDefaultDiv && (asDefaultDiv.style.visibility = selectAll ? "visible" : "hidden");
 
-                const processButton = this.document?.getElementById("btn_process") as HTMLButtonElement;
-                processButton.disabled = false;
-
                 if (selectAll) {
                   // Update default action
                   this.dialog?.dialogData && (this.dialog.dialogData.defaultAction = action);
@@ -294,8 +333,6 @@ export class Dialog {
                   const id = `act_${action}`;
                   const radio = this.document?.getElementById(id) as HTMLInputElement;
                   radio.checked = true;
-
-                  processButton.disabled = action === Action.CANCEL;
                 } else {
                   // Set radio of Column Header to unchecked
                   const asDefaultCheckbox = this.document?.getElementById("act_as_default") as HTMLInputElement;
@@ -325,7 +362,7 @@ export class Dialog {
     };
   }
 
-  private createTh(action: string): TagElementProps {
+  private createTh(action: Action): TagElementProps {
     return {
       tag: "th",
       namespace: "html",

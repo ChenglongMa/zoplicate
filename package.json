@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Detect and manage duplicate items in Zotero.",
   "config": {
-    "addonName": "zoplicate",
+    "addonName": "Zoplicate",
     "addonID": "zoplicate@chenglongma.com",
     "addonRef": "zoplicate",
     "addonInstance": "Zoplicate",
