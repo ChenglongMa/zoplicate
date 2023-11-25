@@ -9,7 +9,6 @@ export class Duplicates {
     this.dialogData = addon.data.dialogs.dialog?.dialogData || {
       savePreference: false,
       defaultAction: Action.CANCEL,
-      resultMessage: undefined,
       loadCallback: () => {
         const defaultActionOptions = this.document?.getElementById(
           `act_${this.dialogData.defaultAction}`,
@@ -56,7 +55,6 @@ export class Duplicates {
         alwaysRaised: true,
       });
       await this.dialogData.unloadLock.promise;
-      addon.data.alive && this.dialogData.resultMessage && ztoolkit.getGlobal("alert")(this.dialogData.resultMessage);
     }
   }
 
@@ -107,8 +105,6 @@ export class Duplicates {
       type: "success",
       progress: 100,
     });
-
-    return { itemsToTrash, selectedItems };
   }
 
   private readonly dialogData: { [key: string | number | symbol]: any };
@@ -264,8 +260,7 @@ export class Duplicates {
       })
       .addButton(getString("du-dialog-button-apply"), "btn_process", {
         callback: (e) => {
-          const { itemsToTrash } = Duplicates.processDuplicates(this.duplicateMaps!);
-          itemsToTrash.length && (this.dialogData.resultMessage = "Has trashed all duplicates.");
+          Duplicates.processDuplicates(this.duplicateMaps!);
         },
       })
       .addButton(getString("du-dialog-button-go-duplicates"), "btn_go_duplicate", {
