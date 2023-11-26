@@ -17,9 +17,7 @@ if (existsSync(profilePath)) {
   const buildPath = path.resolve("build/addon");
 
   if (!existsSync(path.join(buildPath, "./manifest.json"))) {
-    throw new Error(
-      `The built file does not exist, maybe you need to build the addon first.`,
-    );
+    throw new Error(`The built file does not exist, maybe you need to build the addon first.`);
   }
 
   function writeAddonProxyFile() {
@@ -36,10 +34,7 @@ if (existsSync(profilePath)) {
       writeAddonProxyFile();
     }
   } else {
-    if (
-      existsSync(profilePath) &&
-      !existsSync(path.join(profilePath, "extensions"))
-    ) {
+    if (existsSync(profilePath) && !existsSync(path.join(profilePath, "extensions"))) {
       mkdirSync(path.join(profilePath, "extensions"));
     }
     writeAddonProxyFile();
@@ -49,10 +44,7 @@ if (existsSync(profilePath)) {
   if (existsSync(prefsPath)) {
     const PrefsLines = readFileSync(prefsPath, "utf-8").split("\n");
     const filteredLines = PrefsLines.map((line) => {
-      if (
-        line.includes("extensions.lastAppBuildId") ||
-        line.includes("extensions.lastAppVersion")
-      ) {
+      if (line.includes("extensions.lastAppBuildId") || line.includes("extensions.lastAppVersion")) {
         return;
       }
       if (line.includes("extensions.zotero.dataDir") && dataDir !== "") {

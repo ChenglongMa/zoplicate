@@ -1,35 +1,33 @@
 <linkset>
-    <html:link rel="localization" href="__addonRef__-preferences.ftl" />
+  <html:link rel="localization" href="__addonRef__-preferences.ftl" />
 </linkset>
 <vbox id="zotero-prefpane-__addonRef__" onload="Zotero.__addonInstance__.hooks.onPrefsEvent('load', {window})">
-
-<label>
+  <label>
     <html:h1>__addonName__</html:h1>
-</label>
-<groupbox>
+  </label>
+  <groupbox>
     <label>
-        <html:h2 data-l10n-id="pref-title"></html:h2>
+      <html:h2 data-l10n-id="pref-title"></html:h2>
     </label>
 
     <label data-l10n-id="pref-default-action-title" />
     <!-- `preference="extensions.zotero.__addonRef__.default.action"` also works. -->
     <!--  Because __prefsPrefix__ = extensions.zotero.__addonRef__ in package.json-->
-    <radiogroup id="zotero-prefpane-__addonRef__-default-action" preference="__prefsPrefix__.duplicate.default.action" orient="vertical">
-        <radio data-l10n-id="pref-default-action-keep-this" value="keep" />
-        <radio data-l10n-id="pref-default-action-keep-others" value="discard" />
-        <radio data-l10n-id="pref-default-action-keep-all" value="cancel" />
-        <radio data-l10n-id="pref-default-action-always-ask" value="ask" />
+    <radiogroup
+      id="zotero-prefpane-__addonRef__-default-action"
+      preference="__prefsPrefix__.duplicate.default.action"
+      orient="vertical">
+      <radio data-l10n-id="pref-default-action-keep-this" value="keep" />
+      <radio data-l10n-id="pref-default-action-keep-others" value="discard" />
+      <radio data-l10n-id="pref-default-action-keep-all" value="cancel" />
+      <radio data-l10n-id="pref-default-action-always-ask" value="ask" />
     </radiogroup>
-
-</groupbox>
+  </groupbox>
 </vbox>
-
 
 <spacer height="20" />
 <vbox>
-<html:label
-        data-l10n-id="pref-help"
-        data-l10n-args='{"time": "__buildTime__","name": "__addonName__","version":"__buildVersion__"}'
-></html:label>
+  <html:label
+    data-l10n-id="pref-help"
+    data-l10n-args='{"time": "__buildTime__","name": "__addonName__","version":"__buildVersion__"}'></html:label>
 </vbox>
-

@@ -4,11 +4,7 @@
     "es2021": true
   },
   "root": true,
-  "extends": [
-    "eslint:recommended",
-    "plugin:@typescript-eslint/recommended",
-    "prettier"
-  ],
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "prettier"],
   "overrides": [],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
@@ -30,12 +26,5 @@
     "@typescript-eslint/no-explicit-any": ["off", { "ignoreRestArgs": true }],
     "@typescript-eslint/no-non-null-assertion": "off"
   },
-  "ignorePatterns": [
-    "**/build/**",
-    "**/dist/**",
-    "**/node_modules/**",
-    "**/scripts/**",
-    "**/*.js",
-    "**/*.bak"
-  ]
+  "ignorePatterns": ["**/build/**", "**/dist/**", "**/node_modules/**", "**/scripts/**", "**/*.js", "**/*.bak"]
 }

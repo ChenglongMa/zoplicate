@@ -5,11 +5,7 @@ import { createZToolkit } from "./utils/ztoolkit";
 import { Notifier } from "./modules/notifier";
 
 async function onStartup() {
-  await Promise.all([
-    Zotero.initializationPromise,
-    Zotero.unlockPromise,
-    Zotero.uiReadyPromise,
-  ]);
+  await Promise.all([Zotero.initializationPromise, Zotero.unlockPromise, Zotero.uiReadyPromise]);
   initLocale();
 
   registerPrefs();
@@ -65,12 +61,7 @@ function onShutdown(): void {
  * This function is just an example of dispatcher for Notify events.
  * Any operations should be placed in a function to keep this function clear.
  */
-async function onNotify(
-  event: string,
-  type: string,
-  ids: Array<string | number>,
-  extraData: { [key: string]: any },
-) {
+async function onNotify(event: string, type: string, ids: Array<string | number>, extraData: { [key: string]: any }) {
   // You can add your code to the corresponding notify type
   ztoolkit.log("notify", event, type, ids, extraData);
   if (event == "add" && type == "item") {
@@ -94,11 +85,9 @@ async function onPrefsEvent(type: string, data: { [key: string]: any }) {
   }
 }
 
-function onShortcuts(type: string) {
-}
+function onShortcuts(type: string) {}
 
-async function onDialogEvents(type: string) {
-}
+async function onDialogEvents(type: string) {}
 
 // Add your hooks here. For element click, etc.
 // Keep in mind hooks only do dispatch. Don't add code that does real jobs in hooks.

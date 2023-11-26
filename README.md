@@ -7,13 +7,13 @@
 ![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/ChenglongMa/zoplicate?include_prereleases)
 ![GitHub License](https://img.shields.io/github/license/ChenglongMa/zoplicate)
 
-
 A plugin that does one thing only: **Detect** and **Manage** duplicate items in [![zotero](https://www.zotero.org/support/lib/exe/fetch.php?tok=2735f1&media=https%3A%2F%2Fwww.zotero.org%2Fstatic%2Fimages%2Fpromote%2Fzotero-logo-128x31.png)](https://www.zotero.org/).
 
-The plugin can detect if the newly imported item is a duplicate of an existing item in the library. 
+The plugin can detect if the newly imported item is a duplicate of an existing item in the library.
 If so, it will prompt you to process the duplicate items.
 
 The actions you can take are:
+
 1. **Keep This**: Save the last imported item and delete the rest.
 2. **Keep Others**: Delete the last imported item and save the rest.
 3. **Keep All**: Keep both the new item and the existing item.
@@ -22,9 +22,9 @@ The actions you can take are:
 # Install
 
 1. Go to the [release page](https://github.com/ChenglongMa/zoplicate/releases) to download [the latest `.xpi` file](https://github.com/ChenglongMa/zoplicate/releases/latest/download/zoplicate.xpi).
-    - If you are using FireFox, right-click on the link of the XPI file and select "Save As...".
-2. Then, in Zotero, click `Tools` -> `Add-ons` and drag the `.xpi` onto the Add-ons window. 
-See [how to install a Zotero addon](https://www.zotero.org/support/plugins).
+   - If you are using FireFox, right-click on the link of the XPI file and select "Save As...".
+2. Then, in Zotero, click `Tools` -> `Add-ons` and drag the `.xpi` onto the Add-ons window.
+   See [how to install a Zotero addon](https://www.zotero.org/support/plugins).
 
 Note: The latest version is only supported for Zotero 7.
 
@@ -36,33 +36,34 @@ In Zotero, click `Edit` -> `Settings`, go to `Zoplicate` tab, and you will see t
 
 ![zoplicate settings](docs/settings.png)
 
-You can select the actions you want to take when duplicate items are detected. 
+You can select the actions you want to take when duplicate items are detected.
 `Always Ask` is the default option if you have not changed the settings.
 
 ## Duplicate Dialog
 
-By default, or you have selected `Always Ask` in the settings, 
+By default, or you have selected `Always Ask` in the settings,
 a dialog will pop up when you import a new item that is a duplicate of an existing item.
 
 ![zoplicate dialog](docs/dialog.png)
 
 The dialog will show the duplicate items and the actions you can take.
+
 1. Select the action you want to take and click <kbd>Apply</kbd> to process the duplicate items.
 2. Click <kbd>Go to Duplicates</kbd> to go to the `Duplicate Panel` and merge the duplicate items manually.
 3. Click <kbd>Cancel</kbd> to dismiss the dialog and **save** the import of the new item and the existing items.
-4. Check <kbd>Use this action by default</kbd> to remember the selected action in default settings. 
-Then the next time you import a duplicate item, the selected action will be applied automatically.
+4. Check <kbd>Use this action by default</kbd> to remember the selected action in default settings.
+   Then the next time you import a duplicate item, the selected action will be applied automatically.
 
 ### Multiple Duplicate Items
 
-When you import multiple duplicate items, 
+When you import multiple duplicate items,
 or import another duplicate item before you process the previous duplicate items,
 the dialog will show all the duplicate items and the actions you can take.
 
 ![zoplicate dialog](docs/dialog2.png)
 
 1. You can select different actions for different duplicate items.
-2. Click the *header* of action columns to select the same action for all duplicate items.
+2. Click the _header_ of action columns to select the same action for all duplicate items.
 3. <kbd>Use this action by default</kbd> option will be shown only when you select the same action for all duplicate items.
 
 # Contributing
