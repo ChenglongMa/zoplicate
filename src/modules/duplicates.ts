@@ -345,7 +345,7 @@ export class Duplicates {
               type: "click",
               listener: () => {
                 this.updateAction(newItemID, action);
-                const selectAll = Array.from(this.duplicateMaps?.values()!).every((i) => i.action === action);
+                const selectAll = Array.from(this.duplicateMaps?.values() || []).every((i) => i.action === action);
                 this.checkDefaultRadio(selectAll, action);
               },
             },

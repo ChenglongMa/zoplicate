@@ -1,4 +1,4 @@
-import { config , homepage} from "../../package.json";
+import { config, homepage } from "../../package.json";
 import { getString } from "../utils/locale";
 
 export function registerPrefs() {
