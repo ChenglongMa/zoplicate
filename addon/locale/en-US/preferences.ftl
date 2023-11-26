@@ -6,7 +6,7 @@ pref-default-action-keep-this =
 pref-default-action-keep-others =
     .label = [Keep Others]: Delete the last imported item and save the rest
 pref-default-action-keep-all =
-    .label = [Keep All]: Save all imported items
+    .label = [Keep All]: Save all items
 pref-default-action-always-ask =
     .label = [Always Ask]: Ask for action every time
 

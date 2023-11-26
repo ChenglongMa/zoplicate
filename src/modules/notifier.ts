@@ -29,4 +29,32 @@ export class Notifier {
     }
     Duplicates.processDuplicates(duplicateMaps);
   }
+
+  static registerNotifier() {
+    const callback = {
+      notify: async (event: string, type: string, ids: number[] | string[], extraData: { [key: string]: any }) => {
+        if (!addon?.data.alive) {
+          this.unregisterNotifier(notifierID);
+          return;
+        }
+        addon.hooks.onNotify(event, type, ids, extraData);
+      },
+    };
+
+    // Register the callback in Zotero as an item observer
+    const notifierID = Zotero.Notifier.registerObserver(callback, ["tab", "item", "file"]);
+
+    // Unregister callback when the window closes (important to avoid a memory leak)
+    window.addEventListener(
+      "unload",
+      (e: Event) => {
+        this.unregisterNotifier(notifierID);
+      },
+      false,
+    );
+  }
+
+  private static unregisterNotifier(notifierID: string) {
+    Zotero.Notifier.unregisterObserver(notifierID);
+  }
 }
