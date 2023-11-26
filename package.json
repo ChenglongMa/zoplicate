@@ -40,7 +40,7 @@
   "bugs": {
     "url": "https://github.com/ChenglongMa/zoplicate/issues"
   },
-  "homepage": "https://github.com/ChenglongMa/zoplicate#readme",
+  "homepage": "https://chenglongma.com/zoplicate/",
   "dependencies": {
     "zotero-plugin-toolkit": "^2.3.6"
   },

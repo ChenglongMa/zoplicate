@@ -1,16 +1,8 @@
-import {
-  BasicExampleFactory,
-  HelperExampleFactory,
-  KeyExampleFactory,
-  PromptExampleFactory,
-  UIExampleFactory,
-} from "./modules/examples";
 import { config } from "../package.json";
 import { getString, initLocale } from "./utils/locale";
-import { registerPrefsScripts } from "./modules/preferenceScript";
+import { registerPrefs, registerPrefsScripts } from "./modules/preferenceScript";
 import { createZToolkit } from "./utils/ztoolkit";
 import { Notifier } from "./modules/notifier";
-import { Duplicates } from "./modules/duplicates";
 
 async function onStartup() {
   await Promise.all([
@@ -20,9 +12,9 @@ async function onStartup() {
   ]);
   initLocale();
 
-  BasicExampleFactory.registerPrefs();
+  registerPrefs();
 
-  BasicExampleFactory.registerNotifier();
+  Notifier.registerNotifier();
 
   await onMainWindowLoad(window);
 }
@@ -42,38 +34,11 @@ async function onMainWindowLoad(win: Window): Promise<void> {
     })
     .show();
 
-  KeyExampleFactory.registerShortcuts();
-
   await Zotero.Promise.delay(1000);
   popupWin.changeLine({
     progress: 30,
     text: `[30%] ${getString("startup-begin")}`,
   });
-
-  UIExampleFactory.registerStyleSheet();
-
-  UIExampleFactory.registerRightClickMenuItem();
-
-  UIExampleFactory.registerRightClickMenuPopup();
-
-  UIExampleFactory.registerWindowMenuWithSeparator();
-
-  await UIExampleFactory.registerExtraColumn();
-
-  await UIExampleFactory.registerExtraColumnWithCustomCell();
-
-  await UIExampleFactory.registerCustomItemBoxRow();
-
-  UIExampleFactory.registerLibraryTabPanel();
-
-  await UIExampleFactory.registerReaderTabPanel();
-
-  PromptExampleFactory.registerNormalCommandExample();
-
-  PromptExampleFactory.registerAnonymousCommandExample();
-
-  PromptExampleFactory.registerConditionalCommandExample();
-
   await Zotero.Promise.delay(1000);
 
   popupWin.changeLine({
@@ -81,8 +46,6 @@ async function onMainWindowLoad(win: Window): Promise<void> {
     text: `[100%] ${getString("startup-finish")}`,
   });
   popupWin.startCloseTimer(5000);
-
-  addon.hooks.onDialogEvents("dialogExample");
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {
@@ -113,18 +76,6 @@ async function onNotify(
   if (event == "add" && type == "item") {
     await Notifier.whenAddItems(ids as number[]);
   }
-  if (event == "select" && type == "item") {
-    ztoolkit.log("select item", event, type, ids, extraData);
-  }
-  if (
-    event == "select" &&
-    type == "tab" &&
-    extraData[ids[0]].type == "reader"
-  ) {
-    BasicExampleFactory.exampleNotifierCallback();
-  } else {
-    return;
-  }
 }
 
 /**
@@ -144,42 +95,9 @@ async function onPrefsEvent(type: string, data: { [key: string]: any }) {
 }
 
 function onShortcuts(type: string) {
-  switch (type) {
-    case "larger":
-      KeyExampleFactory.exampleShortcutLargerCallback();
-      break;
-    case "smaller":
-      KeyExampleFactory.exampleShortcutSmallerCallback();
-      break;
-    case "confliction":
-      KeyExampleFactory.exampleShortcutConflictingCallback();
-      break;
-    default:
-      break;
-  }
 }
 
 async function onDialogEvents(type: string) {
-  switch (type) {
-    case "dialogExample":
-      const itemIds = Zotero.getActiveZoteroPane().getSelectedItems(true);
-      Notifier.whenAddItems(itemIds);
-      break;
-    case "clipboardExample":
-      HelperExampleFactory.clipboardExample();
-      break;
-    case "filePickerExample":
-      HelperExampleFactory.filePickerExample();
-      break;
-    case "progressWindowExample":
-      HelperExampleFactory.progressWindowExample();
-      break;
-    case "vtableExample":
-      HelperExampleFactory.vtableExample();
-      break;
-    default:
-      break;
-  }
 }
 
 // Add your hooks here. For element click, etc.
