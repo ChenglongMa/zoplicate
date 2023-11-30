@@ -2,10 +2,11 @@
     <img src="https://raw.githubusercontent.com/ChenglongMa/zoplicate/main/docs/banner.png" alt="zoplicate banner">
 </div>
 
+[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/ChenglongMa/zoplicate?include_prereleases)](https://github.com/ChenglongMa/zoplicate/releases/latest)
+[![Github All Releases](https://img.shields.io/github/downloads/ChenglongMa/zoplicate/total.svg)](https://github.com/ChenglongMa/zoplicate/releases)
+![GitHub License](https://img.shields.io/github/license/ChenglongMa/zoplicate)
 [![zotero target version](https://img.shields.io/badge/Zotero-7-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
 [![Using Zotero Plugin Template](https://img.shields.io/badge/Using-Zotero%20Plugin%20Template-blue?style=flat-square&logo=github)](https://github.com/windingwind/zotero-plugin-template)
-![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/ChenglongMa/zoplicate?include_prereleases)
-![GitHub License](https://img.shields.io/github/license/ChenglongMa/zoplicate)
 
 A plugin that does one thing only: **Detect** and **Manage** duplicate items in [![zotero](https://www.zotero.org/support/lib/exe/fetch.php?tok=2735f1&media=https%3A%2F%2Fwww.zotero.org%2Fstatic%2Fimages%2Fpromote%2Fzotero-logo-128x31.png)](https://www.zotero.org/).
 
