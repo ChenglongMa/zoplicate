@@ -1,52 +1,46 @@
 import { config } from "../package.json";
 import { getString, initLocale } from "./utils/locale";
 import { registerPrefs, registerPrefsScripts } from "./modules/preferenceScript";
-import { createZToolkit } from "./utils/ztoolkit";
 import { Notifier } from "./modules/notifier";
 
 async function onStartup() {
-  await Promise.all([Zotero.initializationPromise, Zotero.unlockPromise, Zotero.uiReadyPromise]);
+  await Promise.all([
+    Zotero.initializationPromise,
+    Zotero.unlockPromise,
+    Zotero.uiReadyPromise,
+  ]);
   initLocale();
-
+  ztoolkit.ProgressWindow.setIconURI(
+    "default",
+    `chrome://${config.addonRef}/content/icons/favicon.png`
+  );
   registerPrefs();
 
   Notifier.registerNotifier();
-
-  await onMainWindowLoad(window);
-}
-
-async function onMainWindowLoad(win: Window): Promise<void> {
-  // Create ztoolkit for every window
-  addon.data.ztoolkit = createZToolkit();
-
-  const popupWin = new ztoolkit.ProgressWindow(config.addonName, {
-    closeOnClick: true,
-    closeTime: -1,
-  })
-    .createLine({
-      text: getString("startup-begin"),
-      type: "default",
-      progress: 0,
-    })
-    .show();
-
-  await Zotero.Promise.delay(1000);
-  popupWin.changeLine({
-    progress: 30,
-    text: `[30%] ${getString("startup-begin")}`,
-  });
-  await Zotero.Promise.delay(1000);
-
-  popupWin.changeLine({
-    progress: 100,
-    text: `[100%] ${getString("startup-finish")}`,
-  });
-  popupWin.startCloseTimer(5000);
-}
-
-async function onMainWindowUnload(win: Window): Promise<void> {
-  ztoolkit.unregisterAll();
-  addon.data.dialogs.dialog?.window?.close();
+  //
+  // const popupWin = new ztoolkit.ProgressWindow(config.addonName, {
+  //   closeOnClick: true,
+  //   closeTime: -1,
+  // })
+  //   .createLine({
+  //     text: getString("startup.begin"),
+  //     type: "default",
+  //     progress: 0,
+  //   })
+  //   .show();
+  //
+  // await Zotero.Promise.delay(1000);
+  // popupWin.changeLine({
+  //   progress: 30,
+  //   text: `[30%] ${getString("startup.begin")}`,
+  // });
+  // await Zotero.Promise.delay(1000);
+  //
+  // popupWin.changeLine({
+  //   progress: 100,
+  //   text: `[100%] ${getString("startup.finish")}`,
+  // });
+  // popupWin.startCloseTimer(5000);
 }
 
 function onShutdown(): void {
@@ -96,8 +90,6 @@ async function onDialogEvents(type: string) {}
 export default {
   onStartup,
   onShutdown,
-  onMainWindowLoad,
-  onMainWindowUnload,
   onNotify,
   onPrefsEvent,
   onShortcuts,

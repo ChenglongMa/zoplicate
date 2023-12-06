@@ -47,7 +47,7 @@ export class Duplicates {
     } else {
       // If dialog is not opened, create dialog
       this.dialog = await this.createDialog();
-      this.dialog.open(getString("du-dialog-title"), {
+      this.dialog.open(getString("du.dialog.title"), {
         centerscreen: true,
         resizable: false,
         fitContent: true,
@@ -63,11 +63,11 @@ export class Duplicates {
     const selectedItems: number[] = [];
     if (duplicateMaps.size === 0) return { itemsToTrash, selectedItems };
 
-    const popWin = new ztoolkit.ProgressWindow(getString("du-dialog-title"), {
+    const popWin = new ztoolkit.ProgressWindow(getString("du.dialog.title"), {
       closeOnClick: true,
     })
       .createLine({
-        text: getString("du-progress-text"),
+        text: getString("du.progress.text"),
         type: "default",
         progress: 0,
       })
@@ -83,7 +83,7 @@ export class Duplicates {
       }
     }
     popWin.changeLine({
-      text: getString("du-progress-text"),
+      text: getString("du.progress.text"),
       type: "default",
       progress: 30,
     });
@@ -92,7 +92,7 @@ export class Duplicates {
       Zotero.Items.trashTx(itemsToTrash);
     }
     popWin.changeLine({
-      text: getString("du-progress-text"),
+      text: getString("du.progress.text"),
       type: "default",
       progress: 80,
     });
@@ -101,7 +101,7 @@ export class Duplicates {
     }
 
     popWin.changeLine({
-      text: getString("du-progress-done"),
+      text: getString("du.progress.done"),
       type: "success",
       progress: 100,
     });
@@ -193,7 +193,7 @@ export class Duplicates {
     const tableBody = await this.updateTable();
     return new ztoolkit.Dialog(3, 1)
       .setDialogData(this.dialogData)
-      .addCell(0, 0, { tag: "h2", properties: { innerHTML: getString("du-dialog-header") } })
+      .addCell(0, 0, { tag: "h2", properties: { innerHTML: getString("du.dialog.header") } })
       .addCell(1, 0, {
         tag: "table",
         id: "data_table",
@@ -217,7 +217,7 @@ export class Duplicates {
                     tag: "th",
                     namespace: "html",
                     properties: {
-                      innerHTML: getString("du-dialog-table-title"),
+                      innerHTML: getString("du.dialog.table.title"),
                     },
                   },
                   this.createTh(Action.KEEP),
@@ -254,16 +254,16 @@ export class Duplicates {
             attributes: {
               for: "act_as_default",
             },
-            properties: { innerHTML: getString("du-dialog-as-default") },
+            properties: { innerHTML: getString("du.dialog.as.default") },
           },
         ],
       })
-      .addButton(getString("du-dialog-button-apply"), "btn_process", {
+      .addButton(getString("du.dialog.button.apply"), "btn_process", {
         callback: (e) => {
           Duplicates.processDuplicates(this.duplicateMaps!);
         },
       })
-      .addButton(getString("du-dialog-button-go-duplicates"), "btn_go_duplicate", {
+      .addButton(getString("du.dialog.button.go.duplicates"), "btn_go_duplicate", {
         callback: (e) => {
           const libraryID = ZoteroPane.getSelectedLibraryID();
           const type = "duplicates";
@@ -273,7 +273,7 @@ export class Duplicates {
           ZoteroPane.setVirtual(libraryID, type, show, select);
         },
       })
-      .addButton(getString("general-cancel"), "btn_cancel");
+      .addButton(getString("general.cancel"), "btn_cancel");
   }
 
   private async updateTable(): Promise<TagElementProps> {
@@ -405,7 +405,7 @@ export class Duplicates {
           attributes: {
             for: `act_${action}`,
           },
-          properties: { innerHTML: getString(`du-dialog-table-${action}`) },
+          properties: { innerHTML: getString(`du.dialog.table.${action}`) },
         },
       ],
     };

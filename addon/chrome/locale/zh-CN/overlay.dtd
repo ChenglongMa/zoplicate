@@ -1,0 +1,9 @@
+<!ENTITY zotero.__addonRef__.pref.title "默认设置">
+<!ENTITY zotero.__addonRef__.pref.default.action.title "处理重复条目的默认操作">
+<!ENTITY zotero.__addonRef__.pref.default.action.keep.this "[保留最新的]: 保留新导入条目，删除库中原有的">
+<!ENTITY zotero.__addonRef__.pref.default.action.keep.others "[保留已有的]: 保留库中原有条目，删除新导入的">
+<!ENTITY zotero.__addonRef__.pref.default.action.keep.all "[保留全部]: 保留所有条目，不删除任何项">
+<!ENTITY zotero.__addonRef__.pref.default.action.always.ask "[始终询问]: 每次都询问我该如何处理">
+
+<!ENTITY zotero.__addonRef__.help.version.label "__addonName__ 版本 __buildVersion__">
+<!ENTITY zotero.__addonRef__.help.releasetime.label "Build __buildTime__">

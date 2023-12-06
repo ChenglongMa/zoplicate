@@ -1,13 +1,20 @@
-import { exit } from "process";
+import { exit, argv } from "process";
+import minimist from "minimist";
 import { execSync } from "child_process";
 import details from "../package.json" assert { type: "json" };
-import cmd from "./zotero-cmd.json" assert { type: "json" };
-
 const { addonID, addonName } = details.config;
-const { version } = details;
-const { zoteroBinPath, profilePath } = cmd.exec;
+const version = details.version;
+import cmd from "./zotero-cmd.json" assert { type: "json" };
+const { exec } = cmd;
 
-const startZotero = `"${zoteroBinPath}" --debugger --purgecaches -profile "${profilePath}"`;
+// Run node reload.js -h for help
+const args = minimist(argv.slice(2));
+
+const zoteroPath = exec[args.zotero || args.z || Object.keys(exec)[0]];
+const profile = args.profile || args.p;
+const startZotero = `"${zoteroPath}" --debugger --purgecaches ${
+  profile ? `-p ${profile}` : ""
+}`;
 
 const script = `
 (async () => {

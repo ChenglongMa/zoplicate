@@ -7,25 +7,21 @@ const basicTool = new BasicTool();
 if (!basicTool.getGlobal("Zotero")[config.addonInstance]) {
   // Set global variables
   _globalThis.Zotero = basicTool.getGlobal("Zotero");
-  defineGlobal("window");
-  defineGlobal("document");
-  defineGlobal("ZoteroPane");
-  defineGlobal("Zotero_Tabs");
+  _globalThis.ZoteroPane = basicTool.getGlobal("ZoteroPane");
+  _globalThis.Zotero_Tabs = basicTool.getGlobal("Zotero_Tabs");
+  _globalThis.window = basicTool.getGlobal("window");
+  _globalThis.document = basicTool.getGlobal("document");
   _globalThis.addon = new Addon();
-  defineGlobal("ztoolkit", () => {
-    return _globalThis.addon.data.ztoolkit;
-  });
+  _globalThis.ztoolkit = addon.data.ztoolkit;
+  ztoolkit.basicOptions.log.prefix = `[${config.addonName}]`;
+  ztoolkit.basicOptions.log.disableConsole = addon.data.env === "production";
+  ztoolkit.UI.basicOptions.ui.enableElementJSONLog =
+    addon.data.env === "development";
+  ztoolkit.UI.basicOptions.ui.enableElementDOMLog =
+    addon.data.env === "development";
+  ztoolkit.basicOptions.debug.disableDebugBridgePassword =
+    addon.data.env === "development";
   Zotero[config.addonInstance] = addon;
   // Trigger addon hook for initialization
   addon.hooks.onStartup();
-}
-
-function defineGlobal(name: Parameters<BasicTool["getGlobal"]>[0]): void;
-function defineGlobal(name: string, getter: () => any): void;
-function defineGlobal(name: string, getter?: () => any) {
-  Object.defineProperty(_globalThis, name, {
-    get() {
-      return getter ? getter() : basicTool.getGlobal(name);
-    },
-  });
 }

@@ -1,0 +1,9 @@
+<!ENTITY zotero.__addonRef__.pref.title "Default Preferences">
+<!ENTITY zotero.__addonRef__.pref.default.action.title "Default action to process duplicate items">
+<!ENTITY zotero.__addonRef__.pref.default.action.keep.this "[Keep This]: Save the last imported item and delete the rest">
+<!ENTITY zotero.__addonRef__.pref.default.action.keep.others "[Keep Others]: Delete the last imported item and save the rest">
+<!ENTITY zotero.__addonRef__.pref.default.action.keep.all "[Keep All]: Save all items">
+<!ENTITY zotero.__addonRef__.pref.default.action.always.ask "[Always Ask]: Ask for action every time">
+
+<!ENTITY zotero.__addonRef__.help.version.label "__addonName__ VERSION __buildVersion__">
+<!ENTITY zotero.__addonRef__.help.releasetime.label "Build __buildTime__">

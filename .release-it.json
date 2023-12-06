@@ -4,7 +4,7 @@
   },
   "github": {
     "release": true,
-    "assets": ["build/*.xpi"]
+    "assets": ["builds/*.xpi"]
   },
   "hooks": {
     "before:init": "npm run lint",

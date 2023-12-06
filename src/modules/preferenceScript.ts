@@ -5,9 +5,10 @@ export function registerPrefs() {
   ztoolkit.PreferencePane.register({
     pluginID: config.addonID,
     src: rootURI + "chrome/content/preferences.xhtml",
-    label: getString("prefs-title"),
+    label: getString("prefs.title"),
     image: `chrome://${config.addonRef}/content/icons/favicon.png`,
     helpURL: homepage,
+    extraDTD: [`chrome://${config.addonRef}/locale/overlay.dtd`],
     defaultXUL: true,
   });
 }
