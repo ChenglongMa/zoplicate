@@ -2,11 +2,21 @@
     <img src="https://raw.githubusercontent.com/ChenglongMa/zoplicate/main/docs/banner.png" alt="zoplicate banner">
 </div>
 
-[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/ChenglongMa/zoplicate?include_prereleases)](https://github.com/ChenglongMa/zoplicate/releases/latest)
-[![Github All Releases](https://img.shields.io/github/downloads/ChenglongMa/zoplicate/total.svg)](https://github.com/ChenglongMa/zoplicate/releases)
 ![GitHub License](https://img.shields.io/github/license/ChenglongMa/zoplicate)
-[![zotero target version](https://img.shields.io/badge/Zotero-7-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
 [![Using Zotero Plugin Template](https://img.shields.io/badge/Using-Zotero%20Plugin%20Template-blue?style=flat-square&logo=github)](https://github.com/windingwind/zotero-plugin-template)
+
+**The latest version (for Zotero 7 only)**
+
+[![Version for Zotero 7](https://img.shields.io/github/package-json/v/ChenglongMa/zoplicate)](https://github.com/ChenglongMa/zoplicate/releases/latest)
+[![Downloads for Zotero 7](https://img.shields.io/github/downloads/ChenglongMa/zoplicate/latest/total)](https://github.com/ChenglongMa/zoplicate/releases)
+[![zotero target version](https://img.shields.io/badge/Zotero-7-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
+
+**Version For Zotero 6**
+
+[![Version for Zotero 6](https://img.shields.io/github/package-json/v/ChenglongMa/zoplicate/zotero-6)
+](https://github.com/ChenglongMa/zoplicate/releases/tag/zotero6)
+[![Downloads for Zotero 6](https://img.shields.io/github/downloads/ChenglongMa/zoplicate/zotero6/total)](https://github.com/ChenglongMa/zoplicate/releases/tag/zotero6)
+[![zotero target version](https://img.shields.io/badge/Zotero-6-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
 
 A plugin that does one thing only: **Detect** and **Manage** duplicate items in [![zotero](https://www.zotero.org/support/lib/exe/fetch.php?tok=2735f1&media=https%3A%2F%2Fwww.zotero.org%2Fstatic%2Fimages%2Fpromote%2Fzotero-logo-128x31.png)](https://www.zotero.org/).
 
@@ -22,12 +32,12 @@ The actions you can take are:
 
 # Install
 
-1. Go to the [release page](https://github.com/ChenglongMa/zoplicate/releases) to download [the latest `.xpi` file](https://github.com/ChenglongMa/zoplicate/releases/latest/download/zoplicate.xpi).
+1. Download `.xpi` file according to the version of Zotero you are using.
+   - **For Zotero 7**: Visit the [release page](https://github.com/ChenglongMa/zoplicate/releases/latest) and download [the latest `.xpi` file](https://github.com/ChenglongMa/zoplicate/releases/latest/download/zoplicate.xpi).
+   - **For Zotero 6**: Visit the [release page](https://github.com/ChenglongMa/zoplicate/releases/tag/zotero6) and download [the `.xpi` file for Zotero 6](https://github.com/ChenglongMa/zoplicate/releases/download/zotero6/zoplicate.xpi).
    - If you are using FireFox, right-click on the link of the XPI file and select "Save As...".
 2. Then, in Zotero, click `Tools` -> `Add-ons` and drag the `.xpi` onto the Add-ons window.
    See [how to install a Zotero addon](https://www.zotero.org/support/plugins).
-
-Note: The latest version is only supported for Zotero 7.
 
 # Usage
 
