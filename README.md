@@ -1,18 +1,27 @@
-<div style="text-align:center;">
+<div align="center">
     <img src="https://raw.githubusercontent.com/ChenglongMa/zoplicate/main/docs/banner.png" alt="zoplicate banner">
 </div>
 
+<div align="center">
+    
 👉
 [![zotero target version](https://img.shields.io/badge/For_Zotero-7-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
 [![Version for Zotero 7](https://img.shields.io/github/package-json/v/ChenglongMa/zoplicate)](https://github.com/ChenglongMa/zoplicate/releases/latest)
 [![Downloads for Zotero 7](https://img.shields.io/github/downloads/ChenglongMa/zoplicate/latest/total)](https://github.com/ChenglongMa/zoplicate/releases/latest)
-👉
+👈👉
 [![zotero target version](https://img.shields.io/badge/For_Zotero-6-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
 [![Version for Zotero 6](https://img.shields.io/github/package-json/v/ChenglongMa/zoplicate/zotero-6)](https://github.com/ChenglongMa/zoplicate/releases/tag/zotero6)
 [![Downloads for Zotero 6](https://img.shields.io/github/downloads/ChenglongMa/zoplicate/zotero6/total)](https://github.com/ChenglongMa/zoplicate/releases/tag/zotero6)
-
+👈
+    
+</div>
+<div align="center">
+    
+![GitHub Repo stars](https://img.shields.io/github/stars/ChenglongMa/zoplicate)
 ![GitHub License](https://img.shields.io/github/license/ChenglongMa/zoplicate)
 [![Using Zotero Plugin Template](https://img.shields.io/badge/Using-Zotero%20Plugin%20Template-blue?style=flat-square&logo=github)](https://github.com/windingwind/zotero-plugin-template)
+
+</div>
 
 ----
 
@@ -27,6 +36,8 @@ The actions you can take are:
 2. **Keep Others**: Delete the last imported item and save the rest.
 3. **Keep All**: Keep both the new item and the existing item.
 4. **Merge Manually**: Go to Duplicate Panel and merge the duplicate item manually.
+
+*If you find this project helpful, please consider giving it a star* ⭐. *It would be a great encouragement for me!*
 
 # Install
 
