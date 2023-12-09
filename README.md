@@ -16,7 +16,7 @@
 </div>
 <div align="center">
     
-![GitHub Repo stars](https://img.shields.io/github/stars/ChenglongMa/zoplicate)
+[![GitHub Repo stars](https://img.shields.io/github/stars/ChenglongMa/zoplicate)](https://github.com/ChenglongMa/zoplicate)
 ![GitHub License](https://img.shields.io/github/license/ChenglongMa/zoplicate)
 [![Using Zotero Plugin Template](https://img.shields.io/badge/Using-Zotero%20Plugin%20Template-blue?style=flat-square&logo=github)](https://github.com/windingwind/zotero-plugin-template)
 
@@ -36,7 +36,7 @@ The actions you can take are:
 3. **Keep All**: Keep both the new item and the existing item.
 4. **Merge Manually**: Go to Duplicate Panel and merge the duplicate item manually.
 
-*If you find this project helpful, please consider giving it a star* ⭐. *It would be a great encouragement for me!*
+*If you find this project helpful, please consider [giving it a star](https://github.com/ChenglongMa/zoplicate)* ⭐. *It would be a great encouragement for me!*
 
 # Install
 
