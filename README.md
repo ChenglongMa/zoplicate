@@ -36,7 +36,30 @@ The actions you can take are:
 3. **Keep All**: Keep both the new item and the existing item.
 4. **Merge Manually**: Go to Duplicate Panel and merge the duplicate item manually.
 
+**NOTE**: We use the same method as Zotero to *detect* and *merge* duplicate items.
+See [Zotero Documentation - Duplicate Detection](https://www.zotero.org/support/duplicate_detection) for more details.
+
 *If you find this project helpful, please consider [giving it a star](https://github.com/ChenglongMa/zoplicate)* ⭐. *It would be a great encouragement for me!*
+
+# Changelog
+
+## v1.1.0
+
+In this version, we have made the following changes:
+
+1. 🧬 **CHANGE!**: We change the processing method of duplicate items.
+
+   Previously, we use the `Trash` method to process duplicate items, i.e., delete the duplicate items.
+   However, this method will cause the loss of some information of the duplicate items.
+   * E.g., **notes**, **tags**, **collections**, **attachments**.
+
+   In this version, we use the `Merge` method to process duplicate items.
+   This method will copy all the aforementioned information to the retained item, and then delete the duplicate items.
+   * **NOTE**: If you are using [ZotFile](http://zotfile.com/), the `Merge` method will copy the **file link** of the duplicate items to the retained item.
+   * However, users relying on Zotero's default attachment storage may encounter duplication issues if the newly imported item contains attachments. 
+     * This is a known potential problem in Zotero, as detailed in [Zotero Documentation - Duplicate Detection](https://www.zotero.org/support/duplicate_detection).
+
+
 
 # Install
 
