@@ -27,7 +27,7 @@ export class Notifier {
       await new Duplicates().showDuplicates(duplicateMaps);
       return;
     }
-    Duplicates.processDuplicates(duplicateMaps);
+    await Duplicates.processDuplicates(duplicateMaps);
   }
 
   static registerNotifier() {
@@ -50,7 +50,7 @@ export class Notifier {
       (e: Event) => {
         this.unregisterNotifier(notifierID);
       },
-      false,
+      false
     );
   }
 
