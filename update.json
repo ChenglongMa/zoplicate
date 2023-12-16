@@ -3,7 +3,7 @@
     "zoplicate@chenglongma.com": {
       "updates": [
         {
-          "version": "0.6.0",
+          "version": "0.6.1",
           "update_link": "https://github.com/ChenglongMa/zoplicate/releases/download/zotero6/zoplicate.xpi",
           "applications": {
             "gecko": {
@@ -12,7 +12,7 @@
           }
         },
         {
-          "version": "0.6.0",
+          "version": "0.6.1",
           "update_link": "https://github.com/ChenglongMa/zoplicate/releases/download/zotero6/zoplicate.xpi",
           "applications": {
             "zotero": {

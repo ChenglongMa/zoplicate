@@ -22,6 +22,10 @@ The actions you can take are:
 3. **Keep All**: Keep both the new item and the existing item.
 4. **Merge Manually**: Go to Duplicate Panel and merge the duplicate item manually.
 
+# NOTE
+
+Please refer [the main branch](https://github.com/ChenglongMa/zoplicate/#readme) for the latest documentation. This document will no longer be updated.
+
 # Install
 
 1. Go to the [zotero 6 release page](https://github.com/ChenglongMa/zoplicate/releases/tag/zotero6) to download [the `.xpi` file for zotero 6](https://github.com/ChenglongMa/zoplicate/releases/download/zotero6/zoplicate.xpi).
