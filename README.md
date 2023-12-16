@@ -59,7 +59,7 @@ In this version, we have made the following changes:
    * However, users relying on Zotero's default attachment storage may encounter duplication issues if the newly imported item contains attachments. 
      * This is a known potential problem in Zotero, as detailed in [Zotero Documentation - Duplicate Detection](https://www.zotero.org/support/duplicate_detection).
 
-
+Thanks [ChinJCheung](https://github.com/ChinJCheung)'s idea mentioned in [issue #5](https://github.com/ChenglongMa/zoplicate/issues/5).
 
 # Install
 
