@@ -58,10 +58,9 @@ export class Duplicates {
     }
   }
 
-  static processDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
-    const itemsToTrash: number[] = [];
-    const selectedItems: number[] = [];
-    if (duplicateMaps.size === 0) return { itemsToTrash, selectedItems };
+  static async processDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
+    const items = [];
+    if (duplicateMaps.size === 0) return;
 
     const popWin = new ztoolkit.ProgressWindow(getString("du-dialog-title"), {
       closeOnClick: true,
@@ -75,11 +74,9 @@ export class Duplicates {
 
     for (const [newItemID, { existingItemIDs, action }] of duplicateMaps) {
       if (action === Action.KEEP) {
-        itemsToTrash.push(...existingItemIDs);
-        selectedItems.push(newItemID);
+        items.push({ masterItemID: newItemID, otherIDs: existingItemIDs });
       } else if (action === Action.DISCARD) {
-        itemsToTrash.push(newItemID);
-        selectedItems.push(...existingItemIDs);
+        items.push(...existingItemIDs.map((id) => ({ masterItemID: id, otherIDs: [newItemID] })));
       }
     }
     popWin.changeLine({
@@ -88,16 +85,10 @@ export class Duplicates {
       progress: 30,
     });
 
-    if (itemsToTrash.length) {
-      Zotero.Items.trashTx(itemsToTrash);
-    }
-    popWin.changeLine({
-      text: getString("du-progress-text"),
-      type: "default",
-      progress: 80,
-    });
-    if (selectedItems.length) {
-      ZoteroPane.selectItems(selectedItems);
+    for (const { masterItemID, otherIDs } of items) {
+      const masterItem = Zotero.Items.get(masterItemID);
+      const otherItems = otherIDs.map((id) => Zotero.Items.get(id));
+      await Zotero.Items.merge(masterItem, otherItems);
     }
 
     popWin.changeLine({
@@ -259,8 +250,8 @@ export class Duplicates {
         ],
       })
       .addButton(getString("du-dialog-button-apply"), "btn_process", {
-        callback: (e) => {
-          Duplicates.processDuplicates(this.duplicateMaps!);
+        callback: async (e) => {
+          await Duplicates.processDuplicates(this.duplicateMaps!);
         },
       })
       .addButton(getString("du-dialog-button-go-duplicates"), "btn_go_duplicate", {
