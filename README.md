@@ -50,10 +50,11 @@ The actions you can take are:
 3. **Keep All**: Keep both the new item and the existing item.
 4. **Merge Manually**: Go to Duplicate Panel and merge the duplicate item manually.
 
-**NOTE**: We use the same method as Zotero to *detect* and *merge* duplicate items.
-See [Zotero Documentation - Duplicate Detection](https://www.zotero.org/support/duplicate_detection) for more details.
-
 *If you find this project helpful, please consider [giving it a star](https://github.com/ChenglongMa/zoplicate)* ⭐. *It would be a great encouragement for me!*
+
+> [!NOTE]
+> We use the same method as Zotero to *detect* and *merge* duplicate items.
+> See [Zotero Documentation - Duplicate Detection](https://www.zotero.org/support/duplicate_detection) for more details.
 
 # Changelog
 
