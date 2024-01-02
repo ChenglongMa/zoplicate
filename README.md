@@ -29,9 +29,9 @@
 <div align="center">
 
 
-[![GitHub Repo stars](https://img.shields.io/github/stars/ChenglongMa/zoplicate)](https://github.com/ChenglongMa/zoplicate)
 ![GitHub License](https://img.shields.io/github/license/ChenglongMa/zoplicate)
 [![Using Zotero Plugin Template](https://img.shields.io/badge/Using-Zotero%20Plugin%20Template-blue?style=flat-square&logo=github)](https://github.com/windingwind/zotero-plugin-template)
+[![GitHub Repo stars](https://img.shields.io/github/stars/ChenglongMa/zoplicate)](https://github.com/ChenglongMa/zoplicate)
 
 
 </div>
@@ -54,6 +54,7 @@ The actions you can take are:
 
 > [!NOTE]
 > We use the same method as Zotero to *detect* and *merge* duplicate items.
+> 
 > See [Zotero Documentation - Duplicate Detection](https://www.zotero.org/support/duplicate_detection) for more details.
 
 # Changelog
