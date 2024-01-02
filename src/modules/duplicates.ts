@@ -85,11 +85,20 @@ export class Duplicates {
       progress: 30,
     });
 
+    const selectedItemIDs = [];
     for (const { masterItemID, otherIDs } of items) {
+      selectedItemIDs.push(masterItemID);
       const masterItem = Zotero.Items.get(masterItemID);
       const otherItems = otherIDs.map((id) => Zotero.Items.get(id));
       await Zotero.Items.merge(masterItem, otherItems);
     }
+    popWin.changeLine({
+      text: getString("du-progress-text"),
+      type: "default",
+      progress: 80,
+    });
+
+    Zotero.getActiveZoteroPane().selectItems(selectedItemIDs);
 
     popWin.changeLine({
       text: getString("du-progress-done"),
