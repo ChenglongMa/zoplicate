@@ -50,6 +50,10 @@ The actions you can take are:
 3. **Keep All**: Keep both the new item and the existing item.
 4. **Merge Manually**: Go to Duplicate Panel and merge the duplicate item manually.
 
+Starting from **Version 2.0.0**, the plugin will support **Bulk Merge** functionality.
+
+* **Bulk Merge**: Merge all duplicate items in the library automatically.
+
 *If you find this project helpful, please consider [giving it a star](https://github.com/ChenglongMa/zoplicate)* ⭐. *It would be a great encouragement for me!*
 
 > [!NOTE]
@@ -58,6 +62,19 @@ The actions you can take are:
 > See [Zotero Documentation - Duplicate Detection](https://www.zotero.org/support/duplicate_detection) for more details.
 
 # Changelog
+
+## v2.0.0
+
+In this version, we have made the following changes:
+
+1. ✨ **NEW!**: We have added the **Bulk Merge** functionality.
+   * **Bulk Merge**: Merge all duplicate items in the library automatically.
+   * You can find the **Bulk Merge** button in the `Duplicate Items` panel.
+   * Please see [Bulk Merge](#bulk-merge) section below for more details.
+   * Thanks [csdaboluo](https://github.com/csdaboluo)'s idea mentioned in [issue #8](https://github.com/ChenglongMa/zoplicate/issues/8).
+2. 🐛 **FIX!**: We have fixed a bug that caused the dialog height to be too high when importing duplicate items in bulk.
+3. 🐛 **FIX!**: Now Zotero will auto-select the remained item after merging duplicate items.
+   * Thanks [pencilheart](https://github.com/pencilheart)'s report in [issue #7](https://github.com/ChenglongMa/zoplicate/issues/7).
 
 ## v1.1.0
 
@@ -88,16 +105,18 @@ Thanks [ChinJCheung](https://github.com/ChinJCheung)'s idea mentioned in [issue 
 
 # Usage
 
-## Default Settings
+## Settings
 
-In Zotero, click `Edit` -> `Settings`, go to `Zoplicate` tab, and you will see the default settings.
+In Zotero, click `Edit` -> `Settings`, go to `Zoplicate` tab, and you will see the settings.
 
-![zoplicate settings](docs/settings.png)
+![zoplicate settings](docs/new-settings.png)
 
-You can select the actions you want to take when duplicate items are detected.
-`Always Ask` is the default option if you have not changed the settings.
+1. You can select the actions you want to take when duplicate items are detected.
+    * `Always Ask` is the default option if you have not changed the settings.
+2. You can select the version of duplicate items to use as the **master item**.
+    * `Earliest Added` is the default option if you have not changed the settings.
 
-## Duplicate Dialog
+## Duplicate Detection
 
 By default, or you have selected `Always Ask` in the settings,
 a dialog will pop up when you import a new item that is a duplicate of an existing item.
@@ -107,7 +126,7 @@ a dialog will pop up when you import a new item that is a duplicate of an existi
 The dialog will show the duplicate items and the actions you can take.
 
 1. Select the action you want to take and click <kbd>Apply</kbd> to process the duplicate items.
-2. Click <kbd>Go to Duplicates</kbd> to go to the `Duplicate Panel` and merge the duplicate items manually.
+2. Click <kbd>Go to Duplicates</kbd> to go to the `Duplicate Items` panel and merge the duplicate items manually.
 3. Click <kbd>Cancel</kbd> to dismiss the dialog and **save** the import of the new item and the existing items.
 4. Check <kbd>Use this action by default</kbd> to remember the selected action in default settings.
    Then the next time you import a duplicate item, the selected action will be applied automatically.
@@ -123,6 +142,35 @@ the dialog will show all the duplicate items and the actions you can take.
 1. You can select different actions for different duplicate items.
 2. Click the _header_ of action columns to select the same action for all duplicate items.
 3. <kbd>Use this action by default</kbd> option will be shown only when you select the same action for all duplicate items.
+
+## Bulk Merge
+
+Inspired by [csdaboluo](https://github.com/csdaboluo)'s idea and [ZoteroDuplicatesMerger](https://github.com/frangoud/ZoteroDuplicatesMerger),
+we have added the **Bulk Merge** functionality in **Version 2.0.0**.
+
+In the `Duplicate Items` panel, you can find the **Bulk Merge** button:
+
+![zoplicate bulk merge](docs/bulk-merge-nonselection.png)
+
+You can also find it when you select one or more duplicate items:
+
+![zoplicate bulk merge](docs/bulk-merge-selection.png)
+
+> [!WARNING]  
+> 
+> 1. Before clicking the button, please make sure you have properly configured the _Master Item_ preferences in [Settings](#settings).
+> 2. The **Bulk Merge** functionality will **take a while** to complete if you have a large number of duplicate items.
+
+You will see the progress of the bulk merge process:
+![zoplicate bulk merge process](docs/progress.png)
+
+> [!TIP]
+> 
+> If you want to **Restore** the duplicate items that have been merged, 
+> you can go to `Trash` panel and restore them.
+> 
+> 1. Select the duplicate items you want to restore.
+> 2. Click <kbd>Restore to Library</kbd> button to process.
 
 # Contributing
 
