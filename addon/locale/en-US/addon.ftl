@@ -31,3 +31,16 @@ du-dialog-button-cancel = Cancel
 ## Messages
 du-progress-text = Processing Duplicates...
 du-progress-done = All duplicates have been processed.
+
+duplicate-panel-message = Or
+bulk-merge-title = Bulk Merge All Duplicate Items
+bulk-merge-message = This will merge all duplicate items in your library. Are you sure you want to continue?
+bulk-merge-sub-message = - Master Item Preference: [{ $masterItem }]
+bulk-merge-sub-message-2 = - You can change the preference in Edit > Settings > Zoplicate.
+bulk-merge-master-item-oldest = Earliest Added
+bulk-merge-master-item-newest = Latest Added
+bulk-merge-master-item-modified = Latest Modified
+bulk-merge-master-item-detailed = Most Detailed
+
+bulk-merge-popup-prepare = Preparing...
+bulk-merge-popup-process = Processing: { $item }

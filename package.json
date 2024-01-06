@@ -1,6 +1,6 @@
 {
   "name": "zoplicate",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "Detect and manage duplicate items in Zotero.",
   "config": {
     "addonName": "Zoplicate",
@@ -42,7 +42,7 @@
   },
   "homepage": "https://chenglongma.com/zoplicate/",
   "dependencies": {
-    "zotero-plugin-toolkit": "^2.3.6"
+    "zotero-plugin-toolkit": "^2.3.16"
   },
   "devDependencies": {
     "@types/node": "^20.6.0",

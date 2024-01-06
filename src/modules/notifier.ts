@@ -42,7 +42,11 @@ export class Notifier {
     };
 
     // Register the callback in Zotero as an item observer
-    const notifierID = Zotero.Notifier.registerObserver(callback, ["tab", "item", "file"]);
+    const notifierID = Zotero.Notifier.registerObserver(callback, [
+      'collection', 'search', 'share', 'share-items', 'item', 'file',
+      'collection-item', 'item-tag', 'tag', 'setting', 'group', 'trash',
+      'bucket', 'relation', 'feed', 'feedItem', 'sync', 'api-key', 'tab'
+    ]);
 
     // Unregister callback when the window closes (important to avoid a memory leak)
     window.addEventListener(

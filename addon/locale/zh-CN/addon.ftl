@@ -32,3 +32,16 @@ du-dialog-button-cancel = 取消
 ## Messages
 du-progress-text = 正在处理重复条目...
 du-progress-done = 所有重复条目已处理完成。
+
+duplicate-panel-message = 或者
+bulk-merge-title = 批量合并所有重复条目
+bulk-merge-message = 这将合并您库中的所有重复条目。您确定要继续吗？
+bulk-merge-sub-message = - 主条目设置为: [{ $masterItem }]
+bulk-merge-sub-message-2 = - 您可在 编辑 > 设置 > Zoplicate 中更改该设置。
+bulk-merge-master-item-oldest = 最早添加的
+bulk-merge-master-item-newest = 最新添加的
+bulk-merge-master-item-modified = 最近修改的
+bulk-merge-master-item-detailed = 最详细的
+
+bulk-merge-popup-prepare = 准备中...
+bulk-merge-popup-process = 正在处理: { $item }
