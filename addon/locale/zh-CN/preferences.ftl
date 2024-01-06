@@ -1,5 +1,7 @@
-pref-title = 默认设置
-pref-default-action-title = 处理重复条目的默认操作
+pref-duplicate-detection-title = 重复条目监测
+
+pref-action-title = 默认操作设置
+pref-default-action-description = 处理重复条目的默认操作
 
 pref-default-action-keep-this =
     .label = [保留最新的]: 保留新导入条目，删除库中原有的
@@ -9,5 +11,20 @@ pref-default-action-keep-all =
     .label = [保留全部]: 保留所有条目，不删除任何项
 pref-default-action-always-ask =
     .label = [始终询问]: 每次都询问我该如何处理
+
+pref-bulk-merge-title = 批量合并
+
+pref-master-item-title = 主条目设置
+pref-master-item-description = 选择作为主条目的条目版本
+pref-default-master-item-oldest =
+    .label = [最早添加的]: 根据添加日期选择最早的条目
+pref-default-master-item-newest =
+    .label = [最新添加的]: 根据添加日期选择最新的条目
+pref-default-master-item-modified =
+    .label = [最近修改的]: 根据修改日期选择最近的条目
+pref-default-master-item-detailed =
+    .label = [最详细的]: 选择字段内容最详细的条目
+pref-default-master-item-always-ask =
+    .label = [始终询问]: 每次都询问我该如何选择主条目
 
 pref-help = { $name } Build { $version } { $time }

@@ -3,6 +3,8 @@ import { getString, initLocale } from "./utils/locale";
 import { registerPrefs, registerPrefsScripts } from "./modules/preferenceScript";
 import { createZToolkit } from "./utils/ztoolkit";
 import { Notifier } from "./modules/notifier";
+import { registerStyleSheet } from "./utils/window";
+import { registerUIElements } from "./modules/ui";
 
 async function onStartup() {
   await Promise.all([Zotero.initializationPromise, Zotero.unlockPromise, Zotero.uiReadyPromise]);
@@ -18,6 +20,8 @@ async function onStartup() {
 async function onMainWindowLoad(win: Window): Promise<void> {
   // Create ztoolkit for every window
   addon.data.ztoolkit = createZToolkit();
+  registerStyleSheet();
+  registerUIElements(win);
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {
@@ -36,10 +40,12 @@ function onShutdown(): void {
 /**
  * This function is just an example of dispatcher for Notify events.
  * Any operations should be placed in a function to keep this function clear.
+ *
+ * Refer to: https://github.com/zotero/zotero/blob/main/chrome/content/zotero/xpcom/notifier.js
  */
 async function onNotify(event: string, type: string, ids: Array<string | number>, extraData: { [key: string]: any }) {
   // You can add your code to the corresponding notify type
-  ztoolkit.log("notify", event, type, ids, extraData);
+  // ztoolkit.log("notify", event, type, ids, extraData);
   if (event == "add" && type == "item") {
     await Notifier.whenAddItems(ids as number[]);
   }

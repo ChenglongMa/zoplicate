@@ -1,33 +1,69 @@
+<?xml-stylesheet href="chrome://zoplicate/content/zoteroPane.css"?>
+
 <linkset>
-  <html:link rel="localization" href="__addonRef__-preferences.ftl" />
+    <html:link rel="localization" href="__addonRef__-preferences.ftl" />
 </linkset>
 <vbox id="zotero-prefpane-__addonRef__" onload="Zotero.__addonInstance__.hooks.onPrefsEvent('load', {window})">
-  <label>
-    <html:h1>__addonName__</html:h1>
-  </label>
-  <groupbox>
-    <label>
-      <html:h2 data-l10n-id="pref-title"></html:h2>
-    </label>
 
-    <label data-l10n-id="pref-default-action-title" />
-    <!-- `preference="extensions.zotero.__addonRef__.default.action"` also works. -->
-    <!--  Because __prefsPrefix__ = extensions.zotero.__addonRef__ in package.json-->
-    <radiogroup
-      id="zotero-prefpane-__addonRef__-default-action"
-      preference="__prefsPrefix__.duplicate.default.action"
-      orient="vertical">
-      <radio data-l10n-id="pref-default-action-keep-this" value="keep" />
-      <radio data-l10n-id="pref-default-action-keep-others" value="discard" />
-      <radio data-l10n-id="pref-default-action-keep-all" value="cancel" />
-      <radio data-l10n-id="pref-default-action-always-ask" value="ask" />
-    </radiogroup>
-  </groupbox>
+<label>
+    <html:h1>__addonName__</html:h1>
+</label>
+<vbox class="pref-section">
+    <groupbox>
+        <label>
+            <html:h1 data-l10n-id="pref-duplicate-detection-title"></html:h1>
+        </label>
+
+        <label>
+            <html:h2 data-l10n-id="pref-action-title"></html:h2>
+        </label>
+
+        <label data-l10n-id="pref-default-action-description" />
+        <!-- `preference="extensions.zotero.__addonRef__.default.action"` also works. -->
+        <!--  Because __prefsPrefix__ = extensions.zotero.__addonRef__ in package.json-->
+        <radiogroup
+                id="zotero-prefpane-__addonRef__-default-action"
+                preference="__prefsPrefix__.duplicate.default.action"
+                orient="vertical">
+            <radio data-l10n-id="pref-default-action-keep-this" value="keep" />
+            <radio data-l10n-id="pref-default-action-keep-others" value="discard" />
+            <radio data-l10n-id="pref-default-action-keep-all" value="cancel" />
+            <radio data-l10n-id="pref-default-action-always-ask" value="ask" />
+        </radiogroup>
+    </groupbox>
 </vbox>
 
-<spacer height="20" />
+
+<vbox class="pref-section">
+    <groupbox>
+        <label>
+            <html:h1 data-l10n-id="pref-bulk-merge-title"></html:h1>
+        </label>
+        <label>
+            <html:h2 data-l10n-id="pref-master-item-title"></html:h2>
+        </label>
+
+        <label data-l10n-id="pref-master-item-description" />
+        <radiogroup
+                id="zotero-prefpane-__addonRef__-master-item"
+                preference="__prefsPrefix__.bulk.master.item"
+                orient="vertical">
+            <radio data-l10n-id="pref-default-master-item-oldest" value="oldest" />
+            <radio data-l10n-id="pref-default-master-item-newest" value="newest" />
+            <radio data-l10n-id="pref-default-master-item-modified" value="modified" />
+            <radio data-l10n-id="pref-default-master-item-detailed" value="detailed" />
+<!--            <radio data-l10n-id="pref-default-master-item-always-ask" value="ask" />-->
+
+        </radiogroup>
+    </groupbox>
+</vbox>
+
+</vbox>
+
+
+<spacer height="20" flex="1" />
 <vbox>
-  <html:label
-    data-l10n-id="pref-help"
-    data-l10n-args='{"time": "__buildTime__","name": "__addonName__","version":"__buildVersion__"}'></html:label>
+<html:label
+        data-l10n-id="pref-help"
+        data-l10n-args='{"time": "__buildTime__","name": "__addonName__","version":"__buildVersion__"}'></html:label>
 </vbox>

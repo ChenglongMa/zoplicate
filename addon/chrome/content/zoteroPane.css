@@ -1,1 +1,6 @@
 /* Put your custom css style here */
+/* Headers in subsections */
+.pref-section {
+    margin-top: 16px;
+    border-top: 1px solid lightgray;
+}
