@@ -32,6 +32,7 @@ du-dialog-button-cancel = Cancel
 du-progress-text = Processing Duplicates...
 du-progress-done = All duplicates have been processed.
 
+tabpanel-bulk-merge-tab-label = Bulk Merge
 duplicate-panel-message = Or
 bulk-merge-title = Bulk Merge All Duplicate Items
 bulk-merge-message = This will merge all duplicate items in your library. Are you sure you want to continue?
@@ -44,3 +45,13 @@ bulk-merge-master-item-detailed = Most Detailed
 
 bulk-merge-popup-prepare = Preparing...
 bulk-merge-popup-process = Processing: { $item }
+bulk-merge-suspend = Suspend
+
+bulk-merge-suspend-title = Bulk Merge Suspended
+bulk-merge-suspend-message = Bulk Merge has been suspended. Would you like to Resume or Cancel it?
+bulk-merge-suspend-sub-message = - You can also Restore the deleted items.
+
+bulk-merge-suspend-resume = Resume
+bulk-merge-suspend-cancel = Cancel
+bulk-merge-suspend-restore = Restore Deleted Items (Only valid if "Cancel" is selected)
+bulk-merge-popup-restore = Restoring: { $item }

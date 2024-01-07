@@ -1,6 +1,5 @@
 import { Duplicates } from "./duplicates";
-import { Action } from "../utils/action";
-import { getPref } from "../utils/prefs";
+import { getPref, Action} from "../utils/prefs";
 
 export class Notifier {
   static async whenAddItems(ids: Array<number>) {

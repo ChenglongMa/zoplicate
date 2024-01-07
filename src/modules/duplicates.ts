@@ -9,66 +9,6 @@ import { truncateString } from "../utils/utils";
  * This class is used to store duplicate items.
  * All items in the array are the same item.
  */
-export class DuplicateItems {
-  get items(): Zotero.Item[] {
-    return this._items;
-  }
-
-  get oldestItem(): Zotero.Item | undefined {
-    return this._oldestItem;
-  }
-
-  get newestItem(): Zotero.Item | undefined {
-    return this._newestItem;
-  }
-
-  get newestModifiedItem(): Zotero.Item | undefined {
-    return this._newestModifiedItem;
-  }
-
-  get mostDetailedItem(): Zotero.Item | undefined {
-    return this._mostDetailedItem;
-  }
-
-  get itemTitle(): string {
-    return this._items[0].getField("title");
-  }
-
-  private readonly _items: Zotero.Item[];
-  private _oldestItem: Zotero.Item | undefined;
-  private _newestItem: Zotero.Item | undefined;
-  private _newestModifiedItem: Zotero.Item | undefined;
-  private _mostDetailedItem: Zotero.Item | undefined;
-
-  constructor(items: Zotero.Item[] | number[]) {
-    this._items = items.map((item) => {
-      if (typeof item === "number") {
-        return Zotero.Items.get(item);
-      }
-      return item;
-    });
-  }
-
-  analyze() {
-    this._items.forEach((item) => {
-      if (!this._oldestItem || this._oldestItem.dateAdded > item.dateAdded) {
-        this._oldestItem = item;
-      }
-      if (!this._newestItem || this._newestItem.dateAdded < item.dateAdded) {
-        this._newestItem = item;
-      }
-      if (!this._newestModifiedItem || this._newestModifiedItem.dateModified < item.dateModified) {
-        this._newestModifiedItem = item;
-      }
-      if (
-        !this._mostDetailedItem ||
-        this._mostDetailedItem.getUsedFields(false).length < item.getUsedFields(false).length
-      ) {
-        this._mostDetailedItem = item;
-      }
-    });
-  }
-}
 
 export class Duplicates {
   constructor() {
@@ -131,65 +71,6 @@ export class Duplicates {
       });
       await this.dialogData.unloadLock.promise;
     }
-  }
-
-  static async bulkMergeDuplicates() {
-    const masterItemPref = getPref("bulk.master.item");
-    const duplicates = new Zotero.Duplicates(ZoteroPane.getSelectedLibraryID());
-    const search = await duplicates.getSearchObject();
-    const duplicateItems: number[] = await search.search();
-    const processItems: number[] = [];
-    const popWin = new ztoolkit.ProgressWindow(getString("du-progress-text"), {
-      closeOnClick: false,
-      closeTime: -1,
-    })
-      .createLine({
-        text: getString("bulk-merge-popup-prepare"),
-        type: "default",
-        progress: 0,
-      })
-      .show();
-
-    for (let i = 0; i < duplicateItems.length; i++) {
-      const duplicateItem = duplicateItems[i];
-      if (processItems.includes(duplicateItem)) continue;
-
-      const items: number[] = duplicates.getSetItemsByItemID(duplicateItem);
-      const duItems = new DuplicateItems(items);
-      popWin.changeLine({
-        text: getString("bulk-merge-popup-process", { args: { item: truncateString(duItems.itemTitle) } }),
-        progress: Math.floor((i / duplicateItems.length) * 100),
-      });
-      duItems.analyze();
-      let masterItem: Zotero.Item | undefined;
-      switch (masterItemPref) {
-        case "oldest":
-          masterItem = duItems.oldestItem;
-          break;
-        case "newest":
-          masterItem = duItems.newestItem;
-          break;
-        case "modified":
-          masterItem = duItems.newestModifiedItem;
-          break;
-        case "detailed":
-          masterItem = duItems.mostDetailedItem;
-          break;
-        default:
-          masterItem = duItems.oldestItem;
-      }
-      if (masterItem) {
-        const otherItems = duItems.items.filter((item) => item.id !== masterItem?.id);
-        await Zotero.Items.merge(masterItem, otherItems);
-      }
-      processItems.push(...items);
-    }
-    popWin.changeLine({
-      text: getString("du-progress-done"),
-      type: "success",
-      progress: 100,
-    });
-    popWin.startCloseTimer(5000);
   }
 
   static async processDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
