@@ -33,6 +33,7 @@ du-dialog-button-cancel = 取消
 du-progress-text = 正在处理重复条目...
 du-progress-done = 所有重复条目已处理完成。
 
+tabpanel-bulk-merge-tab-label = 批量合并
 duplicate-panel-message = 或者
 bulk-merge-title = 批量合并所有重复条目
 bulk-merge-message = 这将合并您库中的所有重复条目。您确定要继续吗？
@@ -45,3 +46,13 @@ bulk-merge-master-item-detailed = 最详细的
 
 bulk-merge-popup-prepare = 准备中...
 bulk-merge-popup-process = 正在处理: { $item }
+bulk-merge-suspend = 暂停合并
+
+bulk-merge-suspend-title = 合并已暂停
+bulk-merge-suspend-message = 合并已暂停。您想继续还是取消该操作？
+bulk-merge-suspend-sub-message = - 你还可以恢复已删除的条目。
+
+bulk-merge-suspend-resume = 继续
+bulk-merge-suspend-cancel = 取消
+bulk-merge-suspend-restore = 恢复已删除的条目 (只有选择"取消"时才有效)
+bulk-merge-popup-restore = 正在恢复: { $item }

@@ -4,16 +4,10 @@ import { registerPrefs, registerPrefsScripts } from "./modules/preferenceScript"
 import { createZToolkit } from "./utils/ztoolkit";
 import { Notifier } from "./modules/notifier";
 import { registerStyleSheet } from "./utils/window";
-import { registerUIElements } from "./modules/ui";
-
+import { BulkDuplicates } from "./modules/bulkDuplicates";
 async function onStartup() {
   await Promise.all([Zotero.initializationPromise, Zotero.unlockPromise, Zotero.uiReadyPromise]);
   initLocale();
-
-  registerPrefs();
-
-  Notifier.registerNotifier();
-
   await onMainWindowLoad(window);
 }
 
@@ -21,7 +15,9 @@ async function onMainWindowLoad(win: Window): Promise<void> {
   // Create ztoolkit for every window
   addon.data.ztoolkit = createZToolkit();
   registerStyleSheet();
-  registerUIElements(win);
+  registerPrefs();
+  Notifier.registerNotifier();
+  BulkDuplicates.getInstance().registerUIElements(win);
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {

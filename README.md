@@ -198,3 +198,9 @@ You will see the progress of the bulk merge process:
 
 Thank you for considering contributing to **Zoplicate**. We value your input and look forward to collaborating
 with you!
+
+# Acknowledgements
+
+The icons used in this project are from [Flaticon](https://www.flaticon.com/):
+* ![code-merge](addon/chrome/content/icons/merge.png) <a href="https://www.flaticon.com/free-icons/code-merge" title="code-merge icons">Code-merge icons created by Cap Cool - Flaticon</a>
+* ![pause](addon/chrome/content/icons/pause.png) <a href="https://www.flaticon.com/free-icons/ui" title="ui icons">Ui icons created by Cap Cool - Flaticon</a>
