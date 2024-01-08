@@ -1,14 +1,67 @@
 import { getString } from "../utils/locale";
 import { DialogHelper } from "zotero-plugin-toolkit/dist/helpers/dialog";
 import { TagElementProps } from "zotero-plugin-toolkit/dist/tools/ui";
-import { Action } from "../utils/action";
-import { getPref, setPref } from "../utils/prefs";
+import { getPref, setPref, Action, MasterItem } from "../utils/prefs";
 import { truncateString } from "../utils/utils";
 
 /**
  * This class is used to store duplicate items.
  * All items in the array are the same item.
  */
+export class DuplicateItems {
+  get items(): Zotero.Item[] {
+    return this._items;
+  }
+
+  get itemTitle(): string {
+    return this._items[0].getField("title");
+  }
+
+  private readonly _items: Zotero.Item[];
+  private stats: { [key: string]: Zotero.Item } = {};
+
+  constructor(items: Zotero.Item[] | number[]) {
+    this._items = items.map((item) => {
+      if (typeof item === "number") {
+        return Zotero.Items.get(item);
+      }
+      return item;
+    });
+  }
+
+  private analyze() {
+    this._items.forEach((item) => {
+      if (!this.stats[MasterItem.OLDEST] || this.stats[MasterItem.OLDEST].dateAdded > item.dateAdded) {
+        this.stats[MasterItem.OLDEST] = item;
+      }
+      if (!this.stats[MasterItem.NEWEST] || this.stats[MasterItem.NEWEST].dateAdded < item.dateAdded) {
+        this.stats[MasterItem.NEWEST] = item;
+      }
+      if (!this.stats[MasterItem.MODIFIED] || this.stats[MasterItem.MODIFIED].dateModified < item.dateModified) {
+        this.stats[MasterItem.MODIFIED] = item;
+      }
+      if (
+        !this.stats[MasterItem.DETAILED] ||
+        this.stats[MasterItem.DETAILED].getUsedFields(false).length < item.getUsedFields(false).length
+      ) {
+        this.stats[MasterItem.DETAILED] = item;
+      }
+    });
+  }
+
+  getMasterItem() {
+    const masterItemPref = getPref("bulk.master.item") as string;
+    if (!this.stats[masterItemPref]) {
+      this.analyze();
+    }
+    return this.stats[masterItemPref];
+  }
+
+  getOtherItems() {
+    const masterItem = this.getMasterItem();
+    return this._items.filter((item) => item.id !== masterItem.id);
+  }
+}
 
 export class Duplicates {
   constructor() {
@@ -74,7 +127,7 @@ export class Duplicates {
   }
 
   static async processDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
-    const items = [];
+    const items: { masterItem: Zotero.Item; otherItems: Zotero.Item[] }[] = [];
     if (duplicateMaps.size === 0) return;
 
     const popWin = new ztoolkit.ProgressWindow(getString("du-dialog-title"), {
@@ -88,10 +141,14 @@ export class Duplicates {
       .show();
 
     for (const [newItemID, { existingItemIDs, action }] of duplicateMaps) {
+      const newItem = Zotero.Items.get(newItemID);
       if (action === Action.KEEP) {
-        items.push({ masterItemID: newItemID, otherIDs: existingItemIDs });
+        items.push({ masterItem: newItem, otherItems: existingItemIDs.map((id) => Zotero.Items.get(id)) });
       } else if (action === Action.DISCARD) {
-        items.push(...existingItemIDs.map((id) => ({ masterItemID: id, otherIDs: [newItemID] })));
+        const duplicateItems = new DuplicateItems(existingItemIDs);
+        const masterItem = duplicateItems.getMasterItem();
+        const otherItems = duplicateItems.getOtherItems();
+        items.push({ masterItem: masterItem, otherItems: [...otherItems, newItem] });
       }
     }
     popWin.changeLine({
@@ -101,10 +158,8 @@ export class Duplicates {
     });
 
     const selectedItemIDs = [];
-    for (const { masterItemID, otherIDs } of items) {
-      selectedItemIDs.push(masterItemID);
-      const masterItem = Zotero.Items.get(masterItemID);
-      const otherItems = otherIDs.map((id) => Zotero.Items.get(id));
+    for (const { masterItem, otherItems } of items) {
+      selectedItemIDs.push(masterItem.id);
       await Zotero.Items.merge(masterItem, otherItems);
     }
     popWin.changeLine({
