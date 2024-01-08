@@ -67,7 +67,7 @@ Starting from **Version 2.0.0**, the plugin will support **Bulk Merge** function
 
 In this version, we have made the following changes:
 
-1. ✨ **NEW!**: We have added the **Suspend** and **Restore** functionality.
+1. ✨ **NEW!**: We have added the **Suspend** and **Restore** functionality (Only available in Zotero 7 now).
    * Please see [Bulk Merge](#bulk-merge) section below for more details.
 2. 🧬 **CHANGE!**: We have changed the behavior of **Keep Others** action.
    * Previously, the **Keep Others** action will delete the last imported item and save **ALL** the rest existing items.
@@ -83,7 +83,7 @@ In this version, we have made the following changes:
 
 In this version, we have made the following changes:
 
-1. ✨ **NEW!**: We have added the **Bulk Merge** functionality.
+1. ✨ **NEW!**: We have added the **Bulk Merge** functionality (Only available in Zotero 7 now).
    * **Bulk Merge**: Merge all duplicate items in the library automatically.
    * You can find the **Bulk Merge** button in the `Duplicate Items` panel.
    * Please see [Bulk Merge](#bulk-merge) section below for more details.
@@ -183,6 +183,7 @@ You can also find it when you select one or more duplicate items:
 > 
 > 1. Before clicking the button, please make sure you have properly configured the _Master Item_ preferences in [Settings](#settings).
 > 2. The **Bulk Merge** functionality will **take a while** to complete if you have a large number of duplicate items.
+> 3. This functionality is only available in Zotero 7 now. I will check compatibility and try to migrate to Zotero 6.
 
 You will see the progress of the bulk merge process:
 ![zoplicate bulk merge process](docs/bulk-merge-progress.png)
