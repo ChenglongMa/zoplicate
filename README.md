@@ -63,7 +63,23 @@ Starting from **Version 2.0.0**, the plugin will support **Bulk Merge** function
 
 # Changelog
 
+## v2.1.0
+
+In this version, we have made the following changes:
+
+1. ✨ **NEW!**: We have added the **Suspend** and **Restore** functionality.
+   * Please see [Bulk Merge](#bulk-merge) section below for more details.
+2. 🧬 **CHANGE!**: We have changed the behavior of **Keep Others** action.
+   * Previously, the **Keep Others** action will delete the last imported item and save **ALL** the rest existing items.
+   * Now, the action will **Merge** the existing items based on the **Master Item** preferences in [Settings](#settings).
+3. 🐛 **FIX!**: We have fixed a bug that caused the **tags** could not be loaded correctly in v2.0.0.
+   * Thanks [ChinJCheung](https://github.com/ChinJCheung) for reporting this bug in [issue #10](https://github.com/ChenglongMa/zoplicate/issues/10).
+
+
 ## v2.0.0
+
+<details markdown="1">
+  <summary><i>Click here to show more.</i></summary>
 
 In this version, we have made the following changes:
 
@@ -76,11 +92,16 @@ In this version, we have made the following changes:
 3. 🐛 **FIX!**: Now Zotero will auto-select the remained item after merging duplicate items.
    * Thanks [pencilheart](https://github.com/pencilheart)'s report in [issue #7](https://github.com/ChenglongMa/zoplicate/issues/7).
 
+</details>
+
 ## v1.1.0
+
+<details markdown="1">
+  <summary><i>Click here to show more.</i></summary>
 
 In this version, we have made the following changes:
 
-1. 🧬 **CHANGE!**: We change the processing method of duplicate items.
+1. 🧬 **CHANGE!**: We have changed the processing method of duplicate items.
 
    Previously, we use the `Trash` method to process duplicate items, i.e., delete the duplicate items.
    However, this method will cause the loss of some information of the duplicate items.
@@ -93,6 +114,8 @@ In this version, we have made the following changes:
      * This is a known potential problem in Zotero, as detailed in [Zotero Documentation - Duplicate Detection](https://www.zotero.org/support/duplicate_detection).
 
 Thanks [ChinJCheung](https://github.com/ChinJCheung)'s idea mentioned in [issue #5](https://github.com/ChenglongMa/zoplicate/issues/5).
+
+</details>
 
 # Install
 
@@ -162,10 +185,22 @@ You can also find it when you select one or more duplicate items:
 > 2. The **Bulk Merge** functionality will **take a while** to complete if you have a large number of duplicate items.
 
 You will see the progress of the bulk merge process:
-![zoplicate bulk merge process](docs/progress.png)
+![zoplicate bulk merge process](docs/bulk-merge-progress.png)
+
+### Suspend Bulk Merge
+
+You can click the <kbd>Suspend</kbd> button to suspend the bulk merge process.
+
+A dialog will pop up to confirm your action:
+![zoplicate bulk merge suspend](docs/bulk-merge-suspended-dialog.png)
+
+1. Click <kbd>Resume</kbd> to **resume** the bulk merge process.
+2. Click <kbd>Cancel</kbd> to **cancel** the bulk merge process.
+   * Check <kbd>Restore Deleted Items</kbd> to restore the duplicate items that have been merged.
+   * Note that the **Restore** action is only effective if you click <kbd>Cancel</kbd>. 
 
 > [!TIP]
-> 
+>
 > If you want to **Restore** the duplicate items that have been merged, 
 > you can go to `Trash` panel and restore them.
 > 
