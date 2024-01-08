@@ -8,7 +8,7 @@
 👉
 [![zotero target version](https://img.shields.io/badge/For_Zotero-7-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
 [![Version for Zotero 7](https://img.shields.io/github/package-json/v/ChenglongMa/zoplicate)](https://github.com/ChenglongMa/zoplicate/releases/latest)
-[![Downloads for Zotero 7](https://img.shields.io/github/downloads/ChenglongMa/zoplicate/latest/total)](https://github.com/ChenglongMa/zoplicate/releases/latest)
+[![Downloads for Zotero 7](https://img.shields.io/github/downloads/ChenglongMa/zoplicate/total)](https://github.com/ChenglongMa/zoplicate/releases/latest)
 👈
 
 
