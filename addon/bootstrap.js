@@ -17,11 +17,13 @@ async function startup({ id, version, resourceURI, rootURI }, reason) {
     rootURI = resourceURI.spec;
   }
 
-  var aomStartup = Components.classes["@mozilla.org/addons/addon-manager-startup;1"].getService(
-    Components.interfaces.amIAddonManagerStartup,
-  );
+  var aomStartup = Components.classes[
+    "@mozilla.org/addons/addon-manager-startup;1"
+  ].getService(Components.interfaces.amIAddonManagerStartup);
   var manifestURI = Services.io.newURI(rootURI + "manifest.json");
-  chromeHandle = aomStartup.registerChrome(manifestURI, [["content", "__addonRef__", rootURI + "chrome/content/"]]);
+  chromeHandle = aomStartup.registerChrome(manifestURI, [
+    ["content", "__addonRef__", rootURI + "chrome/content/"],
+  ]);
 
   /**
    * Global variables for plugin code.
@@ -34,7 +36,11 @@ async function startup({ id, version, resourceURI, rootURI }, reason) {
   };
   ctx._globalThis = ctx;
 
-  Services.scriptloader.loadSubScript(`${rootURI}/chrome/content/scripts/__addonRef__.js`, ctx);
+  Services.scriptloader.loadSubScript(
+    `${rootURI}/chrome/content/scripts/__addonRef__.js`,
+    ctx,
+  );
+  Zotero.__addonInstance__.hooks.onStartup();
 }
 
 async function onMainWindowLoad({ window }, reason) {
@@ -51,11 +57,15 @@ function shutdown({ id, version, resourceURI, rootURI }, reason) {
   }
 
   if (typeof Zotero === "undefined") {
-    Zotero = Components.classes["@zotero.org/Zotero;1"].getService(Components.interfaces.nsISupports).wrappedJSObject;
+    Zotero = Components.classes["@zotero.org/Zotero;1"].getService(
+      Components.interfaces.nsISupports,
+    ).wrappedJSObject;
   }
   Zotero.__addonInstance__?.hooks.onShutdown();
 
-  Cc["@mozilla.org/intl/stringbundle;1"].getService(Components.interfaces.nsIStringBundleService).flushBundles();
+  Cc["@mozilla.org/intl/stringbundle;1"]
+    .getService(Components.interfaces.nsIStringBundleService)
+    .flushBundles();
 
   Cu.unload(`${rootURI}/chrome/content/scripts/__addonRef__.js`);
 
