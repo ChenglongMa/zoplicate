@@ -6,3 +6,4 @@
 ./update.json
 ./.github
 src/modules/preferenceScript.ts
+src/modules/examples.ts
