@@ -22,7 +22,7 @@ jobs:
         #   submodules: true
 
       - name: actions-template-sync
-        uses: AndreasAugustin/actions-template-sync@v1
+        uses: AndreasAugustin/actions-template-sync@v1.2.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           source_repo_path: windingwind/zotero-plugin-template
