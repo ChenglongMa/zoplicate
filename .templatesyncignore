@@ -4,3 +4,5 @@
 ./addon/prefs.js
 ./README.md
 ./update.json
+./.github
+src/modules/preferenceScript.ts
