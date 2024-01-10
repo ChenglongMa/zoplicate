@@ -1,0 +1,6 @@
+./doc
+./addon/chrome
+./addon/locale
+./addon/prefs.js
+./README.md
+./update.json
