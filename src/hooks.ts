@@ -1,12 +1,26 @@
 import { config } from "../package.json";
-import { getString, initLocale } from "./utils/locale";
-import { registerPrefs, registerPrefsScripts } from "./modules/preferenceScript";
+import { initLocale } from "./utils/locale";
+import {
+  registerPrefs,
+  registerPrefsScripts,
+} from "./modules/preferenceScript";
 import { createZToolkit } from "./utils/ztoolkit";
 import { Notifier } from "./modules/notifier";
 import { registerStyleSheet } from "./utils/window";
 import { BulkDuplicates } from "./modules/bulkDuplicates";
+
 async function onStartup() {
-  await Promise.all([Zotero.initializationPromise, Zotero.unlockPromise, Zotero.uiReadyPromise]);
+  await Promise.all([
+    Zotero.initializationPromise,
+    Zotero.unlockPromise,
+    Zotero.uiReadyPromise,
+  ]);
+  // TODO: Remove this after zotero#3387 is merged
+  if (__env__ === "development") {
+    // Keep in sync with the scripts/startup.mjs
+    const loadDevToolWhen = `Plugin ${config.addonID} startup`;
+    ztoolkit.log(loadDevToolWhen);
+  }
   initLocale();
   await onMainWindowLoad(window);
 }
@@ -39,7 +53,12 @@ function onShutdown(): void {
  *
  * Refer to: https://github.com/zotero/zotero/blob/main/chrome/content/zotero/xpcom/notifier.js
  */
-async function onNotify(event: string, type: string, ids: Array<string | number>, extraData: { [key: string]: any }) {
+async function onNotify(
+  event: string,
+  type: string,
+  ids: Array<string | number>,
+  extraData: { [key: string]: any },
+) {
   // You can add your code to the corresponding notify type
   // ztoolkit.log("notify", event, type, ids, extraData);
   if (event == "add" && type == "item") {
@@ -69,7 +88,7 @@ async function onDialogEvents(type: string) {}
 
 // Add your hooks here. For element click, etc.
 // Keep in mind hooks only do dispatch. Don't add code that does real jobs in hooks.
-// Otherwise the code would be hard to read and maintian.
+// Otherwise the code would be hard to read and maintain.
 
 export default {
   onStartup,
