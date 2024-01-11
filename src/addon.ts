@@ -7,7 +7,7 @@ import { Action } from "./utils/prefs";
 class Addon {
   public data: {
     alive: boolean;
-    // Env type, see build.js
+    // Env type, see build.mjs
     env: "development" | "production";
     ztoolkit: ZToolkit;
     locale?: {

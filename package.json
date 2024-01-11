@@ -9,8 +9,7 @@
     "addonInstance": "Zoplicate",
     "prefsPrefix": "extensions.zotero.zoplicate",
     "releasePage": "https://github.com/ChenglongMa/zoplicate/releases",
-    "updateJSON": "https://raw.githubusercontent.com/ChenglongMa/zoplicate/main/update.json",
-    "updateBetaJSON": "https://raw.githubusercontent.com/ChenglongMa/zoplicate/main/update-beta.json"
+    "updateJSON": "https://raw.githubusercontent.com/ChenglongMa/zoplicate/main/update.json"
   },
   "main": "src/index.ts",
   "scripts": {
