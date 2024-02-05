@@ -8,7 +8,7 @@ import chokidar from "chokidar";
 import { context } from "esbuild";
 import { exit } from "process";
 
-process.env.NODE_ENV = "development";
+process.env.NODE_ENV = process.argv[2] === "production" ? "production" : "development";
 
 const { zoteroBinPath, profilePath } = cmd.exec;
 

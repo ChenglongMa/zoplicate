@@ -14,6 +14,7 @@
   "main": "src/index.ts",
   "scripts": {
     "start": "node scripts/server.mjs",
+    "start-prod": "node scripts/server.mjs production",
     "build": "tsc --noEmit && node scripts/build.mjs production",
     "stop": "node scripts/stop.mjs",
     "lint": "prettier --write . && eslint . --ext .ts --fix",
