@@ -33,7 +33,7 @@
   },
   "homepage": "https://chenglongma.com/zoplicate/",
   "dependencies": {
-    "zotero-plugin-toolkit": "^2.3.16"
+    "zotero-plugin-toolkit": "^2.3.19"
   },
   "devDependencies": {
     "@types/node": "^20.10.4",

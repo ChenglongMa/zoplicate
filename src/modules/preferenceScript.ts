@@ -2,13 +2,12 @@ import { config, homepage } from "../../package.json";
 import { getString } from "../utils/locale";
 
 export function registerPrefs() {
-  ztoolkit.PreferencePane.register({
+  Zotero.PreferencePanes.register({
     pluginID: config.addonID,
     src: rootURI + "chrome/content/preferences.xhtml",
     label: getString("prefs-title"),
     image: `chrome://${config.addonRef}/content/icons/favicon.png`,
     helpURL: homepage,
-    defaultXUL: true,
   });
 }
 
