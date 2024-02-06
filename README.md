@@ -63,7 +63,23 @@ Starting from **Version 2.0.0**, the plugin will support **Bulk Merge** function
 
 # Changelog
 
+## v2.2.0
+
+<details markdown="1" open>
+  <summary><i>Click here to show more.</i></summary>
+
+In this version, we have made the following changes:
+
+1. ✨ **NEW!**: We have added **"Smart" Merge** functionality (Only available in Zotero 7 now).
+   * When merging duplicate items, the function will fill in the missing information of the retained item with the duplicates.
+   * Thanks [endfreude](https://github.com/endfreude)'s idea mentioned in [issue #15](https://github.com/ChenglongMa/zoplicate/issues/15).
+
+</details>
+
 ## v2.1.0
+
+<details markdown="1">
+  <summary><i>Click here to show more.</i></summary>
 
 In this version, we have made the following changes:
 
@@ -75,6 +91,7 @@ In this version, we have made the following changes:
 3. 🐛 **FIX!**: We have fixed a bug that caused the **tags** could not be loaded correctly in v2.0.0.
    * Thanks [ChinJCheung](https://github.com/ChinJCheung) for reporting this bug in [issue #10](https://github.com/ChenglongMa/zoplicate/issues/10).
 
+</details>
 
 ## v2.0.0
 
