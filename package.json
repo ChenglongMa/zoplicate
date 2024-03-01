@@ -1,19 +1,20 @@
 {
-  "name": "zotero-addon-template",
-  "version": "1.1.1",
-  "description": "Zotero Addon Template",
+  "name": "zoplicate",
+  "version": "2.2.0",
+  "description": "Detect and manage duplicate items in Zotero.",
   "config": {
-    "addonName": "Zotero Addon Template",
-    "addonID": "addontemplate@euclpts.com",
-    "addonRef": "addontemplate",
-    "addonInstance": "AddonTemplate",
-    "prefsPrefix": "extensions.zotero.addontemplate",
-    "releasePage": "https://github.com/windingwind/zotero-addon-template/releases",
-    "updateJSON": "https://raw.githubusercontent.com/windingwind/zotero-addon-template/main/update.json"
+    "addonName": "Zoplicate",
+    "addonID": "zoplicate@chenglongma.com",
+    "addonRef": "zoplicate",
+    "addonInstance": "Zoplicate",
+    "prefsPrefix": "extensions.zotero.zoplicate",
+    "releasePage": "https://github.com/ChenglongMa/zoplicate/releases",
+    "updateJSON": "https://raw.githubusercontent.com/ChenglongMa/zoplicate/main/update.json"
   },
   "main": "src/index.ts",
   "scripts": {
     "start": "node scripts/server.mjs",
+    "start-prod": "node scripts/server.mjs production",
     "build": "tsc --noEmit && node scripts/build.mjs production",
     "stop": "node scripts/stop.mjs",
     "lint": "prettier --write . && eslint . --ext .ts --fix",
@@ -23,24 +24,24 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/windingwind/zotero-addon-template.git"
+    "url": "git+https://github.com/ChenglongMa/zoplicate.git"
   },
-  "author": "windingwind",
+  "author": "Chenglong Ma",
   "license": "AGPL-3.0-or-later",
   "bugs": {
-    "url": "https://github.com/windingwind/zotero-addon-template/issues"
+    "url": "https://github.com/ChenglongMa/zoplicate/issues"
   },
-  "homepage": "https://github.com/windingwind/zotero-addon-template#readme",
+  "homepage": "https://chenglongma.com/zoplicate/",
   "dependencies": {
-    "zotero-plugin-toolkit": "^2.3.15"
+    "zotero-plugin-toolkit": "^2.3.19"
   },
   "devDependencies": {
     "@types/node": "^20.10.4",
-    "@typescript-eslint/eslint-plugin": "^6.14.0",
-    "@typescript-eslint/parser": "^6.14.0",
+    "@typescript-eslint/eslint-plugin": "^7.1.0",
+    "@typescript-eslint/parser": "^7.0.2",
     "chokidar": "^3.5.3",
     "compressing": "^1.10.0",
-    "esbuild": "^0.19.9",
+    "esbuild": "^0.20.0",
     "eslint": "^8.55.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.1.1",
