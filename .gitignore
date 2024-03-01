@@ -1,6 +1,8 @@
 build
+builds
 logs
 node_modules
+Profiles
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
