@@ -56,3 +56,6 @@ bulk-merge-suspend-resume = 继续
 bulk-merge-suspend-cancel = 取消
 bulk-merge-suspend-restore = 恢复已删除的条目 (只有选择"取消"时才有效)
 bulk-merge-popup-restore = 正在恢复: { $item }
+
+duplicate-tooltip = 检测到 { $total } 个重复项，源自 { $unique } 个唯一条目。
+duplicate-not-found-tooltip = 未找到重复条目

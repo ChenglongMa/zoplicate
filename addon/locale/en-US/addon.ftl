@@ -55,3 +55,6 @@ bulk-merge-suspend-resume = Resume
 bulk-merge-suspend-cancel = Cancel
 bulk-merge-suspend-restore = Restore Deleted Items (Only valid if "Cancel" is selected)
 bulk-merge-popup-restore = Restoring: { $item }
+
+duplicate-tooltip = Found { $total } duplicates from { $unique } unique { $items }.
+duplicate-not-found-tooltip = No duplicate items found.
