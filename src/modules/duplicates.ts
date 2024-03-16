@@ -143,6 +143,40 @@ export class Duplicates {
     }
   }
 
+  static async getDuplicates(
+    libraryID = ZoteroPane.getSelectedLibraryID(),
+  ): Promise<{
+    libraryID: number;
+    duplicatesObj: { getSetItemsByItemID(itemID: number): number[] };
+    duplicateItems: number[];
+  }> {
+    const duplicatesObj = new Zotero.Duplicates(libraryID);
+    const search = await duplicatesObj.getSearchObject();
+    const duplicateItems: number[] = await search.search();
+    return { libraryID, duplicatesObj, duplicateItems };
+  }
+
+  static duplicateStatistics(
+    duplicatesObj: {
+      getSetItemsByItemID(itemID: number): number[];
+    },
+    duplicateItems: number[],
+  ) {
+    const total = duplicateItems.length;
+    const counted: Set<number> = new Set();
+    let unique = 0;
+
+    for (const itemID of duplicateItems) {
+      if (counted.has(itemID)) continue;
+
+      const duplicates = duplicatesObj.getSetItemsByItemID(itemID);
+      duplicates.forEach((id) => counted.add(id));
+      unique++;
+    }
+
+    return { total, unique };
+  }
+
   static async processDuplicates(
     duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>,
   ) {

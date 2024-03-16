@@ -1,6 +1,6 @@
 import { config } from "../../package.json";
 
-export { isWindowAlive, registerStyleSheet };
+export { isWindowAlive, registerStyleSheet, removeSiblings };
 
 /**
  * Check if the window is alive.
@@ -16,8 +16,17 @@ function registerStyleSheet() {
     properties: {
       type: "text/css",
       rel: "stylesheet",
-      href: `chrome://${config.addonRef}/content/zoteroPane.css`,
+      href: `chrome://${config.addonRef}/content/zoplicate.css`,
     },
   });
   document.documentElement.appendChild(styles);
+}
+
+function removeSiblings(targetElement: NonDocumentTypeChildNode) {
+  let nextSibling = targetElement.nextElementSibling;
+  while (nextSibling && !nextSibling.classList.contains(config.addonRef)) {
+    const elementToRemove = nextSibling;
+    nextSibling = nextSibling.nextElementSibling;
+    elementToRemove.remove();
+  }
 }

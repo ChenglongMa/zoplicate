@@ -3,7 +3,7 @@ import { getString } from "../utils/locale";
 import { config } from "../../package.json";
 import { getPref, MasterItem } from "../utils/prefs";
 import { truncateString } from "../utils/utils";
-import { DuplicateItems } from "./duplicates";
+import { DuplicateItems, Duplicates } from "./duplicates";
 import { merge } from "./merger";
 
 export class BulkDuplicates {
@@ -107,10 +107,8 @@ export class BulkDuplicates {
 
   private async bulkMergeDuplicates() {
     const masterItemPref = getPref("bulk.master.item") as MasterItem;
-    const duplicates = new Zotero.Duplicates(ZoteroPane.getSelectedLibraryID());
-    const search = await duplicates.getSearchObject();
-    const duplicateItems: number[] = await search.search();
-    const processItems: number[] = [];
+    const { duplicatesObj, duplicateItems } = await Duplicates.getDuplicates();
+    const processedItems: Set<number> = new Set();
     const popWin = new ztoolkit.ProgressWindow(getString("du-progress-text"), {
       closeOnClick: false,
       closeTime: -1,
@@ -146,9 +144,9 @@ export class BulkDuplicates {
         }
       }
       const duplicateItem = duplicateItems[i];
-      if (processItems.includes(duplicateItem)) continue;
+      if (processedItems.has(duplicateItem)) continue;
 
-      const items: number[] = duplicates.getSetItemsByItemID(duplicateItem);
+      const items: number[] = duplicatesObj.getSetItemsByItemID(duplicateItem);
       const duItems = new DuplicateItems(items, masterItemPref);
       popWin.changeLine({
         text: getString("bulk-merge-popup-process", {
@@ -160,7 +158,7 @@ export class BulkDuplicates {
       const otherItems = duItems.getOtherItems();
       await merge(masterItem, otherItems);
       deletedItems.push(...otherItems);
-      processItems.push(...items);
+      items.forEach((id) => processedItems.add(id));
     }
 
     if (toCancel && restoreCheckbox.value) {
@@ -197,7 +195,7 @@ export class BulkDuplicates {
     };
 
     ZoteroPane.collectionsView.onSelect.addListener(async () => {
-      ztoolkit.log("onSelect");
+
       const mergeButton = win.document.getElementById(
         "zotero-duplicates-merge-button",
       ) as Element;

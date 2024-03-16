@@ -37,17 +37,20 @@ import {
 import { UITool } from "zotero-plugin-toolkit/dist/tools/ui";
 import { DialogHelper } from "zotero-plugin-toolkit/dist/helpers/dialog";
 import { ProgressWindowHelper } from "zotero-plugin-toolkit/dist/helpers/progressWindow";
+import { PatchHelper } from "zotero-plugin-toolkit/dist/helpers/patch";
 
 class MyToolkit extends BasicTool {
   UI: UITool;
   Dialog: typeof DialogHelper;
   ProgressWindow: typeof ProgressWindowHelper;
+  Patch: typeof PatchHelper;
 
   constructor() {
     super();
     this.UI = new UITool(this);
     this.ProgressWindow = makeHelperTool(ProgressWindowHelper, this);
     this.Dialog = makeHelperTool(DialogHelper, this);
+    this.Patch = makeHelperTool(PatchHelper, this);
   }
 
   unregisterAll() {

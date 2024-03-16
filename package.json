@@ -1,6 +1,6 @@
 {
   "name": "zoplicate",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Detect and manage duplicate items in Zotero.",
   "config": {
     "addonName": "Zoplicate",
@@ -33,7 +33,7 @@
   },
   "homepage": "https://chenglongma.com/zoplicate/",
   "dependencies": {
-    "zotero-plugin-toolkit": "^2.3.19"
+    "zotero-plugin-toolkit": "^2.3.25"
   },
   "devDependencies": {
     "@types/node": "^20.10.4",
@@ -48,7 +48,7 @@
     "release-it": "^17.0.1",
     "replace-in-file": "^7.0.2",
     "typescript": "^5.3.3",
-    "zotero-types": "^1.3.10"
+    "zotero-types": "^1.3.19"
   },
   "eslintConfig": {
     "env": {
@@ -100,7 +100,7 @@
     ]
   },
   "prettier": {
-    "printWidth": 80,
+    "printWidth": 120,
     "tabWidth": 2,
     "endOfLine": "lf",
     "overrides": [
