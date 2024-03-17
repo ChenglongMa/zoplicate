@@ -1,8 +1,11 @@
+import { config } from "../../package.json";
 import { getString } from "../utils/locale";
 import { DialogHelper } from "zotero-plugin-toolkit/dist/helpers/dialog";
 import { TagElementProps } from "zotero-plugin-toolkit/dist/tools/ui";
 import { getPref, setPref, Action, MasterItem } from "../utils/prefs";
 import { merge } from "./merger";
+import CollectionTreeRow = Zotero.CollectionTreeRow;
+import { removeSiblings } from "../utils/window";
 
 /**
  * This class is used to store duplicate items.
@@ -28,8 +31,6 @@ export class DuplicateItems {
   private _masterItem: Zotero.Item | undefined;
   private readonly _masterItemPref: MasterItem;
 
-  // private stats: { [key: string]: Zotero.Item } = {};
-
   constructor(items: Zotero.Item[] | number[], masterItemPref: MasterItem) {
     this._masterItemPref = masterItemPref;
     this._items = items.map((item) => {
@@ -45,20 +46,16 @@ export class DuplicateItems {
     switch (this._masterItemPref) {
       default:
       case MasterItem.OLDEST:
-        compare = (a: Zotero.Item, b: Zotero.Item) =>
-          a.dateAdded < b.dateAdded ? 1 : -1;
+        compare = (a: Zotero.Item, b: Zotero.Item) => (a.dateAdded < b.dateAdded ? 1 : -1);
         break;
       case MasterItem.NEWEST:
-        compare = (a: Zotero.Item, b: Zotero.Item) =>
-          a.dateAdded > b.dateAdded ? 1 : -1;
+        compare = (a: Zotero.Item, b: Zotero.Item) => (a.dateAdded > b.dateAdded ? 1 : -1);
         break;
       case MasterItem.MODIFIED:
-        compare = (a: Zotero.Item, b: Zotero.Item) =>
-          a.dateModified > b.dateModified ? 1 : -1;
+        compare = (a: Zotero.Item, b: Zotero.Item) => (a.dateModified > b.dateModified ? 1 : -1);
         break;
       case MasterItem.DETAILED:
-        compare = (a: Zotero.Item, b: Zotero.Item) =>
-          a.getUsedFields(false).length - b.getUsedFields(false).length;
+        compare = (a: Zotero.Item, b: Zotero.Item) => a.getUsedFields(false).length - b.getUsedFields(false).length;
         break;
     }
     this._items.sort(compare);
@@ -84,12 +81,9 @@ export class Duplicates {
         ) as HTMLInputElement;
         defaultActionOptions?.click();
         setTimeout(() => {
-          const currentHeight =
-            this.document?.getElementById("table_container")?.clientHeight || 0;
+          const currentHeight = this.document?.getElementById("table_container")?.clientHeight || 0;
           if (currentHeight > 500) {
-            (
-              this.document?.getElementById("table_container") as HTMLElement
-            ).style.height = "500px";
+            (this.document?.getElementById("table_container") as HTMLElement).style.height = "500px";
             (this.window as any).sizeToContent();
             this.window?.resizeBy(20, 0); // Add 20px to width for scrollbar
           }
@@ -106,9 +100,93 @@ export class Duplicates {
     };
   }
 
-  async showDuplicates(
-    duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>,
-  ) {
+  static async refreshDuplicateStats() {
+    if (!addon.data.refreshDuplicateStats) return;
+    // Update duplicate statistics on startup
+    const allLibs = Zotero.Libraries.getAll();
+    for (const lib of allLibs) {
+      const libraryID = lib.libraryID;
+      await addon.hooks.onItemsChanged(libraryID);
+    }
+    addon.data.refreshDuplicateStats = false;
+  }
+
+  static async registerDuplicateStats() {
+    let showStats = getPref("duplicate.stats.enable") as boolean;
+
+    if (showStats) {
+      await this.refreshDuplicateStats();
+    }
+
+    const patch = new ztoolkit.Patch();
+    patch.setData({
+      target: ZoteroPane.collectionsView,
+      funcSign: "renderItem",
+      // refer to https://github.com/zotero/zotero/blob/main/chrome/content/zotero/collectionTree.jsx#L274
+      // i.e., the `renderItem` function of collectionTree
+      patcher: (originalFunc) => (index: number, selection: object, oldDiv: HTMLDivElement, columns: any[]) => {
+        const originalDIV = originalFunc(index, selection, oldDiv, columns);
+        showStats = getPref("duplicate.stats.enable") as boolean;
+        if (!showStats) {
+          originalDIV.removeAttribute("title");
+          return originalDIV;
+        }
+        const collectionTreeRow = ZoteroPane.collectionsView.getRow(index) as CollectionTreeRow;
+        if (collectionTreeRow.isDuplicates()) {
+          const libraryID = collectionTreeRow.ref.libraryID.toString();
+          const total = getPref(`duplicate.count.total.${libraryID}`) || 0;
+          const unique = getPref(`duplicate.count.unique.${libraryID}`) || 0;
+          const text = `${unique}/${total}`;
+          const tooltip = total
+            ? getString("duplicate-tooltip", {
+                args: { unique, total, items: unique == 1 ? "item" : "items" },
+              })
+            : getString("duplicate-not-found-tooltip");
+          originalDIV.setAttribute("title", tooltip);
+
+          // https://github.com/zotero/zotero/blob/main/chrome/content/zotero/collectionTree.jsx#L321
+          // https://github.com/MuiseDestiny/zotero-style/blob/master/src/modules/views.ts#L3279
+          const cell = originalDIV.querySelector("span.cell.label.primary");
+          const collectionNameSpan = cell.querySelector("span.cell-text");
+          removeSiblings(collectionNameSpan);
+          const numberNode = cell.querySelector(".number");
+          if (numberNode) {
+            numberNode.innerHTML = text;
+          } else {
+            ztoolkit.UI.appendElement(
+              {
+                tag: "span",
+                classList: [config.addonRef],
+                styles: {
+                  display: "inline-block",
+                  flex: "1",
+                },
+              },
+              cell,
+            );
+            ztoolkit.UI.appendElement(
+              {
+                tag: "span",
+                classList: [config.addonRef, "number"],
+                styles: {
+                  marginRight: "6px",
+                },
+                properties: {
+                  innerHTML: text,
+                },
+              },
+              cell,
+            );
+          }
+        }
+        return originalDIV;
+      },
+      enabled: true,
+    });
+    addon.data.renderItemPatcher = patch;
+  }
+
+  async showDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
     this.updateDuplicateMaps(duplicateMaps);
 
     if (this.dialog) {
@@ -116,9 +194,7 @@ export class Duplicates {
       // const prevScrollHeight = this.document?.body.scrollHeight || 0;
       // If dialog is already opened, update table
       const tableBody = await this.updateTable();
-      const prevTableBody = this.document?.getElementById(
-        "table_body",
-      ) as Element;
+      const prevTableBody = this.document?.getElementById("table_body") as Element;
       ztoolkit.UI.replaceElement(tableBody, prevTableBody);
 
       this.resumeRadioCheckStatus();
@@ -143,9 +219,7 @@ export class Duplicates {
     }
   }
 
-  static async getDuplicates(
-    libraryID = ZoteroPane.getSelectedLibraryID(),
-  ): Promise<{
+  static async getDuplicates(libraryID = ZoteroPane.getSelectedLibraryID()): Promise<{
     libraryID: number;
     duplicatesObj: { getSetItemsByItemID(itemID: number): number[] };
     duplicateItems: number[];
@@ -177,9 +251,7 @@ export class Duplicates {
     return { total, unique };
   }
 
-  static async processDuplicates(
-    duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>,
-  ) {
+  static async processDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
     const items: { masterItem: Zotero.Item; otherItems: Zotero.Item[] }[] = [];
     if (duplicateMaps.size === 0) return;
 
@@ -202,10 +274,7 @@ export class Duplicates {
           otherItems: existingItemIDs.map((id) => Zotero.Items.get(id)),
         });
       } else if (action === Action.DISCARD) {
-        const duplicateItems = new DuplicateItems(
-          existingItemIDs,
-          masterItemPref,
-        );
+        const duplicateItems = new DuplicateItems(existingItemIDs, masterItemPref);
         const masterItem = duplicateItems.masterItem;
         const otherItems = duplicateItems.getOtherItems();
         items.push({
@@ -250,17 +319,11 @@ export class Duplicates {
     addon.data.dialogs.dialog = value;
   }
 
-  private get duplicateMaps():
-    | Map<number, { existingItemIDs: number[]; action: Action }>
-    | undefined {
+  private get duplicateMaps(): Map<number, { existingItemIDs: number[]; action: Action }> | undefined {
     return addon.data.dialogs.duplicateMaps;
   }
 
-  private set duplicateMaps(
-    value:
-      | Map<number, { existingItemIDs: number[]; action: Action }>
-      | undefined,
-  ) {
+  private set duplicateMaps(value: Map<number, { existingItemIDs: number[]; action: Action }> | undefined) {
     addon.data.dialogs.duplicateMaps = value;
   }
 
@@ -276,17 +339,11 @@ export class Duplicates {
     return Array.from(this.duplicateMaps?.keys() || []);
   }
 
-  private updateDuplicateMaps(
-    newDuplicateMaps: Map<
-      number,
-      { existingItemIDs: number[]; action: Action }
-    >,
-  ) {
+  private updateDuplicateMaps(newDuplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
     if (this.duplicateMaps) {
       newDuplicateMaps.forEach((value, key) => {
         value.action = this.duplicateMaps?.get(key)?.action || value.action;
-        value.action =
-          value.action === Action.ASK ? Action.CANCEL : value.action;
+        value.action = value.action === Action.ASK ? Action.CANCEL : value.action;
         this.duplicateMaps?.set(key, value);
       });
     } else {
@@ -312,13 +369,11 @@ export class Duplicates {
   private checkDefaultRadio(selectAll: boolean, defaultAction: Action) {
     // Set disabled status of "as default" checkbox
     const asDefaultDiv = this.document?.getElementById("act_as_default_div");
-    asDefaultDiv &&
-      (asDefaultDiv.style.visibility = selectAll ? "visible" : "hidden");
+    asDefaultDiv && (asDefaultDiv.style.visibility = selectAll ? "visible" : "hidden");
 
     if (selectAll) {
       // Update default action
-      this.dialog?.dialogData &&
-        (this.dialog.dialogData.defaultAction = defaultAction);
+      this.dialog?.dialogData && (this.dialog.dialogData.defaultAction = defaultAction);
 
       // Set radio of Column Header to checked
       const id = `act_${defaultAction}`;
@@ -326,13 +381,9 @@ export class Duplicates {
       radio.checked = true;
     } else {
       // Set radio of Column Header to unchecked
-      const asDefaultCheckbox = this.document?.getElementById(
-        "act_as_default",
-      ) as HTMLInputElement;
+      const asDefaultCheckbox = this.document?.getElementById("act_as_default") as HTMLInputElement;
       asDefaultCheckbox.checked = false;
-      const allRadios = this.document?.getElementsByName(
-        "default_action",
-      ) as NodeListOf<HTMLInputElement>;
+      const allRadios = this.document?.getElementsByName("default_action") as NodeListOf<HTMLInputElement>;
       allRadios &&
         allRadios.forEach((radio) => {
           radio.checked = false;
@@ -428,20 +479,16 @@ export class Duplicates {
           await Duplicates.processDuplicates(this.duplicateMaps!);
         },
       })
-      .addButton(
-        getString("du-dialog-button-go-duplicates"),
-        "btn_go_duplicate",
-        {
-          callback: (e) => {
-            const libraryID = ZoteroPane.getSelectedLibraryID();
-            const type = "duplicates";
-            const show = true;
-            const select = true;
-            // https://github.com/zotero/zotero/blob/main/chrome/content/zotero/zoteroPane.js#L1430C21
-            ZoteroPane.setVirtual(libraryID, type, show, select);
-          },
+      .addButton(getString("du-dialog-button-go-duplicates"), "btn_go_duplicate", {
+        callback: (e) => {
+          const libraryID = ZoteroPane.getSelectedLibraryID();
+          const type = "duplicates";
+          const show = true;
+          const select = true;
+          // https://github.com/zotero/zotero/blob/main/chrome/content/zotero/zoteroPane.js#L1430C21
+          ZoteroPane.setVirtual(libraryID, type, show, select);
         },
-      )
+      })
       .addButton(getString("general-cancel"), "btn_cancel");
   }
 
@@ -514,9 +561,7 @@ export class Duplicates {
               type: "click",
               listener: () => {
                 this.updateAction(newItemID, action);
-                const selectAll = Array.from(
-                  this.duplicateMaps?.values() || [],
-                ).every((i) => i.action === action);
+                const selectAll = Array.from(this.duplicateMaps?.values() || []).every((i) => i.action === action);
                 this.checkDefaultRadio(selectAll, action);
               },
             },
@@ -563,9 +608,7 @@ export class Duplicates {
                 // Set all radio of this action to checked
                 this.newItemIDs.forEach((newItemID) => {
                   const id = `act_${action}_${newItemID}`;
-                  const radio = this.document?.getElementById(
-                    id,
-                  ) as HTMLInputElement;
+                  const radio = this.document?.getElementById(id) as HTMLInputElement;
                   !radio.checked && radio.click();
                 });
               },

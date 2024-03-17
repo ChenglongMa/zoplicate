@@ -27,4 +27,9 @@ pref-default-master-item-detailed =
 pref-default-master-item-always-ask =
     .label = [Always Ask]: Ask for master item every time
 
+pref-view-title = View Preferences
+pref-view-description = Choose the widget to display in the main window
+pref-view-duplicate-stats =
+    .label = Append duplicate counts to the "Duplicate Items" entry, e.g., Duplicate Items 2/6
+
 pref-help = { $name } Build { $version } { $time }
