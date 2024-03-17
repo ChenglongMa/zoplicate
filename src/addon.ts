@@ -3,6 +3,7 @@ import { DialogHelper } from "zotero-plugin-toolkit/dist/helpers/dialog";
 import hooks from "./hooks";
 import { createZToolkit } from "./utils/ztoolkit";
 import { Action } from "./utils/prefs";
+import { PatchHelper } from "zotero-plugin-toolkit/dist/helpers/patch";
 
 class Addon {
   public data: {
@@ -22,6 +23,8 @@ class Addon {
       dialog?: DialogHelper;
       duplicateMaps?: Map<number, { existingItemIDs: number[]; action: Action }>;
     };
+    renderItemPatcher?: PatchHelper;
+    refreshDuplicateStats: boolean;
   };
   // Lifecycle hooks
   public hooks: typeof hooks;
@@ -34,6 +37,7 @@ class Addon {
       env: __env__,
       ztoolkit: createZToolkit(),
       dialogs: {},
+      refreshDuplicateStats: true,
     };
     this.hooks = hooks;
     this.api = {};

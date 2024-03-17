@@ -1,5 +1,6 @@
 import { config, homepage } from "../../package.json";
 import { getString } from "../utils/locale";
+import { Duplicates } from "./duplicates";
 
 export function registerPrefs() {
   Zotero.PreferencePanes.register({
@@ -33,4 +34,11 @@ async function updatePrefsUI() {
 function bindPrefEvents() {
   // Refer to:
   // https://github.com/windingwind/zotero-plugin-template/blob/main/src/modules/preferenceScript.ts#L109-L130
+  addon.data
+    .prefs!.window.document.querySelector(`#zotero-prefpane-${config.addonRef}-view-duplicate-stats-enable`)
+    ?.addEventListener("command", async (e) => {
+      if ((e.target as XUL.Checkbox).checked) {
+        await Duplicates.refreshDuplicateStats();
+      }
+    });
 }

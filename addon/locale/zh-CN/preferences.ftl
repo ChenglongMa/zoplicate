@@ -27,4 +27,9 @@ pref-default-master-item-detailed =
 pref-default-master-item-always-ask =
     .label = [始终询问]: 每次都询问我该如何选择主条目
 
+pref-view-title = 视图设置
+pref-view-description = 选择重复条目的显示方式
+pref-view-duplicate-stats =
+    .label = 在“重复条目”选项后显示重复条目数量。如，重复条目 2/6
+
 pref-help = { $name } Build { $version } { $time }
