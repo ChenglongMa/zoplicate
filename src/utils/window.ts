@@ -12,14 +12,20 @@ function isWindowAlive(win?: Window) {
 }
 
 function registerStyleSheet() {
-  const styles = ztoolkit.UI.createElement(document, "link", {
-    properties: {
-      type: "text/css",
-      rel: "stylesheet",
-      href: `chrome://${config.addonRef}/content/zoplicate.css`,
-    },
-  });
-  document.documentElement.appendChild(styles);
+  const hrefs =[
+    `chrome://${config.addonRef}/content/zoplicate.css`,
+  ]
+
+  for (const href of hrefs) {
+    const styles = ztoolkit.UI.createElement(document, "link", {
+      properties: {
+        type: "text/css",
+        rel: "stylesheet",
+        href,
+      },
+    });
+    document.documentElement.appendChild(styles);
+  }
 }
 
 function removeSiblings(targetElement: NonDocumentTypeChildNode) {

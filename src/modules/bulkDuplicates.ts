@@ -27,19 +27,13 @@ export class BulkDuplicates {
     const imageName = value ? "pause" : "merge";
     const label = value ? "bulk-merge-suspend" : "bulk-merge-title";
     this.getBulkMergeButtons(this.win!).forEach((button) => {
-      button?.setAttribute(
-        "image",
-        `chrome://${config.addonRef}/content/icons/${imageName}.png`,
-      );
+      button?.setAttribute("image", `chrome://${config.addonRef}/content/icons/${imageName}.svg`);
       button?.setAttribute("label", getString(label));
     });
   }
 
   private getBulkMergeButtons(win: Window) {
-    return [
-      win.document.getElementById(this.innerButtonID),
-      win.document.getElementById(this.externalButtonID),
-    ];
+    return [win.document.getElementById(this.innerButtonID), win.document.getElementById(this.externalButtonID)];
   }
 
   private createBulkMergeButton(win: Window, id: string): TagElementProps {
@@ -48,8 +42,9 @@ export class BulkDuplicates {
       id: id,
       attributes: {
         label: getString("bulk-merge-title"),
-        image: `chrome://${config.addonRef}/content/icons/merge.png`,
+        image: `chrome://${config.addonRef}/content/icons/merge.svg`,
       },
+      classList:["merge-button"],
       namespace: "xul",
       listeners: [
         {
@@ -64,12 +59,9 @@ export class BulkDuplicates {
 
             const pref = getPref("bulk.master.item");
             const masterItem = getString(`bulk-merge-master-item-${pref}`);
-            const text = `${getString("bulk-merge-message")}\n\n${getString(
-              "bulk-merge-sub-message",
-              {
-                args: { masterItem },
-              },
-            )}\n${getString("bulk-merge-sub-message-2")}`;
+            const text = `${getString("bulk-merge-message")}\n\n${getString("bulk-merge-sub-message", {
+              args: { masterItem },
+            })}\n${getString("bulk-merge-sub-message-2")}`;
             // https://github.com/zotero/zotero/blob/main/chrome/content/zotero/xpcom/prompt.js#L60
             // https://firefox-source-docs.mozilla.org/toolkit/components/prompts/prompts/nsIPromptService-reference.html#Prompter.confirmEx
             const result = Zotero.Prompt.confirm({
@@ -92,11 +84,7 @@ export class BulkDuplicates {
     };
   }
 
-  private updateButtonDisabled(
-    win: Window,
-    disabled: boolean,
-    ...ids: string[]
-  ) {
+  private updateButtonDisabled(win: Window, disabled: boolean, ...ids: string[]) {
     ids.forEach((id) => {
       const button = win.document.getElementById(id);
       if (button) {
@@ -195,44 +183,23 @@ export class BulkDuplicates {
     };
 
     ZoteroPane.collectionsView.onSelect.addListener(async () => {
-
-      const mergeButton = win.document.getElementById(
-        "zotero-duplicates-merge-button",
-      ) as Element;
-      const groupBox = win.document.getElementById(
-        "zotero-item-pane-groupbox",
-      ) as Element;
-      const collectionTree =
-        Zotero.getActiveZoteroPane().getCollectionTreeRow();
+      const mergeButton = win.document.getElementById("zotero-duplicates-merge-button") as Element;
+      const groupBox = win.document.getElementById("zotero-item-pane-groupbox") as Element;
+      const collectionTree = Zotero.getActiveZoteroPane().getCollectionTreeRow();
       if (collectionTree?.isDuplicates()) {
         ztoolkit.UI.appendElement(msgVBox, groupBox);
-        ztoolkit.UI.insertElementBefore(
-          this.createBulkMergeButton(win, this.innerButtonID),
-          mergeButton,
-        );
-        ztoolkit.UI.appendElement(
-          this.createBulkMergeButton(win, this.externalButtonID),
-          groupBox,
-        );
+        ztoolkit.UI.insertElementBefore(this.createBulkMergeButton(win, this.innerButtonID), mergeButton);
+        ztoolkit.UI.appendElement(this.createBulkMergeButton(win, this.externalButtonID), groupBox);
         await ZoteroPane.itemsView.waitForLoad();
         const disabled = Zotero.getActiveZoteroPane().itemsView.rowCount <= 0;
-        this.updateButtonDisabled(
-          win,
-          disabled,
-          this.innerButtonID,
-          this.externalButtonID,
-        );
+        this.updateButtonDisabled(win, disabled, this.innerButtonID, this.externalButtonID);
         if (this._isRunning) {
           Zotero.getActiveZoteroPane().itemsView.selection.clearSelection();
         }
       } else {
-        const externalButton = win.document.getElementById(
-          this.externalButtonID,
-        );
+        const externalButton = win.document.getElementById(this.externalButtonID);
         if (externalButton) {
-          mergeButton.parentNode?.removeChild(
-            win.document.getElementById(this.innerButtonID)!,
-          );
+          mergeButton.parentNode?.removeChild(win.document.getElementById(this.innerButtonID)!);
           groupBox.removeChild(win.document.getElementById(msgID)!);
           groupBox.removeChild(externalButton);
         }
