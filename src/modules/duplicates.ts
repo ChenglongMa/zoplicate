@@ -508,7 +508,7 @@ export class Duplicates {
             namespace: "html",
             styles: {
               maxWidth: "800px",
-              minWidth: "100px",
+              minWidth: "500px",
               padding: "5px",
               overflow: "hidden",
               textOverflow: "ellipsis",
