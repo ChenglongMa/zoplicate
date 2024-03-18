@@ -6,9 +6,10 @@ import {
 } from "./modules/preferenceScript";
 import { createZToolkit } from "./utils/ztoolkit";
 import { Notifier } from "./modules/notifier";
-import { registerStyleSheet, removeSiblings } from "./utils/window";
+import { registerStyleSheet } from "./utils/window";
 import { BulkDuplicates } from "./modules/bulkDuplicates";
 import { Duplicates } from "./modules/duplicates";
+import views from "./modules/views";
 
 
 async function onStartup() {
@@ -35,6 +36,7 @@ async function onMainWindowLoad(win: Window): Promise<void> {
   Notifier.registerNotifier();
   BulkDuplicates.getInstance().registerUIElements(win);
   await Duplicates.registerDuplicateStats();
+  views.registerMenus();
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {
