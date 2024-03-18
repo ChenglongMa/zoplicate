@@ -58,3 +58,8 @@ bulk-merge-popup-restore = Restoring: { $item }
 
 duplicate-tooltip = Found { $total } duplicates from { $unique } unique { $items }.
 duplicate-not-found-tooltip = No duplicate items found.
+
+
+## Menus
+menuitem-refresh-duplicate-stats = Refresh Duplicate Count
+refresh-duplicate-stats-done = Duplicate count has been refreshed.

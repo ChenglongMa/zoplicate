@@ -100,8 +100,8 @@ export class Duplicates {
     };
   }
 
-  static async refreshDuplicateStats() {
-    if (!addon.data.refreshDuplicateStats) return;
+  static async refreshDuplicateStats(force: boolean = false) {
+    if (!force && !addon.data.refreshDuplicateStats) return;
     // Update duplicate statistics on startup
     const allLibs = Zotero.Libraries.getAll();
     for (const lib of allLibs) {

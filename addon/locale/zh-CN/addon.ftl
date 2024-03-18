@@ -59,3 +59,8 @@ bulk-merge-popup-restore = 正在恢复: { $item }
 
 duplicate-tooltip = 检测到 { $total } 个重复项，源自 { $unique } 个唯一条目。
 duplicate-not-found-tooltip = 未找到重复条目
+
+
+## Menus
+menuitem-refresh-duplicate-stats = 刷新重复数量
+refresh-duplicate-stats-done = 重复数量已刷新
