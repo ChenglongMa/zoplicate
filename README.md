@@ -42,6 +42,27 @@ Starting from **Version 2.0.0**, the plugin will support **Bulk Merge** function
 
 # Changelog
 
+## v2.3.0
+
+<details markdown="1" open>
+  <summary><i>Click here to show more.</i></summary>
+
+In this version, we have made the following changes:
+
+1. ✨ **NEW!**: We have added an option to show the duplicate count on the left collection pane.
+   * You can find the option in the `Zoplicate` tab in the settings.
+   * When your mouse hovers over the <kbd>Duplicate Items</kbd> entry, a tooltip will show the duplicate statistics.
+      
+      ![Show duplicate count](docs/show-duplicate-count.png)
+   * The duplicate count will be updated automatically. You can also find the <kbd>Refresh Duplicate Count</kbd> menu to update the count manually.
+      
+     ![Refresh duplicate count](docs/refresh-duplicate-count.png)
+   * Thanks [Apollo7777777](https://github.com/Apollo7777777)'s idea mentioned in [discussion #18](https://github.com/ChenglongMa/zoplicate/discussions/18)
+2. 🐛 **FIX!**: We have fixed a bug that caused the dialog to be too narrow when the title is short.
+3. 🐛 **FIX!**: We have fixed a bug that caused the `Bulk Merge` icons to not maintain aspect ratios.
+
+</details>
+
 ## v2.2.0
 
 <details markdown="1" open>
@@ -128,7 +149,7 @@ Thanks [ChinJCheung](https://github.com/ChinJCheung)'s idea mentioned in [issue 
 
 In Zotero, click `Edit` -> `Settings`, go to `Zoplicate` tab, and you will see the settings.
 
-![zoplicate settings](docs/new-settings.png)
+![zoplicate settings](docs/settings_2.3.0.png)
 
 1. You can select the actions you want to take when duplicate items are detected.
     * `Always Ask` is the default option if you have not changed the settings.
@@ -203,6 +224,20 @@ A dialog will pop up to confirm your action:
 > 
 > 1. Select the duplicate items you want to restore.
 > 2. Click <kbd>Restore to Library</kbd> button to process.
+
+## Show Duplicate Statistics
+
+Starting from **Version 2.3.0**, we have added an option to show the duplicate count on the left collection pane.
+
+You can find the option in the `Zoplicate` tab in [the settings](#settings).
+
+When your mouse hovers over the <kbd>Duplicate Items</kbd> entry, a tooltip will show the duplicate statistics.
+
+![Show duplicate count](docs/show-duplicate-count.png)
+
+The duplicate count will be updated automatically. You can also find the <kbd>Refresh Duplicate Count</kbd> menu to update the count manually.
+
+![Refresh duplicate count](docs/refresh-duplicate-count.png)
 
 # Contributing
 
