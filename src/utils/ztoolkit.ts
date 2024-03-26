@@ -1,4 +1,3 @@
-import ZoteroToolkit from "zotero-plugin-toolkit";
 import { config } from "../../package.json";
 
 export { createZToolkit };
@@ -16,24 +15,17 @@ function createZToolkit() {
 
 function initZToolkit(_ztoolkit: ReturnType<typeof createZToolkit>) {
   const env = __env__;
+  const enableUILog = false; //__env__ === "development";
   _ztoolkit.basicOptions.log.prefix = `[${config.addonName}]`;
   _ztoolkit.basicOptions.log.disableConsole = env === "production";
-  _ztoolkit.UI.basicOptions.ui.enableElementJSONLog = __env__ === "development";
-  _ztoolkit.UI.basicOptions.ui.enableElementDOMLog = __env__ === "development";
-  _ztoolkit.basicOptions.debug.disableDebugBridgePassword =
-    __env__ === "development";
+  _ztoolkit.UI.basicOptions.ui.enableElementJSONLog = enableUILog;
+  _ztoolkit.UI.basicOptions.ui.enableElementDOMLog = enableUILog;
+  _ztoolkit.basicOptions.debug.disableDebugBridgePassword = __env__ === "development";
   _ztoolkit.basicOptions.api.pluginID = config.addonID;
-  _ztoolkit.ProgressWindow.setIconURI(
-    "default",
-    `chrome://${config.addonRef}/content/icons/favicon.png`,
-  );
+  _ztoolkit.ProgressWindow.setIconURI("default", `chrome://${config.addonRef}/content/icons/favicon.png`);
 }
 
-import {
-  BasicTool,
-  makeHelperTool,
-  unregister,
-} from "zotero-plugin-toolkit/dist/basic";
+import { BasicTool, makeHelperTool, unregister } from "zotero-plugin-toolkit/dist/basic";
 import { UITool } from "zotero-plugin-toolkit/dist/tools/ui";
 import { DialogHelper } from "zotero-plugin-toolkit/dist/helpers/dialog";
 import { ProgressWindowHelper } from "zotero-plugin-toolkit/dist/helpers/progressWindow";
