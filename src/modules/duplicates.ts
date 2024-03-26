@@ -131,8 +131,8 @@ export class Duplicates {
           originalDIV.removeAttribute("title");
           return originalDIV;
         }
-        const collectionTreeRow = ZoteroPane.collectionsView.getRow(index) as CollectionTreeRow;
-        if (collectionTreeRow.isDuplicates()) {
+        const collectionTreeRow = Zotero.getActiveZoteroPane()?.collectionsView.getRow(index) as CollectionTreeRow;
+        if (collectionTreeRow?.isDuplicates()) {
           const libraryID = collectionTreeRow.ref.libraryID.toString();
           const total = getPref(`duplicate.count.total.${libraryID}`) || 0;
           const unique = getPref(`duplicate.count.unique.${libraryID}`) || 0;
