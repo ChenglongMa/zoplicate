@@ -44,7 +44,7 @@ export class BulkDuplicates {
         label: getString("bulk-merge-title"),
         image: `chrome://${config.addonRef}/content/icons/merge.svg`,
       },
-      classList:["merge-button"],
+      classList: ["merge-button"],
       namespace: "xul",
       listeners: [
         {
@@ -182,28 +182,31 @@ export class BulkDuplicates {
       ignoreIfExists: true,
     };
 
-    ZoteroPane.collectionsView.onSelect.addListener(async () => {
-      const mergeButton = win.document.getElementById("zotero-duplicates-merge-button") as Element;
-      const groupBox = win.document.getElementById("zotero-item-pane-groupbox") as Element;
-      const collectionTree = Zotero.getActiveZoteroPane().getCollectionTreeRow();
-      if (collectionTree?.isDuplicates()) {
-        ztoolkit.UI.appendElement(msgVBox, groupBox);
-        ztoolkit.UI.insertElementBefore(this.createBulkMergeButton(win, this.innerButtonID), mergeButton);
-        ztoolkit.UI.appendElement(this.createBulkMergeButton(win, this.externalButtonID), groupBox);
-        await ZoteroPane.itemsView.waitForLoad();
-        const disabled = Zotero.getActiveZoteroPane().itemsView.rowCount <= 0;
-        this.updateButtonDisabled(win, disabled, this.innerButtonID, this.externalButtonID);
-        if (this._isRunning) {
-          Zotero.getActiveZoteroPane().itemsView.selection.clearSelection();
+    ZoteroPane.collectionsView &&
+      ZoteroPane.collectionsView.onSelect.addListener(async () => {
+        const mergeButton = win.document.getElementById("zotero-duplicates-merge-button") as Element;
+        const groupBox = win.document.getElementById("zotero-item-pane-groupbox") as Element;
+        const collectionTree = Zotero.getActiveZoteroPane()?.getCollectionTreeRow();
+        if (collectionTree?.isDuplicates()) {
+          ztoolkit.UI.appendElement(msgVBox, groupBox);
+          ztoolkit.UI.insertElementBefore(this.createBulkMergeButton(win, this.innerButtonID), mergeButton);
+          ztoolkit.UI.appendElement(this.createBulkMergeButton(win, this.externalButtonID), groupBox);
+          if (ZoteroPane.itemsView) {
+            await ZoteroPane.itemsView.waitForLoad();
+            const disabled = ZoteroPane.itemsView.rowCount <= 0;
+            this.updateButtonDisabled(win, disabled, this.innerButtonID, this.externalButtonID);
+            if (this._isRunning) {
+              ZoteroPane.itemsView.selection.clearSelection();
+            }
+          }
+        } else {
+          const externalButton = win.document.getElementById(this.externalButtonID);
+          if (externalButton) {
+            mergeButton.parentNode?.removeChild(win.document.getElementById(this.innerButtonID)!);
+            groupBox.removeChild(win.document.getElementById(msgID)!);
+            groupBox.removeChild(externalButton);
+          }
         }
-      } else {
-        const externalButton = win.document.getElementById(this.externalButtonID);
-        if (externalButton) {
-          mergeButton.parentNode?.removeChild(win.document.getElementById(this.innerButtonID)!);
-          groupBox.removeChild(win.document.getElementById(msgID)!);
-          groupBox.removeChild(externalButton);
-        }
-      }
-    });
+      });
   }
 }

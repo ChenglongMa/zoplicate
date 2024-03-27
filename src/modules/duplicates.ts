@@ -124,63 +124,67 @@ export class Duplicates {
       funcSign: "renderItem",
       // refer to https://github.com/zotero/zotero/blob/main/chrome/content/zotero/collectionTree.jsx#L274
       // i.e., the `renderItem` function of collectionTree
-      patcher: (originalFunc) => (index: number, selection: object, oldDiv: HTMLDivElement, columns: any[]) => {
-        const originalDIV = originalFunc(index, selection, oldDiv, columns);
-        showStats = getPref("duplicate.stats.enable") as boolean;
-        if (!showStats) {
-          originalDIV.removeAttribute("title");
-          return originalDIV;
-        }
-        const collectionTreeRow = Zotero.getActiveZoteroPane()?.collectionsView.getRow(index) as CollectionTreeRow;
-        if (collectionTreeRow?.isDuplicates()) {
-          const libraryID = collectionTreeRow.ref.libraryID.toString();
-          const total = getPref(`duplicate.count.total.${libraryID}`) || 0;
-          const unique = getPref(`duplicate.count.unique.${libraryID}`) || 0;
-          const text = `${unique}/${total}`;
-          const tooltip = total
-            ? getString("duplicate-tooltip", {
-                args: { unique, total, items: unique == 1 ? "item" : "items" },
-              })
-            : getString("duplicate-not-found-tooltip");
-          originalDIV.setAttribute("title", tooltip);
-
-          // https://github.com/zotero/zotero/blob/main/chrome/content/zotero/collectionTree.jsx#L321
-          // https://github.com/MuiseDestiny/zotero-style/blob/master/src/modules/views.ts#L3279
-          const cell = originalDIV.querySelector("span.cell.label.primary");
-          const collectionNameSpan = cell.querySelector("span.cell-text");
-          removeSiblings(collectionNameSpan);
-          const numberNode = cell.querySelector(".number");
-          if (numberNode) {
-            numberNode.innerHTML = text;
-          } else {
-            ztoolkit.UI.appendElement(
-              {
-                tag: "span",
-                classList: [config.addonRef],
-                styles: {
-                  display: "inline-block",
-                  flex: "1",
-                },
-              },
-              cell,
-            );
-            ztoolkit.UI.appendElement(
-              {
-                tag: "span",
-                classList: [config.addonRef, "number"],
-                styles: {
-                  marginRight: "6px",
-                },
-                properties: {
-                  innerHTML: text,
-                },
-              },
-              cell,
-            );
+      // @ts-ignore
+      patcher:
+        (originalFunc: (index: number, selection: object, oldDiv: HTMLDivElement, columns: any[]) => HTMLDivElement) =>
+        (index: number, selection: object, oldDiv: HTMLDivElement, columns: any[]): HTMLDivElement => {
+          const originalDIV = originalFunc(index, selection, oldDiv, columns);
+          showStats = getPref("duplicate.stats.enable") as boolean;
+          if (!showStats) {
+            originalDIV.removeAttribute("title");
+            return originalDIV;
           }
-        }
-        return originalDIV;
-      },
+          const collectionTreeRow =
+            ZoteroPane?.collectionsView && (ZoteroPane?.collectionsView.getRow(index) as CollectionTreeRow);
+          if (collectionTreeRow && collectionTreeRow.isDuplicates()) {
+            const libraryID = collectionTreeRow.ref.libraryID.toString();
+            const total = getPref(`duplicate.count.total.${libraryID}`) || 0;
+            const unique = getPref(`duplicate.count.unique.${libraryID}`) || 0;
+            const text = `${unique}/${total}`;
+            const tooltip = total
+              ? getString("duplicate-tooltip", {
+                  args: { unique, total, items: unique == 1 ? "item" : "items" },
+                })
+              : getString("duplicate-not-found-tooltip");
+            originalDIV.setAttribute("title", tooltip);
+
+            // https://github.com/zotero/zotero/blob/main/chrome/content/zotero/collectionTree.jsx#L321
+            // https://github.com/MuiseDestiny/zotero-style/blob/master/src/modules/views.ts#L3279
+            const cell = originalDIV.querySelector("span.cell.label.primary") as Element;
+            const collectionNameSpan = cell.querySelector("span.cell-text") as Element;
+            removeSiblings(collectionNameSpan);
+            const numberNode = cell.querySelector(".number");
+            if (numberNode) {
+              numberNode.innerHTML = text;
+            } else {
+              ztoolkit.UI.appendElement(
+                {
+                  tag: "span",
+                  classList: [config.addonRef],
+                  styles: {
+                    display: "inline-block",
+                    flex: "1",
+                  },
+                },
+                cell,
+              );
+              ztoolkit.UI.appendElement(
+                {
+                  tag: "span",
+                  classList: [config.addonRef, "number"],
+                  styles: {
+                    marginRight: "6px",
+                  },
+                  properties: {
+                    innerHTML: text,
+                  },
+                },
+                cell,
+              );
+            }
+          }
+          return originalDIV;
+        },
       enabled: true,
     });
     addon.data.renderItemPatcher = patch;
