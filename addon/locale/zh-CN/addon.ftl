@@ -64,3 +64,6 @@ duplicate-not-found-tooltip = 未找到重复条目
 ## Menus
 menuitem-refresh-duplicate-stats = 刷新重复数量
 refresh-duplicate-stats-done = 重复数量已刷新
+
+menuitem-not-duplicate = 标记为非重复条目
+menuitem-is-duplicate = 标记为重复条目

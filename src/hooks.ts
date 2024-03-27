@@ -7,10 +7,13 @@ import { registerStyleSheet } from "./utils/window";
 import { BulkDuplicates } from "./modules/bulkDuplicates";
 import { Duplicates } from "./modules/duplicates";
 import views from "./modules/views";
+import "./modules/zduplicates.js";
+import { DB } from "./modules/db";
 
 async function onStartup() {
   await Promise.all([Zotero.initializationPromise, Zotero.unlockPromise, Zotero.uiReadyPromise]);
   // TODO: Remove this after zotero#3387 is merged
+  // https://github.com/zotero/zotero/pull/3387
   if (__env__ === "development") {
     // Keep in sync with the scripts/startup.mjs
     const loadDevToolWhen = `Plugin ${config.addonID} startup`;
@@ -23,6 +26,7 @@ async function onStartup() {
 async function onMainWindowLoad(win: Window): Promise<void> {
   // Create ztoolkit for every window
   addon.data.ztoolkit = createZToolkit();
+  await DB.getInstance().init();
   registerStyleSheet();
   registerPrefs();
   Notifier.registerNotifier();
@@ -32,11 +36,13 @@ async function onMainWindowLoad(win: Window): Promise<void> {
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {
+  await DB.getInstance().close(true);
   ztoolkit.unregisterAll();
   addon.data.dialogs.dialog?.window?.close();
 }
 
-function onShutdown(): void {
+async function onShutdown() {
+  await DB.getInstance().close(true);
   ztoolkit.unregisterAll();
   addon.data.dialogs.dialog?.window?.close();
   // Remove addon object
