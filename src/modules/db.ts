@@ -34,7 +34,7 @@ export class DB {
     );
   }
 
-  async insertNonDuplicate(itemID: number, itemID2: number) {
+  async insertNonDuplicatePair(itemID: number, itemID2: number) {
     await this._db.queryAsync(
       `INSERT OR IGNORE INTO ${this.tables.nonDuplicates} (itemID, itemID2)
        VALUES (?, ?),
@@ -43,7 +43,7 @@ export class DB {
     );
   }
 
-  async insertNonDuplicates(...rows: { itemID: number; itemID2: number }[]) {
+  async insertNonDuplicatePairs(...rows: { itemID: number; itemID2: number }[]) {
     const placeholders = rows.map(() => "(?, ?), (?, ?)").join(",");
     const values = rows.flatMap(({ itemID, itemID2 }) => [itemID, itemID2, itemID2, itemID]);
     await this._db.queryAsync(
@@ -53,7 +53,12 @@ export class DB {
     );
   }
 
-  async deleteNonDuplicate(itemID: number, itemID2: number) {
+  async insertNonDuplicates(itemIDs: number[]) {
+    const rows = itemIDs.flatMap((itemID, i) => itemIDs.slice(i + 1).map((itemID2) => ({ itemID, itemID2 })));
+    await this.insertNonDuplicatePairs(...rows);
+  }
+
+  async deleteNonDuplicatePair(itemID: number, itemID2: number) {
     await this._db.queryAsync(
       `DELETE
        FROM ${this.tables.nonDuplicates}
@@ -63,7 +68,7 @@ export class DB {
     );
   }
 
-  async deleteNonDuplicates(...rows: { itemID: number; itemID2: number }[]) {
+  async deleteNonDuplicatePairs(...rows: { itemID: number; itemID2: number }[]) {
     const placeholders = rows.map(() => "(?, ?), (?, ?)").join(",");
     const values = rows.flatMap(({ itemID, itemID2 }) => [itemID, itemID2, itemID2, itemID]);
     await this._db.queryAsync(
@@ -72,6 +77,11 @@ export class DB {
        WHERE (itemID, itemID2) IN (${placeholders});`,
       values,
     );
+  }
+
+  async deleteNonDuplicates(itemIDs: number[]) {
+    const rows = itemIDs.flatMap((itemID, i) => itemIDs.slice(i + 1).map((itemID2) => ({ itemID, itemID2 })));
+    await this.deleteNonDuplicatePairs(...rows);
   }
 
   async close(permanent: boolean = false) {
