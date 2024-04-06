@@ -7,8 +7,10 @@ import { registerStyleSheet } from "./utils/window";
 import { BulkDuplicates } from "./modules/bulkDuplicates";
 import { Duplicates } from "./modules/duplicates";
 import views from "./modules/views";
-import "./modules/zduplicates.js";
+// import "./modules/zduplicates.js";
 import { DB } from "./modules/db";
+import { NonDuplicates } from "./modules/nonDuplicates";
+import { patchDuplicateTable } from "./modules/patcher";
 
 async function onStartup() {
   await Promise.all([Zotero.initializationPromise, Zotero.unlockPromise, Zotero.uiReadyPromise]);
@@ -26,13 +28,16 @@ async function onStartup() {
 async function onMainWindowLoad(win: Window): Promise<void> {
   // Create ztoolkit for every window
   addon.data.ztoolkit = createZToolkit();
-  await DB.getInstance().init();
+  const db = DB.getInstance();
+  await db.init();
+  NonDuplicates.getInstance().init(db);
   registerStyleSheet();
   registerPrefs();
   Notifier.registerNotifier();
   BulkDuplicates.getInstance().registerUIElements(win);
   await Duplicates.registerDuplicateStats();
   views.registerMenus();
+  patchDuplicateTable();
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {
@@ -60,7 +65,9 @@ async function onNotify(event: string, type: string, ids: Array<string | number>
   // You can add your code to the corresponding `notify type`
   // ztoolkit.log("notify", event, type, ids, extraData);
 
-  if (type == "item") {
+  if (type == "item" && !BulkDuplicates.getInstance().isRunning) {
+    addon.data.needResetDuplicateSearch = true;
+    ztoolkit.log("Call on items changed in onNotify.");
     const { duplicatesObj } = await onItemsChanged();
     if (event == "add") {
       await Notifier.whenItemsAdded(duplicatesObj, ids as number[]);
@@ -83,7 +90,7 @@ async function onItemsChanged(libraryID = ZoteroPane.getSelectedLibraryID()) {
 async function onPrefsEvent(type: string, data: { [key: string]: any }) {
   switch (type) {
     case "load":
-      registerPrefsScripts(data.window);
+      await registerPrefsScripts(data.window);
       break;
     default:
       return;

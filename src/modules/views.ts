@@ -4,6 +4,7 @@ import { getPref } from "../utils/prefs";
 import { Duplicates } from "./duplicates";
 import { MenuManager } from "zotero-plugin-toolkit/dist/managers/menu";
 import { DB } from "./db";
+import { isDuplicates } from "../utils/zotero";
 
 function registerMenus() {
   const menuManager = new ztoolkit.Menu();
@@ -29,7 +30,10 @@ function registerItemsViewMenu(menuManager: MenuManager) {
         commandListener: async (ev) => {
           const selectedItems = Zotero.getActiveZoteroPane().getSelectedItems();
           await DB.getInstance().deleteNonDuplicates(selectedItems.map((item) => item.id));
-        }
+          if (isDuplicates()) {
+            await Zotero.ItemTreeManager._notifyItemTrees();
+          }
+        },
       },
       {
         tag: "menuitem",
@@ -39,7 +43,10 @@ function registerItemsViewMenu(menuManager: MenuManager) {
         commandListener: async (ev) => {
           const selectedItems = Zotero.getActiveZoteroPane().getSelectedItems();
           await DB.getInstance().insertNonDuplicates(selectedItems.map((item) => item.id));
-        }
+          if (isDuplicates()) {
+            await Zotero.ItemTreeManager._notifyItemTrees();
+          }
+        },
       },
     ],
     getVisibility: (elem, ev) => {
@@ -74,8 +81,7 @@ function registerDuplicateCollectionMenu(menuManager: MenuManager) {
     icon: menuIcon,
     getVisibility: (elem, ev) => {
       let showStats = getPref("duplicate.stats.enable") as boolean;
-      const collectionTree = Zotero.getActiveZoteroPane().getCollectionTreeRow();
-      return showStats && collectionTree?.isDuplicates();
+      return showStats && isDuplicates();
     },
   });
 }

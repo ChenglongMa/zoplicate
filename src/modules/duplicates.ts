@@ -6,6 +6,7 @@ import { getPref, setPref, Action, MasterItem } from "../utils/prefs";
 import { merge } from "./merger";
 import CollectionTreeRow = Zotero.CollectionTreeRow;
 import { removeSiblings } from "../utils/window";
+import { goToDuplicates } from "../utils/zotero";
 
 /**
  * This class is used to store duplicate items.
@@ -106,6 +107,7 @@ export class Duplicates {
     const allLibs = Zotero.Libraries.getAll();
     for (const lib of allLibs) {
       const libraryID = lib.libraryID;
+      ztoolkit.log("Call on items changed in refreshDuplicateStats.");
       await addon.hooks.onItemsChanged(libraryID);
     }
     addon.data.refreshDuplicateStats = false;
@@ -124,9 +126,8 @@ export class Duplicates {
       funcSign: "renderItem",
       // refer to https://github.com/zotero/zotero/blob/main/chrome/content/zotero/collectionTree.jsx#L274
       // i.e., the `renderItem` function of collectionTree
-      // @ts-ignore
       patcher:
-        (originalFunc: (index: number, selection: object, oldDiv: HTMLDivElement, columns: any[]) => HTMLDivElement) =>
+        (originalFunc: any) =>
         (index: number, selection: object, oldDiv: HTMLDivElement, columns: any[]): HTMLDivElement => {
           const originalDIV = originalFunc(index, selection, oldDiv, columns);
           showStats = getPref("duplicate.stats.enable") as boolean;
@@ -230,6 +231,7 @@ export class Duplicates {
   }> {
     const duplicatesObj = new Zotero.Duplicates(libraryID);
     const search = await duplicatesObj.getSearchObject();
+    ztoolkit.log("get search object done", search);
     const duplicateItems: number[] = await search.search();
     return { libraryID, duplicatesObj, duplicateItems };
   }
@@ -485,12 +487,7 @@ export class Duplicates {
       })
       .addButton(getString("du-dialog-button-go-duplicates"), "btn_go_duplicate", {
         callback: (e) => {
-          const libraryID = ZoteroPane.getSelectedLibraryID();
-          const type = "duplicates";
-          const show = true;
-          const select = true;
-          // https://github.com/zotero/zotero/blob/main/chrome/content/zotero/zoteroPane.js#L1430C21
-          ZoteroPane.setVirtual(libraryID, type, show, select);
+          goToDuplicates();
         },
       })
       .addButton(getString("general-cancel"), "btn_cancel");

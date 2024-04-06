@@ -1,6 +1,7 @@
 import { config, homepage } from "../../package.json";
 import { getString } from "../utils/locale";
 import { Duplicates } from "./duplicates";
+import { refreshCollectionView } from "../utils/zotero";
 
 export function registerPrefs() {
   Zotero.PreferencePanes.register({
@@ -8,6 +9,7 @@ export function registerPrefs() {
     src: rootURI + "chrome/content/preferences.xhtml",
     label: getString("prefs-title"),
     image: `chrome://${config.addonRef}/content/icons/favicon.png`,
+    stylesheets:[`chrome://${config.addonRef}/content/prefs.css`],
     helpURL: homepage,
   });
 }
@@ -19,7 +21,7 @@ export async function registerPrefsScripts(_window: Window) {
     window: _window,
   };
 
-  updatePrefsUI();
+  await updatePrefsUI();
   bindPrefEvents();
 }
 
@@ -40,5 +42,7 @@ function bindPrefEvents() {
       if ((e.target as XUL.Checkbox).checked) {
         await Duplicates.refreshDuplicateStats();
       }
+      // refreshCollectionView();
+      await Zotero.Notifier.trigger('redraw', 'collection', []);
     });
 }

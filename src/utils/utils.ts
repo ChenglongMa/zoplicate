@@ -5,3 +5,7 @@ export function truncateString(inputString: string, maxLength: number = 24): str
     return inputString.slice(0, maxLength) + "...";
   }
 }
+
+export function hasOwnProperty(obj: { [key: string | number]: any }, key: string | number): boolean {
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}

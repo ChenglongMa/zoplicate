@@ -5,6 +5,8 @@ import { getPref, MasterItem } from "../utils/prefs";
 import { truncateString } from "../utils/utils";
 import { DuplicateItems, Duplicates } from "./duplicates";
 import { merge } from "./merger";
+import hooks from "../hooks";
+import { isDuplicates, refreshCollectionView } from "../utils/zotero";
 
 export class BulkDuplicates {
   static getInstance(): BulkDuplicates {
@@ -22,6 +24,10 @@ export class BulkDuplicates {
   private win: Window | undefined;
   private static instance: BulkDuplicates;
   private _isRunning = false;
+  public get isRunning(): boolean {
+    return this._isRunning;
+  }
+
   private set isRunning(value: boolean) {
     this._isRunning = value;
     const imageName = value ? "pause" : "merge";
@@ -30,6 +36,18 @@ export class BulkDuplicates {
       button?.setAttribute("image", `chrome://${config.addonRef}/content/icons/${imageName}.svg`);
       button?.setAttribute("label", getString(label));
     });
+    if (!value) {
+      // When the merge is done:
+      // 1. Refresh the duplicate item tree
+      // 2. Refresh the status of bulk merge buttons
+      // 3. Refresh the duplicate stats
+      // 4. Refresh duplicate search
+      addon.data.needResetDuplicateSearch = true;
+      Zotero.ItemTreeManager._notifyItemTrees();
+      hooks.onItemsChanged().then(() => {
+        refreshCollectionView();
+      });
+    }
   }
 
   private getBulkMergeButtons(win: Window) {
@@ -184,20 +202,24 @@ export class BulkDuplicates {
 
     ZoteroPane.collectionsView &&
       ZoteroPane.collectionsView.onSelect.addListener(async () => {
+        if (addon.data.duplicateSearchObj) {
+          ztoolkit.log(`Collected ${addon.data.tempTables.size} temp tables.`);
+        }
+        for (const table of addon.data.tempTables) {
+          const rows = await Zotero.DB.queryAsync(`select id
+                                                 from ${table};`);
+          ztoolkit.log(`${table} has ${rows.length} records.`);
+        }
+
         const mergeButton = win.document.getElementById("zotero-duplicates-merge-button") as Element;
         const groupBox = win.document.getElementById("zotero-item-pane-groupbox") as Element;
-        const collectionTree = Zotero.getActiveZoteroPane()?.getCollectionTreeRow();
-        if (collectionTree?.isDuplicates()) {
+        if (isDuplicates()) {
           ztoolkit.UI.appendElement(msgVBox, groupBox);
           ztoolkit.UI.insertElementBefore(this.createBulkMergeButton(win, this.innerButtonID), mergeButton);
           ztoolkit.UI.appendElement(this.createBulkMergeButton(win, this.externalButtonID), groupBox);
-          if (ZoteroPane.itemsView) {
+          if (this._isRunning && ZoteroPane.itemsView) {
             await ZoteroPane.itemsView.waitForLoad();
-            const disabled = ZoteroPane.itemsView.rowCount <= 0;
-            this.updateButtonDisabled(win, disabled, this.innerButtonID, this.externalButtonID);
-            if (this._isRunning) {
-              ZoteroPane.itemsView.selection.clearSelection();
-            }
+            ZoteroPane.itemsView.selection.clearSelection();
           }
         } else {
           const externalButton = win.document.getElementById(this.externalButtonID);
@@ -205,6 +227,18 @@ export class BulkDuplicates {
             mergeButton.parentNode?.removeChild(win.document.getElementById(this.innerButtonID)!);
             groupBox.removeChild(win.document.getElementById(msgID)!);
             groupBox.removeChild(externalButton);
+          }
+        }
+      });
+
+    ZoteroPane.itemsView &&
+      ZoteroPane.itemsView.onRefresh.addListener(() => {
+        if (isDuplicates() && ZoteroPane.itemsView) {
+          ztoolkit.log("refresh");
+          const disabled = ZoteroPane.itemsView.rowCount <= 0;
+          this.updateButtonDisabled(win!, disabled, this.innerButtonID, this.externalButtonID);
+          if (this._isRunning) {
+            ZoteroPane.itemsView.selection.clearSelection();
           }
         }
       });

@@ -9,6 +9,7 @@ export class Notifier {
     },
     duplicateItems: number[],
   ) {
+    // TODO: executed multiple times when bulk merging
     const { total, unique } = Duplicates.duplicateStatistics(
       duplicatesObj,
       duplicateItems,
