@@ -3,12 +3,14 @@ import { config } from "../../package.json";
 export class DB {
   private static _instance: DB;
   // @ts-ignore
-  private _db: Zotero.DBConnection;
+  private readonly _db: Zotero.DBConnection;
   private tables = {
     nonDuplicates: "nonDuplicates",
   };
 
-  private constructor() {}
+  private constructor() {
+    this._db = new Zotero.DBConnection(config.addonRef);
+  }
 
   public static getInstance(): DB {
     if (!DB._instance) {
@@ -17,8 +19,11 @@ export class DB {
     return DB._instance;
   }
 
+  public get db() {
+    return this._db;
+  }
+
   async init() {
-    this._db = new Zotero.DBConnection(config.addonRef);
     await this.createNonDuplicateTable();
     ztoolkit.log("DB initialized");
   }
@@ -37,15 +42,14 @@ export class DB {
   async insertNonDuplicatePair(itemID: number, itemID2: number) {
     await this._db.queryAsync(
       `INSERT OR IGNORE INTO ${this.tables.nonDuplicates} (itemID, itemID2)
-       VALUES (?, ?),
-              (?, ?);`,
-      [itemID, itemID2, itemID2, itemID],
+       VALUES (?, ?);`,
+      [itemID, itemID2].sort(),
     );
   }
 
   async insertNonDuplicatePairs(...rows: { itemID: number; itemID2: number }[]) {
-    const placeholders = rows.map(() => "(?, ?), (?, ?)").join(",");
-    const values = rows.flatMap(({ itemID, itemID2 }) => [itemID, itemID2, itemID2, itemID]);
+    const placeholders = rows.map(() => "(?, ?)").join(",");
+    const values = rows.flatMap(({ itemID, itemID2 }) => [itemID, itemID2].sort());
     await this._db.queryAsync(
       `INSERT OR IGNORE INTO ${this.tables.nonDuplicates} (itemID, itemID2)
        VALUES ${placeholders};`,
@@ -82,6 +86,33 @@ export class DB {
   async deleteNonDuplicates(itemIDs: number[]) {
     const rows = itemIDs.flatMap((itemID, i) => itemIDs.slice(i + 1).map((itemID2) => ({ itemID, itemID2 })));
     await this.deleteNonDuplicatePairs(...rows);
+  }
+
+  async existsNonDuplicatePair(itemID: number, itemID2: number) {
+    const result = await this._db.queryAsync(
+      `SELECT EXISTS(SELECT 1
+                     FROM ${this.tables.nonDuplicates}
+                     WHERE (itemID = ? AND itemID2 = ?)
+                        OR (itemID = ? AND itemID2 = ?)) AS existsResult;`,
+
+      [itemID, itemID2, itemID2, itemID],
+    );
+    // ztoolkit.log(itemID, itemID2, "is non duplicate? ", !!result[0].existsResult);
+    return !!result[0].existsResult;
+  }
+
+  async getNonDuplicates(itemID: number | undefined = undefined) {
+    const params: number[] = [];
+    let query = `SELECT itemID, itemID2
+                 FROM ${this.tables.nonDuplicates}`;
+
+    if (itemID !== undefined && itemID !== null) {
+      query += ` WHERE itemID = ? OR itemID2 = ?`;
+      params.push(itemID, itemID);
+    }
+
+    const rows: { itemID: number; itemID2: number }[] = await this._db.queryAsync(query, params);
+    return new Set(rows.map(({ itemID, itemID2 }) => [itemID, itemID2].sort().join(",")));
   }
 
   async close(permanent: boolean = false) {
