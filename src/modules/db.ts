@@ -97,14 +97,24 @@ export class DB {
 
       [itemID, itemID2, itemID2, itemID],
     );
-    // ztoolkit.log(itemID, itemID2, "is non duplicate? ", !!result[0].existsResult);
     return !!result[0].existsResult;
+  }
+
+  async existsNonDuplicates(itemIDs: number[]) {
+    const rows = itemIDs.flatMap((itemID, i) => itemIDs.slice(i + 1).map((itemID2) => [itemID, itemID2].sort()));
+    const placeholders = rows.map(() => "(?, ?)").join(", ");
+    const query = `SELECT COUNT(*) AS count
+                   FROM ${this.tables.nonDuplicates}
+                   WHERE (itemID, itemID2) IN (${placeholders});`;
+    const result = await this._db.queryAsync(query, rows.flat());
+    ztoolkit.log("existsNonDuplicates called");
+    return result[0].count === rows.length;
   }
 
   async getNonDuplicates(itemID: number | undefined = undefined) {
     const params: number[] = [];
     let query = `SELECT itemID, itemID2
-                 FROM ${this.tables.nonDuplicates}`;
+                 FROM ${this.tables.nonDuplicates};`;
 
     if (itemID !== undefined && itemID !== null) {
       query += ` WHERE itemID = ? OR itemID2 = ?`;

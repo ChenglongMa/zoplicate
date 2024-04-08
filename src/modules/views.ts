@@ -4,17 +4,20 @@ import { getPref } from "../utils/prefs";
 import { Duplicates } from "./duplicates";
 import { MenuManager } from "zotero-plugin-toolkit/dist/managers/menu";
 import { DB } from "./db";
-import { isDuplicates } from "../utils/zotero";
+import { isInDuplicatesPane } from "../utils/zotero";
+import MenuPopup = XUL.MenuPopup;
 
-function registerMenus() {
+function registerMenus(win: Window) {
   const menuManager = new ztoolkit.Menu();
   registerDuplicateCollectionMenu(menuManager);
-  registerItemsViewMenu(menuManager);
+  registerItemsViewMenu(menuManager, win);
 }
 
-function registerItemsViewMenu(menuManager: MenuManager) {
+function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
   const nonDuplicateMenuTitle = getString("menuitem-not-duplicate");
   const isDuplicateMenuTitle = getString("menuitem-is-duplicate");
+  let showingIsDuplicate = false;
+  let showingNotDuplicate = false;
   menuManager.register("item", {
     tag: "menu",
     label: config.addonName,
@@ -27,33 +30,83 @@ function registerItemsViewMenu(menuManager: MenuManager) {
         icon: `chrome://${config.addonRef}/content/icons/link.svg`,
         classList: ["zotero-menuitem-sync"],
         label: isDuplicateMenuTitle,
+        id: `${config.addonRef}-menuitem-is-duplicate`,
         commandListener: async (ev) => {
           const selectedItems = Zotero.getActiveZoteroPane().getSelectedItems();
           await DB.getInstance().deleteNonDuplicates(selectedItems.map((item) => item.id));
-          if (isDuplicates()) {
+          if (isInDuplicatesPane()) {
             await Zotero.ItemTreeManager._notifyItemTrees();
           }
+        },
+        getVisibility: (elem, ev) => {
+          return showingIsDuplicate;
         },
       },
       {
         tag: "menuitem",
         classList: ["zotero-menuitem-sync"],
         label: nonDuplicateMenuTitle,
+        id: `${config.addonRef}-menuitem-not-duplicate`,
         icon: `chrome://${config.addonRef}/content/icons/unlink.svg`,
         commandListener: async (ev) => {
           const selectedItems = Zotero.getActiveZoteroPane().getSelectedItems();
           await DB.getInstance().insertNonDuplicates(selectedItems.map((item) => item.id));
-          if (isDuplicates()) {
+          if (isInDuplicatesPane()) {
             await Zotero.ItemTreeManager._notifyItemTrees();
           }
         },
+        getVisibility: (elem, ev) => {
+          return showingNotDuplicate;
+        },
       },
     ],
-    getVisibility: (elem, ev) => {
-      const selectedItems = Zotero.getActiveZoteroPane().getSelectedItems();
-      return selectedItems.length > 1;
-    },
   });
+
+  function setVisibilityListeners(win: Window) {
+    // const menu = win.document.getElementById(`${config.addonRef}-itemsview-menu`) as HTMLElement;
+    const menu = win.document.getElementById("zotero-itemmenu") as HTMLElement;
+    menu.addEventListener("popupshowing", async (ev) => {
+      const target = ev.target as MenuPopup;
+      if (target.id !== "zotero-itemmenu") {
+        return;
+      }
+      const selectedItems = Zotero.getActiveZoteroPane().getSelectedItems();
+      const mainMenu = win.document.getElementById(`${config.addonRef}-itemsview-menu`) as HTMLElement;
+      const showing = selectedItems.length > 1;
+      if (!showing) {
+        mainMenu.setAttribute("hidden", "true");
+        return;
+      }
+      mainMenu.removeAttribute("hidden");
+      const isDuplicateMenuItem = win.document.getElementById(
+        `${config.addonRef}-menuitem-is-duplicate`,
+      ) as HTMLElement;
+      const notDuplicateMenuItem = win.document.getElementById(
+        `${config.addonRef}-menuitem-not-duplicate`,
+      ) as HTMLElement;
+      const itemIDs = selectedItems.map((item) => item.id);
+      showingIsDuplicate = await DB.getInstance().existsNonDuplicates(itemIDs);
+      if (showingIsDuplicate) {
+        isDuplicateMenuItem.removeAttribute("hidden");
+        notDuplicateMenuItem.setAttribute("hidden", "true");
+      } else {
+        isDuplicateMenuItem.setAttribute("hidden", "true");
+
+        const { duplicatesObj } = await Duplicates.getDuplicates();
+        const duplicateItems = new Set(duplicatesObj.getSetItemsByItemID(itemIDs[0]));
+
+        showingNotDuplicate = itemIDs.every((itemID) => duplicateItems.has(itemID));
+        if (showingNotDuplicate) {
+          notDuplicateMenuItem.removeAttribute("hidden");
+        } else {
+          notDuplicateMenuItem.setAttribute("hidden", "true");
+          mainMenu.setAttribute("hidden", "true");
+        }
+      }
+    });
+  }
+
+  setVisibilityListeners(win);
 }
 
 function registerDuplicateCollectionMenu(menuManager: MenuManager) {
@@ -81,7 +134,7 @@ function registerDuplicateCollectionMenu(menuManager: MenuManager) {
     icon: menuIcon,
     getVisibility: (elem, ev) => {
       let showStats = getPref("duplicate.stats.enable") as boolean;
-      return showStats && isDuplicates();
+      return showStats && isInDuplicatesPane();
     },
   });
 }
