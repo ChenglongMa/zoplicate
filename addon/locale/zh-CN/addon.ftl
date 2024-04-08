@@ -13,6 +13,7 @@ tabpanel-reader-tab-label = 阅读器标签
 # General
 prefs-title = Zoplicate
 general-cancel = 取消
+general-empty = 空
 
 # Duplicate Dialog
 du-dialog-title = 检测到重复条目

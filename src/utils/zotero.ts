@@ -1,4 +1,4 @@
-export function goToDuplicates(libraryID: number = ZoteroPane.getSelectedLibraryID()) {
+export function goToDuplicatesPane(libraryID: number = ZoteroPane.getSelectedLibraryID()) {
   const type = "duplicates";
   const show = true;
   const select = true;
@@ -10,7 +10,7 @@ export function refreshCollectionView() {
   ZoteroPane.collectionsView && ZoteroPane.collectionsView.tree.invalidate();
 }
 
-export function isDuplicates(index: number | undefined = undefined) {
+export function isInDuplicatesPane(index: number | undefined = undefined) {
   let collectionTreeRow;
   if (index !== undefined) {
     collectionTreeRow =

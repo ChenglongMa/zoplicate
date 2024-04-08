@@ -36,7 +36,7 @@ async function onMainWindowLoad(win: Window): Promise<void> {
   Notifier.registerNotifier();
   BulkDuplicates.getInstance().registerUIElements(win);
   await Duplicates.registerDuplicateStats();
-  views.registerMenus();
+  views.registerMenus(win);
   patchDuplicateTable();
 }
 

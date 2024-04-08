@@ -6,7 +6,7 @@ import { truncateString } from "../utils/utils";
 import { DuplicateItems, Duplicates } from "./duplicates";
 import { merge } from "./merger";
 import hooks from "../hooks";
-import { isDuplicates, refreshCollectionView } from "../utils/zotero";
+import { isInDuplicatesPane, refreshCollectionView } from "../utils/zotero";
 
 export class BulkDuplicates {
   static getInstance(): BulkDuplicates {
@@ -202,6 +202,7 @@ export class BulkDuplicates {
 
     ZoteroPane.collectionsView &&
       ZoteroPane.collectionsView.onSelect.addListener(async () => {
+        // TODO: To remove
         if (addon.data.duplicateSearchObj) {
           ztoolkit.log(`Collected ${addon.data.tempTables.size} temp tables.`);
         }
@@ -213,7 +214,7 @@ export class BulkDuplicates {
 
         const mergeButton = win.document.getElementById("zotero-duplicates-merge-button") as Element;
         const groupBox = win.document.getElementById("zotero-item-pane-groupbox") as Element;
-        if (isDuplicates()) {
+        if (isInDuplicatesPane()) {
           ztoolkit.UI.appendElement(msgVBox, groupBox);
           ztoolkit.UI.insertElementBefore(this.createBulkMergeButton(win, this.innerButtonID), mergeButton);
           ztoolkit.UI.appendElement(this.createBulkMergeButton(win, this.externalButtonID), groupBox);
@@ -233,7 +234,7 @@ export class BulkDuplicates {
 
     ZoteroPane.itemsView &&
       ZoteroPane.itemsView.onRefresh.addListener(() => {
-        if (isDuplicates() && ZoteroPane.itemsView) {
+        if (isInDuplicatesPane() && ZoteroPane.itemsView) {
           ztoolkit.log("refresh");
           const disabled = ZoteroPane.itemsView.rowCount <= 0;
           this.updateButtonDisabled(win!, disabled, this.innerButtonID, this.externalButtonID);

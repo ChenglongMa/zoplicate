@@ -12,6 +12,7 @@ tabpanel-reader-tab-label = Reader Tab
 # General
 prefs-title = Zoplicate
 general-cancel = Cancel
+general-empty = Empty
 
 # Duplicate Dialog
 du-dialog-title = Found Duplicate Items

@@ -6,7 +6,7 @@ import { getPref, setPref, Action, MasterItem } from "../utils/prefs";
 import { merge } from "./merger";
 import CollectionTreeRow = Zotero.CollectionTreeRow;
 import { removeSiblings } from "../utils/window";
-import { goToDuplicates } from "../utils/zotero";
+import { goToDuplicatesPane } from "../utils/zotero";
 
 /**
  * This class is used to store duplicate items.
@@ -487,7 +487,7 @@ export class Duplicates {
       })
       .addButton(getString("du-dialog-button-go-duplicates"), "btn_go_duplicate", {
         callback: (e) => {
-          goToDuplicates();
+          goToDuplicatesPane();
         },
       })
       .addButton(getString("general-cancel"), "btn_cancel");
