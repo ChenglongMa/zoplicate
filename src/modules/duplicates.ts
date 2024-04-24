@@ -1,74 +1,96 @@
-import { config } from "../../package.json";
 import { getString } from "../utils/locale";
 import { DialogHelper } from "zotero-plugin-toolkit/dist/helpers/dialog";
 import { TagElementProps } from "zotero-plugin-toolkit/dist/tools/ui";
 import { getPref, setPref, Action, MasterItem } from "../utils/prefs";
 import { merge } from "./merger";
-import CollectionTreeRow = Zotero.CollectionTreeRow;
-import { removeSiblings } from "../utils/window";
 import { goToDuplicatesPane } from "../utils/zotero";
+import { DuplicateItems } from "./duplicateItems";
+
+export async function fetchAllDuplicates(refresh = false) {
+  const libraries = Zotero.Libraries.getAll();
+  for (const library of libraries) {
+    await fetchDuplicates(library.libraryID, refresh);
+  }
+}
 
 /**
- * This class is used to store duplicate items.
- * All items in the array are the same item.
+ * Get or refresh duplicates DB for the selected library
+ * @param libraryID Library ID
+ * @param refresh Whether to refresh the search, default is false
  */
-export class DuplicateItems {
-  get masterItem(): Zotero.Item {
-    if (!this._masterItem) {
-      this.analyze();
+export async function fetchDuplicates(
+  libraryID = ZoteroPane.getSelectedLibraryID(),
+  refresh = false,
+): Promise<{
+  libraryID: number;
+  duplicatesObj: { getSetItemsByItemID(itemID: number): number[] };
+  duplicateItems: number[];
+}> {
+  if (refresh) {
+    addon.data.needResetDuplicateSearch[libraryID] = true;
+  }
+  const duplicatesObj = new Zotero.Duplicates(libraryID);
+  const search = await duplicatesObj.getSearchObject();
+  const duplicateItems: number[] = await search.search();
+  return { libraryID, duplicatesObj, duplicateItems };
+}
+
+export async function processDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
+  const items: { masterItem: Zotero.Item; otherItems: Zotero.Item[] }[] = [];
+  if (duplicateMaps.size === 0) return;
+
+  const popWin = new ztoolkit.ProgressWindow(getString("du-dialog-title"), {
+    closeOnClick: true,
+  })
+    .createLine({
+      text: getString("du-progress-text"),
+      type: "default",
+      progress: 0,
+    })
+    .show();
+
+  const masterItemPref = getPref("bulk.master.item") as MasterItem;
+  for (const [newItemID, { existingItemIDs, action }] of duplicateMaps) {
+    const newItem = Zotero.Items.get(newItemID);
+    if (action === Action.KEEP) {
+      items.push({
+        masterItem: newItem,
+        otherItems: existingItemIDs.map((id) => Zotero.Items.get(id)),
+      });
+    } else if (action === Action.DISCARD) {
+      const duplicateItems = new DuplicateItems(existingItemIDs, masterItemPref);
+      const masterItem = duplicateItems.masterItem;
+      const otherItems = duplicateItems.getOtherItems();
+      items.push({
+        masterItem: masterItem,
+        otherItems: [...otherItems, newItem],
+      });
     }
-    return this._masterItem!;
   }
+  popWin.changeLine({
+    text: getString("du-progress-text"),
+    type: "default",
+    progress: 30,
+  });
 
-  get items(): Zotero.Item[] {
-    return this._items;
+  const selectedItemIDs = [];
+  for (const { masterItem, otherItems } of items) {
+    selectedItemIDs.push(masterItem.id);
+    await merge(masterItem, otherItems);
   }
+  popWin.changeLine({
+    text: getString("du-progress-text"),
+    type: "default",
+    progress: 80,
+  });
 
-  get itemTitle(): string {
-    return this._items[0].getField("title");
-  }
+  Zotero.getActiveZoteroPane().selectItems(selectedItemIDs);
 
-  private readonly _items: Zotero.Item[];
-  private _masterItem: Zotero.Item | undefined;
-  private readonly _masterItemPref: MasterItem;
-
-  constructor(items: Zotero.Item[] | number[], masterItemPref: MasterItem) {
-    this._masterItemPref = masterItemPref;
-    this._items = items.map((item) => {
-      if (typeof item === "number") {
-        return Zotero.Items.get(item);
-      }
-      return item;
-    });
-  }
-
-  private analyze() {
-    let compare: (a: Zotero.Item, b: Zotero.Item) => number;
-    switch (this._masterItemPref) {
-      default:
-      case MasterItem.OLDEST:
-        compare = (a: Zotero.Item, b: Zotero.Item) => (a.dateAdded < b.dateAdded ? 1 : -1);
-        break;
-      case MasterItem.NEWEST:
-        compare = (a: Zotero.Item, b: Zotero.Item) => (a.dateAdded > b.dateAdded ? 1 : -1);
-        break;
-      case MasterItem.MODIFIED:
-        compare = (a: Zotero.Item, b: Zotero.Item) => (a.dateModified > b.dateModified ? 1 : -1);
-        break;
-      case MasterItem.DETAILED:
-        compare = (a: Zotero.Item, b: Zotero.Item) => a.getUsedFields(false).length - b.getUsedFields(false).length;
-        break;
-    }
-    this._items.sort(compare);
-    this._masterItem = this._items.pop();
-  }
-
-  getOtherItems() {
-    if (!this._masterItem) {
-      this.analyze();
-    }
-    return this.items;
-  }
+  popWin.changeLine({
+    text: getString("du-progress-done"),
+    type: "success",
+    progress: 100,
+  });
 }
 
 export class Duplicates {
@@ -99,96 +121,6 @@ export class Duplicates {
         this.duplicateMaps = undefined;
       },
     };
-  }
-
-  static async refreshDuplicateStats(force: boolean = false) {
-    if (!force && !addon.data.refreshDuplicateStats) return;
-    // Update duplicate statistics on startup
-    const allLibs = Zotero.Libraries.getAll();
-    for (const lib of allLibs) {
-      const libraryID = lib.libraryID;
-      ztoolkit.log("Call on items changed in refreshDuplicateStats.");
-      await addon.hooks.onItemsChanged(libraryID);
-    }
-    addon.data.refreshDuplicateStats = false;
-  }
-
-  static async registerDuplicateStats() {
-    let showStats = getPref("duplicate.stats.enable") as boolean;
-
-    if (showStats) {
-      await this.refreshDuplicateStats();
-    }
-
-    const patch = new ztoolkit.Patch();
-    patch.setData({
-      target: ZoteroPane.collectionsView,
-      funcSign: "renderItem",
-      // refer to https://github.com/zotero/zotero/blob/main/chrome/content/zotero/collectionTree.jsx#L274
-      // i.e., the `renderItem` function of collectionTree
-      patcher:
-        (originalFunc: any) =>
-        (index: number, selection: object, oldDiv: HTMLDivElement, columns: any[]): HTMLDivElement => {
-          const originalDIV = originalFunc(index, selection, oldDiv, columns);
-          showStats = getPref("duplicate.stats.enable") as boolean;
-          if (!showStats) {
-            originalDIV.removeAttribute("title");
-            return originalDIV;
-          }
-          const collectionTreeRow =
-            ZoteroPane?.collectionsView && (ZoteroPane?.collectionsView.getRow(index) as CollectionTreeRow);
-          if (collectionTreeRow && collectionTreeRow.isDuplicates()) {
-            const libraryID = collectionTreeRow.ref.libraryID.toString();
-            const total = getPref(`duplicate.count.total.${libraryID}`) || 0;
-            const unique = getPref(`duplicate.count.unique.${libraryID}`) || 0;
-            const text = `${unique}/${total}`;
-            const tooltip = total
-              ? getString("duplicate-tooltip", {
-                  args: { unique, total, items: unique == 1 ? "item" : "items" },
-                })
-              : getString("duplicate-not-found-tooltip");
-            originalDIV.setAttribute("title", tooltip);
-
-            // https://github.com/zotero/zotero/blob/main/chrome/content/zotero/collectionTree.jsx#L321
-            // https://github.com/MuiseDestiny/zotero-style/blob/master/src/modules/views.ts#L3279
-            const cell = originalDIV.querySelector("span.cell.label.primary") as Element;
-            const collectionNameSpan = cell.querySelector("span.cell-text") as Element;
-            removeSiblings(collectionNameSpan);
-            const numberNode = cell.querySelector(".number");
-            if (numberNode) {
-              numberNode.innerHTML = text;
-            } else {
-              ztoolkit.UI.appendElement(
-                {
-                  tag: "span",
-                  classList: [config.addonRef],
-                  styles: {
-                    display: "inline-block",
-                    flex: "1",
-                  },
-                },
-                cell,
-              );
-              ztoolkit.UI.appendElement(
-                {
-                  tag: "span",
-                  classList: [config.addonRef, "number"],
-                  styles: {
-                    marginRight: "6px",
-                  },
-                  properties: {
-                    innerHTML: text,
-                  },
-                },
-                cell,
-              );
-            }
-          }
-          return originalDIV;
-        },
-      enabled: true,
-    });
-    addon.data.renderItemPatcher = patch;
   }
 
   async showDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
@@ -222,97 +154,6 @@ export class Duplicates {
       });
       await this.dialogData.unloadLock.promise;
     }
-  }
-
-  static async getDuplicates(libraryID = ZoteroPane.getSelectedLibraryID()): Promise<{
-    libraryID: number;
-    duplicatesObj: { getSetItemsByItemID(itemID: number): number[] };
-    duplicateItems: number[];
-  }> {
-    const duplicatesObj = new Zotero.Duplicates(libraryID);
-    const search = await duplicatesObj.getSearchObject();
-    ztoolkit.log("get search object done", search);
-    const duplicateItems: number[] = await search.search();
-    return { libraryID, duplicatesObj, duplicateItems };
-  }
-
-  static duplicateStatistics(
-    duplicatesObj: {
-      getSetItemsByItemID(itemID: number): number[];
-    },
-    duplicateItems: number[],
-  ) {
-    const total = duplicateItems.length;
-    const counted: Set<number> = new Set();
-    let unique = 0;
-
-    for (const itemID of duplicateItems) {
-      if (counted.has(itemID)) continue;
-
-      const duplicates = duplicatesObj.getSetItemsByItemID(itemID);
-      duplicates.forEach((id) => counted.add(id));
-      unique++;
-    }
-
-    return { total, unique };
-  }
-
-  static async processDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
-    const items: { masterItem: Zotero.Item; otherItems: Zotero.Item[] }[] = [];
-    if (duplicateMaps.size === 0) return;
-
-    const popWin = new ztoolkit.ProgressWindow(getString("du-dialog-title"), {
-      closeOnClick: true,
-    })
-      .createLine({
-        text: getString("du-progress-text"),
-        type: "default",
-        progress: 0,
-      })
-      .show();
-
-    const masterItemPref = getPref("bulk.master.item") as MasterItem;
-    for (const [newItemID, { existingItemIDs, action }] of duplicateMaps) {
-      const newItem = Zotero.Items.get(newItemID);
-      if (action === Action.KEEP) {
-        items.push({
-          masterItem: newItem,
-          otherItems: existingItemIDs.map((id) => Zotero.Items.get(id)),
-        });
-      } else if (action === Action.DISCARD) {
-        const duplicateItems = new DuplicateItems(existingItemIDs, masterItemPref);
-        const masterItem = duplicateItems.masterItem;
-        const otherItems = duplicateItems.getOtherItems();
-        items.push({
-          masterItem: masterItem,
-          otherItems: [...otherItems, newItem],
-        });
-      }
-    }
-    popWin.changeLine({
-      text: getString("du-progress-text"),
-      type: "default",
-      progress: 30,
-    });
-
-    const selectedItemIDs = [];
-    for (const { masterItem, otherItems } of items) {
-      selectedItemIDs.push(masterItem.id);
-      await merge(masterItem, otherItems);
-    }
-    popWin.changeLine({
-      text: getString("du-progress-text"),
-      type: "default",
-      progress: 80,
-    });
-
-    Zotero.getActiveZoteroPane().selectItems(selectedItemIDs);
-
-    popWin.changeLine({
-      text: getString("du-progress-done"),
-      type: "success",
-      progress: 100,
-    });
   }
 
   private readonly dialogData: { [key: string | number | symbol]: any };
@@ -482,7 +323,7 @@ export class Duplicates {
       })
       .addButton(getString("du-dialog-button-apply"), "btn_process", {
         callback: async (e) => {
-          await Duplicates.processDuplicates(this.duplicateMaps!);
+          await processDuplicates(this.duplicateMaps!);
         },
       })
       .addButton(getString("du-dialog-button-go-duplicates"), "btn_go_duplicate", {

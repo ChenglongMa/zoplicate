@@ -10,6 +10,12 @@ export function refreshCollectionView() {
   ZoteroPane.collectionsView && ZoteroPane.collectionsView.tree.invalidate();
 }
 
+export function refreshItemTree() {
+  // NOTE: this function is async in the original code
+  // but it will black the UI when it is called by `await`
+  Zotero.ItemTreeManager._notifyItemTrees();
+}
+
 export function isInDuplicatesPane(index: number | undefined = undefined) {
   let collectionTreeRow;
   if (index !== undefined) {
@@ -19,4 +25,10 @@ export function isInDuplicatesPane(index: number | undefined = undefined) {
     collectionTreeRow = ZoteroPane?.getCollectionTreeRow();
   }
   return collectionTreeRow && collectionTreeRow.isDuplicates();
+}
+
+export function containsRegularItem(ids: number[] | string[]) {
+  return Zotero.Items.get(ids).some((item) => {
+    return item && item.isRegularItem();
+  });
 }

@@ -1,10 +1,15 @@
 import { DB } from "./db";
 import { NonDuplicates } from "./nonDuplicates";
-import { getPref } from "../utils/prefs";
-import { getString } from "../utils/locale";
-import { removeSiblings } from "../utils/window";
+import { refreshDuplicateStats } from "./duplicateStats";
 
-export function patchNonDuplicates(db: DB) {
+/**
+ * Execution order:
+ * 1. _findDuplicates
+ * 2. getSearchObject
+ * 3. _saveData
+ */
+
+export function patchFindDuplicates(db: DB) {
   const patch = new ztoolkit.Patch();
   patch.setData({
     target: Zotero.Duplicates.prototype,
@@ -32,7 +37,7 @@ export function patchNonDuplicates(db: DB) {
   });
 }
 
-export function patchDuplicateTable() {
+export function patchGetSearchObject() {
   const patch = new ztoolkit.Patch();
   patch.setData({
     target: Zotero.Duplicates.prototype,
@@ -41,25 +46,43 @@ export function patchDuplicateTable() {
     patcher: (original) =>
       async function (this: any): Promise<Zotero.Search> {
         ztoolkit.log("Get Search Object is called.");
-        if (addon.data.needResetDuplicateSearch || !addon.data.duplicateSearchObj) {
-          ztoolkit.log("Reset duplicate search");
-          addon.data.duplicateSearchObj = await original.call(this);
-          addon.data.duplicateSets = this._sets;
-          addon.data.needResetDuplicateSearch = false;
+        const libraryID = this._libraryID;
+        if (addon.data.needResetDuplicateSearch[libraryID] || !addon.data.duplicateSearchObj[libraryID]) {
+          ztoolkit.log("debug flag: Reset duplicate search", libraryID);
+          const search = await original.call(this);
+          addon.data.duplicateSearchObj[libraryID] = search;
+          addon.data.duplicateSets[libraryID] = this._sets;
+          addon.data.needResetDuplicateSearch[libraryID] = false;
+          await refreshDuplicateStats(libraryID, this, await search.search());
         }
-        this._sets = addon.data.duplicateSets;
+        this._sets = addon.data.duplicateSets[libraryID];
+        return addon.data.duplicateSearchObj[libraryID];
+      },
+  });
+}
 
-        // remove
-        const s = addon.data.duplicateSearchObj!;
-        for (let id in s.conditions) {
-          let c = s.conditions[id];
-          if (c.condition == "tempTable") {
-            addon.data.tempTables.add(c.value);
-            break;
-          }
+export function patchItemSaveData() {
+  const patch = new ztoolkit.Patch();
+  patch.setData({
+    target: Zotero.Item.prototype,
+    funcSign: "_saveData",
+    enabled: true,
+    patcher: (original) =>
+      async function (this: any, event: any) {
+        await original.call(this, event);
+
+        const refreshDuplicates =
+          !event.isNew &&
+          !event.options.skipNotifier &&
+          (this._changed.creators !== undefined || this._changed.itemData !== undefined) &&
+          this.isRegularItem();
+        ztoolkit.log("refreshDuplicates in _saveData", refreshDuplicates);
+        ztoolkit.log("this._changed", this._changed);
+        if (refreshDuplicates) {
+          const notifierData = event.notifierData || {};
+          notifierData.refreshDuplicates = true;
+          Zotero.Notifier.queue("modify", "item", this.id, notifierData, event.options.notifierQueue);
         }
-        //
-        return addon.data.duplicateSearchObj!;
       },
   });
 }

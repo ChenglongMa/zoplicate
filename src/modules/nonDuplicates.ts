@@ -1,5 +1,5 @@
 import { DB } from "./db";
-import { patchNonDuplicates } from "./patcher";
+import { patchFindDuplicates } from "./patcher";
 
 export class NonDuplicates {
   private static _instance: NonDuplicates;
@@ -16,6 +16,6 @@ export class NonDuplicates {
   }
 
   init(db: DB) {
-    patchNonDuplicates(db);
+    patchFindDuplicates(db);
   }
 }

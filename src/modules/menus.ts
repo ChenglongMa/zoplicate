@@ -1,10 +1,10 @@
 import { getString } from "../utils/locale";
 import { config } from "../../package.json";
-import { getPref } from "../utils/prefs";
-import { Duplicates } from "./duplicates";
+import { showingDuplicateStats } from "../utils/prefs";
+import { fetchAllDuplicates, fetchDuplicates } from "./duplicates";
 import { MenuManager } from "zotero-plugin-toolkit/dist/managers/menu";
 import { DB } from "./db";
-import { isInDuplicatesPane } from "../utils/zotero";
+import { isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
 import MenuPopup = XUL.MenuPopup;
 
 function registerMenus(win: Window) {
@@ -35,7 +35,7 @@ function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
           const selectedItems = Zotero.getActiveZoteroPane().getSelectedItems();
           await DB.getInstance().deleteNonDuplicates(selectedItems.map((item) => item.id));
           if (isInDuplicatesPane()) {
-            await Zotero.ItemTreeManager._notifyItemTrees();
+            refreshItemTree();
           }
         },
         getVisibility: (elem, ev) => {
@@ -52,7 +52,7 @@ function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
           const selectedItems = Zotero.getActiveZoteroPane().getSelectedItems();
           await DB.getInstance().insertNonDuplicates(selectedItems.map((item) => item.id));
           if (isInDuplicatesPane()) {
-            await Zotero.ItemTreeManager._notifyItemTrees();
+            refreshItemTree();
           }
         },
         getVisibility: (elem, ev) => {
@@ -92,7 +92,7 @@ function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
       } else {
         isDuplicateMenuItem.setAttribute("hidden", "true");
 
-        const { duplicatesObj } = await Duplicates.getDuplicates();
+        const { duplicatesObj } = await fetchDuplicates();
         const duplicateItems = new Set(duplicatesObj.getSetItemsByItemID(itemIDs[0]));
 
         showingNotDuplicate = itemIDs.every((itemID) => duplicateItems.has(itemID));
@@ -110,7 +110,7 @@ function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
 }
 
 function registerDuplicateCollectionMenu(menuManager: MenuManager) {
-  const menuTitle = getString("menuitem-refresh-duplicate-stats");
+  const menuTitle = getString("menuitem-refresh-duplicates");
   const menuIcon = `chrome://zotero/skin/16/universal/sync.svg`;
   menuManager.register("collection", {
     tag: "menuitem",
@@ -118,13 +118,13 @@ function registerDuplicateCollectionMenu(menuManager: MenuManager) {
     id: `${config.addonRef}-menuitem-refresh-duplicate-stats`,
     label: menuTitle,
     commandListener: (ev) => {
-      Duplicates.refreshDuplicateStats(true).then((r) => {
+      fetchAllDuplicates(true).then((r) => {
         new ztoolkit.ProgressWindow(menuTitle, {
           closeOnClick: true,
           closeTime: 2000,
         })
           .createLine({
-            text: getString("refresh-duplicate-stats-done"),
+            text: getString("refresh-duplicates-done"),
             type: "default",
             progress: 100,
           })
@@ -133,7 +133,7 @@ function registerDuplicateCollectionMenu(menuManager: MenuManager) {
     },
     icon: menuIcon,
     getVisibility: (elem, ev) => {
-      let showStats = getPref("duplicate.stats.enable") as boolean;
+      let showStats = showingDuplicateStats();
       return showStats && isInDuplicatesPane();
     },
   });

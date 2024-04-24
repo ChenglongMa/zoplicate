@@ -3,10 +3,11 @@ import { getString } from "../utils/locale";
 import { config } from "../../package.json";
 import { getPref, MasterItem } from "../utils/prefs";
 import { truncateString } from "../utils/utils";
-import { DuplicateItems, Duplicates } from "./duplicates";
+import { fetchDuplicates } from "./duplicates";
 import { merge } from "./merger";
-import hooks from "../hooks";
-import { isInDuplicatesPane, refreshCollectionView } from "../utils/zotero";
+import { isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
+import { updateButtonDisabled } from "../utils/view";
+import { DuplicateItems } from "./duplicateItems";
 
 export class BulkDuplicates {
   static getInstance(): BulkDuplicates {
@@ -37,16 +38,9 @@ export class BulkDuplicates {
       button?.setAttribute("label", getString(label));
     });
     if (!value) {
-      // When the merge is done:
-      // 1. Refresh the duplicate item tree
-      // 2. Refresh the status of bulk merge buttons
-      // 3. Refresh the duplicate stats
-      // 4. Refresh duplicate search
-      addon.data.needResetDuplicateSearch = true;
-      Zotero.ItemTreeManager._notifyItemTrees();
-      hooks.onItemsChanged().then(() => {
-        refreshCollectionView();
-      });
+      addon.data.needResetDuplicateSearch[ZoteroPane.getSelectedLibraryID()] = true;
+      // Force refresh the duplicate item tree
+      refreshItemTree();
     }
   }
 
@@ -102,18 +96,9 @@ export class BulkDuplicates {
     };
   }
 
-  private updateButtonDisabled(win: Window, disabled: boolean, ...ids: string[]) {
-    ids.forEach((id) => {
-      const button = win.document.getElementById(id);
-      if (button) {
-        button.setAttribute("disabled", disabled.toString());
-      }
-    });
-  }
-
   private async bulkMergeDuplicates() {
     const masterItemPref = getPref("bulk.master.item") as MasterItem;
-    const { duplicatesObj, duplicateItems } = await Duplicates.getDuplicates();
+    const { duplicatesObj, duplicateItems } = await fetchDuplicates();
     const processedItems: Set<number> = new Set();
     const popWin = new ztoolkit.ProgressWindow(getString("du-progress-text"), {
       closeOnClick: false,
@@ -202,16 +187,6 @@ export class BulkDuplicates {
 
     ZoteroPane.collectionsView &&
       ZoteroPane.collectionsView.onSelect.addListener(async () => {
-        // TODO: To remove
-        if (addon.data.duplicateSearchObj) {
-          ztoolkit.log(`Collected ${addon.data.tempTables.size} temp tables.`);
-        }
-        for (const table of addon.data.tempTables) {
-          const rows = await Zotero.DB.queryAsync(`select id
-                                                 from ${table};`);
-          ztoolkit.log(`${table} has ${rows.length} records.`);
-        }
-
         const mergeButton = win.document.getElementById("zotero-duplicates-merge-button") as Element;
         const groupBox = win.document.getElementById("zotero-item-pane-groupbox") as Element;
         if (isInDuplicatesPane()) {
@@ -234,10 +209,10 @@ export class BulkDuplicates {
 
     ZoteroPane.itemsView &&
       ZoteroPane.itemsView.onRefresh.addListener(() => {
+        ztoolkit.log("refresh");
         if (isInDuplicatesPane() && ZoteroPane.itemsView) {
-          ztoolkit.log("refresh");
           const disabled = ZoteroPane.itemsView.rowCount <= 0;
-          this.updateButtonDisabled(win!, disabled, this.innerButtonID, this.externalButtonID);
+          updateButtonDisabled(win!, disabled, this.innerButtonID, this.externalButtonID);
           if (this._isRunning) {
             ZoteroPane.itemsView.selection.clearSelection();
           }

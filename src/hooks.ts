@@ -5,12 +5,14 @@ import { createZToolkit } from "./utils/ztoolkit";
 import { Notifier } from "./modules/notifier";
 import { registerStyleSheet } from "./utils/window";
 import { BulkDuplicates } from "./modules/bulkDuplicates";
-import { Duplicates } from "./modules/duplicates";
-import views from "./modules/views";
+import { fetchDuplicates } from "./modules/duplicates";
+import menus from "./modules/menus";
 // import "./modules/zduplicates.js";
 import { DB } from "./modules/db";
 import { NonDuplicates } from "./modules/nonDuplicates";
-import { patchDuplicateTable } from "./modules/patcher";
+import { patchGetSearchObject, patchItemSaveData } from "./modules/patcher";
+import { containsRegularItem, isInDuplicatesPane, refreshItemTree } from "./utils/zotero";
+import { registerDuplicateStats } from "./modules/duplicateStats";
 
 async function onStartup() {
   await Promise.all([Zotero.initializationPromise, Zotero.unlockPromise, Zotero.uiReadyPromise]);
@@ -35,9 +37,10 @@ async function onMainWindowLoad(win: Window): Promise<void> {
   registerPrefs();
   Notifier.registerNotifier();
   BulkDuplicates.getInstance().registerUIElements(win);
-  await Duplicates.registerDuplicateStats();
-  views.registerMenus(win);
-  patchDuplicateTable();
+  menus.registerMenus(win);
+  patchGetSearchObject();
+  patchItemSaveData();
+  await registerDuplicateStats();
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {
@@ -61,24 +64,46 @@ async function onShutdown() {
  *
  * Refer to: https://github.com/zotero/zotero/blob/main/chrome/content/zotero/xpcom/notifier.js
  */
-async function onNotify(event: string, type: string, ids: Array<string | number>, extraData: { [key: string]: any }) {
+async function onNotify(event: string, type: string, ids: number[] | string[], extraData: { [key: string]: any }) {
   // You can add your code to the corresponding `notify type`
-  // ztoolkit.log("notify", event, type, ids, extraData);
+  ztoolkit.log("notify", event, type, ids, extraData);
+  const precondition = ids && ids.length > 0 && !BulkDuplicates.getInstance().isRunning;
 
-  if (type == "item" && !BulkDuplicates.getInstance().isRunning) {
-    addon.data.needResetDuplicateSearch = true;
-    ztoolkit.log("Call on items changed in onNotify.");
-    const { duplicatesObj } = await onItemsChanged();
-    if (event == "add") {
+  if (!precondition) {
+    // ignore when bulk duplicates is running and no ids
+    return;
+  }
+
+  if (type == "item" && event == "removeDuplicatesMaster" && isInDuplicatesPane()) {
+    refreshItemTree();
+    return;
+  }
+
+  let libraryIDs = [ZoteroPane.getSelectedLibraryID()];
+
+  const toRefresh =
+    // subset of "modify" event (modification on item data and authors) on regular items
+    (extraData && Object.values(extraData).some((data) => data.refreshDuplicates)) ||
+    // "add" event on regular items
+    (type == "item" && event == "add" && containsRegularItem(ids)) ||
+    // "refresh" event on trash
+    (type == "trash" && event == "refresh");
+
+  ztoolkit.log("refreshDuplicates", toRefresh);
+
+  if (toRefresh) {
+    if (type == "item") {
+      libraryIDs = ids.map((id) => Zotero.Items.get(id).libraryID);
+    }
+    if (type == "trash") {
+      libraryIDs = ids as number[];
+    }
+    const libraryID = libraryIDs[0]; // normally only one libraryID
+    const { duplicatesObj } = await fetchDuplicates(libraryID, true);
+    if (type == "item" && event == "add") {
       await Notifier.whenItemsAdded(duplicatesObj, ids as number[]);
     }
   }
-}
-
-async function onItemsChanged(libraryID = ZoteroPane.getSelectedLibraryID()) {
-  const { duplicatesObj, duplicateItems } = await Duplicates.getDuplicates(libraryID);
-  await Notifier.whenItemsChanged(libraryID, duplicatesObj, duplicateItems);
-  return { libraryID, duplicatesObj, duplicateItems };
 }
 
 /**
@@ -111,7 +136,6 @@ export default {
   onMainWindowLoad,
   onMainWindowUnload,
   onNotify,
-  onItemsChanged,
   onPrefsEvent,
   onShortcuts,
   onDialogEvents,

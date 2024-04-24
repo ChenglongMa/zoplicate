@@ -2,8 +2,7 @@ import { config } from "../../package.json";
 
 export class DB {
   private static _instance: DB;
-  // @ts-ignore
-  private readonly _db: Zotero.DBConnection;
+  private readonly _db: typeof Zotero.DBConnection;
   private tables = {
     nonDuplicates: "nonDuplicates",
   };
