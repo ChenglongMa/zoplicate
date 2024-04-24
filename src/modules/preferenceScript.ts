@@ -1,7 +1,6 @@
 import { config, homepage } from "../../package.json";
 import { getString } from "../utils/locale";
-import { Duplicates } from "./duplicates";
-import { refreshCollectionView } from "../utils/zotero";
+import { fetchAllDuplicates } from "./duplicates";
 
 export function registerPrefs() {
   Zotero.PreferencePanes.register({
@@ -40,9 +39,10 @@ function bindPrefEvents() {
     .prefs!.window.document.querySelector(`#zotero-prefpane-${config.addonRef}-view-duplicate-stats-enable`)
     ?.addEventListener("command", async (e) => {
       if ((e.target as XUL.Checkbox).checked) {
-        await Duplicates.refreshDuplicateStats();
+        await fetchAllDuplicates();
       }
-      // refreshCollectionView();
+      // refreshCollectionView(); // Not respond to mouse click event
+      // Show `unique/total` UI in collection tree
       await Zotero.Notifier.trigger('redraw', 'collection', []);
     });
 }

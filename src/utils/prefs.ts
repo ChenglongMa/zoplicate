@@ -28,6 +28,10 @@ export function clearPref(key: string) {
   return Zotero.Prefs.clear(`${config.prefsPrefix}.${key}`, true);
 }
 
+export function showingDuplicateStats() {
+  return getPref("duplicate.stats.enable") as boolean;
+}
+
 /**
  * NOTE: Corresponding to radio values in addon/chrome/content/preferences.xhtml.
  */

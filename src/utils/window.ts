@@ -1,7 +1,5 @@
 import { config } from "../../package.json";
 
-export { isWindowAlive, registerStyleSheet, removeSiblings };
-
 /**
  * Check if the window is alive.
  * Useful to prevent opening duplicate windows.
@@ -12,9 +10,7 @@ function isWindowAlive(win?: Window) {
 }
 
 function registerStyleSheet() {
-  const hrefs =[
-    `chrome://${config.addonRef}/content/zoplicate.css`,
-  ]
+  const hrefs = [`chrome://${config.addonRef}/content/zoplicate.css`];
 
   for (const href of hrefs) {
     const styles = ztoolkit.UI.createElement(document, "link", {
@@ -28,11 +24,4 @@ function registerStyleSheet() {
   }
 }
 
-function removeSiblings(targetElement: NonDocumentTypeChildNode) {
-  let nextSibling = targetElement.nextElementSibling;
-  while (nextSibling && !nextSibling.classList.contains(config.addonRef)) {
-    const elementToRemove = nextSibling;
-    nextSibling = nextSibling.nextElementSibling;
-    elementToRemove.remove();
-  }
-}
+export { isWindowAlive, registerStyleSheet };

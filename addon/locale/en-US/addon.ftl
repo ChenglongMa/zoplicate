@@ -62,8 +62,8 @@ duplicate-not-found-tooltip = No duplicate items found.
 
 
 ## Menus
-menuitem-refresh-duplicate-stats = Refresh Duplicate Count
-refresh-duplicate-stats-done = Duplicate count has been refreshed.
+menuitem-refresh-duplicates = Refresh
+refresh-duplicates-done = Duplicate items has been refreshed.
 
 menuitem-not-duplicate = They are NOT duplicates
 menuitem-is-duplicate = They are duplicates

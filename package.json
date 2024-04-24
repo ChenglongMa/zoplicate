@@ -35,7 +35,7 @@
   "homepage": "https://chenglongma.com/zoplicate/",
   "dependencies": {
     "sqlite3": "^5.1.7",
-    "zotero-plugin-toolkit": "^2.3.28"
+    "zotero-plugin-toolkit": "^2.3.29"
   },
   "devDependencies": {
     "@types/node": "^20.11.30",

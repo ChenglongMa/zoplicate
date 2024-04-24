@@ -1,36 +1,15 @@
-import { Duplicates } from "./duplicates";
-import { getPref, Action, setPref } from "../utils/prefs";
+import { Duplicates, processDuplicates } from "./duplicates";
+import { getPref, Action } from "../utils/prefs";
 
 export class Notifier {
-  static async whenItemsChanged(
-    libraryID: number,
-    duplicatesObj: {
-      getSetItemsByItemID(itemID: number): number[];
-    },
-    duplicateItems: number[],
-  ) {
-    // TODO: executed multiple times when bulk merging
-    const { total, unique } = Duplicates.duplicateStatistics(
-      duplicatesObj,
-      duplicateItems,
-    );
-    setPref(`duplicate.count.total.${libraryID}`, total);
-    setPref(`duplicate.count.unique.${libraryID}`, unique);
-  }
-
-  static async whenItemsAdded(
-    duplicatesObj: { getSetItemsByItemID(itemID: number): number[] },
-    ids: Array<number>,
-  ) {
+  static async whenItemsAdded(duplicatesObj: { getSetItemsByItemID(itemID: number): number[] }, ids: Array<number>) {
     const defaultAction = getPref("duplicate.default.action") as Action;
     if (defaultAction === Action.CANCEL || ids.length === 0) {
       return;
     }
 
     const duplicateMaps = ids.reduce((acc, id) => {
-      const existingItemIDs: number[] = duplicatesObj
-        .getSetItemsByItemID(id)
-        .filter((i: number) => i !== id);
+      const existingItemIDs: number[] = duplicatesObj.getSetItemsByItemID(id).filter((i: number) => i !== id);
       if (existingItemIDs.length > 0) {
         acc.set(id, { existingItemIDs, action: defaultAction });
       }
@@ -43,17 +22,12 @@ export class Notifier {
       await new Duplicates().showDuplicates(duplicateMaps);
       return;
     }
-    await Duplicates.processDuplicates(duplicateMaps);
+    await processDuplicates(duplicateMaps);
   }
 
   static registerNotifier() {
     const callback = {
-      notify: async (
-        event: string,
-        type: string,
-        ids: number[] | string[],
-        extraData: { [key: string]: any },
-      ) => {
+      notify: async (event: string, type: string, ids: number[] | string[], extraData: { [key: string]: any }) => {
         if (!addon?.data.alive) {
           this.unregisterNotifier(notifierID);
           return;
