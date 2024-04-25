@@ -5,11 +5,11 @@ import { createZToolkit } from "./utils/ztoolkit";
 import { Notifier } from "./modules/notifier";
 import { registerStyleSheet } from "./utils/window";
 import { BulkDuplicates } from "./modules/bulkDuplicates";
-import { fetchDuplicates } from "./modules/duplicates";
+import { fetchDuplicates, registerButtonsInDuplicatePane } from "./modules/duplicates";
 import menus from "./modules/menus";
 // import "./modules/zduplicates.js";
 import { DB } from "./modules/db";
-import { NonDuplicates } from "./modules/nonDuplicates";
+import { NonDuplicates, registerNonDuplicatesSection } from "./modules/nonDuplicates";
 import { patchGetSearchObject, patchItemSaveData } from "./modules/patcher";
 import { containsRegularItem, isInDuplicatesPane, refreshItemTree } from "./utils/zotero";
 import { registerDuplicateStats } from "./modules/duplicateStats";
@@ -28,11 +28,11 @@ async function onStartup() {
 }
 
 async function onMainWindowLoad(win: Window): Promise<void> {
-  // Create ztoolkit for every window
   addon.data.ztoolkit = createZToolkit();
   const db = DB.getInstance();
   await db.init();
   NonDuplicates.getInstance().init(db);
+  registerNonDuplicatesSection();
   registerStyleSheet();
   registerPrefs();
   Notifier.registerNotifier();
@@ -41,6 +41,7 @@ async function onMainWindowLoad(win: Window): Promise<void> {
   patchGetSearchObject();
   patchItemSaveData();
   await registerDuplicateStats();
+  registerButtonsInDuplicatePane(win);
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {
@@ -99,7 +100,7 @@ async function onNotify(event: string, type: string, ids: number[] | string[], e
       libraryIDs = ids as number[];
     }
     const libraryID = libraryIDs[0]; // normally only one libraryID
-    const { duplicatesObj } = await fetchDuplicates(libraryID, true);
+    const { duplicatesObj } = await fetchDuplicates({ libraryID, refresh: true });
     if (type == "item" && event == "add") {
       await Notifier.whenItemsAdded(duplicatesObj, ids as number[]);
     }

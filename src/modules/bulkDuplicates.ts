@@ -19,9 +19,9 @@ export class BulkDuplicates {
 
   private constructor() {}
 
-  private bulkMergeButtonID = "zoplicate-bulk-merge-button";
-  private innerButtonID = this.bulkMergeButtonID + "-inner";
-  private externalButtonID = this.bulkMergeButtonID + "-external";
+  public static readonly bulkMergeButtonID = "zoplicate-bulk-merge-button";
+  public static readonly innerButtonID = this.bulkMergeButtonID + "-inner";
+  public static readonly externalButtonID = this.bulkMergeButtonID + "-external";
   private win: Window | undefined;
   private static instance: BulkDuplicates;
   private _isRunning = false;
@@ -45,10 +45,10 @@ export class BulkDuplicates {
   }
 
   private getBulkMergeButtons(win: Window) {
-    return [win.document.getElementById(this.innerButtonID), win.document.getElementById(this.externalButtonID)];
+    return [win.document.getElementById(BulkDuplicates.innerButtonID), win.document.getElementById(BulkDuplicates.externalButtonID)];
   }
 
-  private createBulkMergeButton(win: Window, id: string): TagElementProps {
+  public createBulkMergeButton(win: Window, id: string): TagElementProps {
     return {
       tag: "button",
       id: id,
@@ -56,7 +56,7 @@ export class BulkDuplicates {
         label: getString("bulk-merge-title"),
         image: `chrome://${config.addonRef}/content/icons/merge.svg`,
       },
-      classList: ["merge-button"],
+      classList: ["duplicate-box-button"],
       namespace: "xul",
       listeners: [
         {
@@ -187,20 +187,17 @@ export class BulkDuplicates {
 
     ZoteroPane.collectionsView &&
       ZoteroPane.collectionsView.onSelect.addListener(async () => {
-        const mergeButton = win.document.getElementById("zotero-duplicates-merge-button") as Element;
         const groupBox = win.document.getElementById("zotero-item-pane-groupbox") as Element;
         if (isInDuplicatesPane()) {
           ztoolkit.UI.appendElement(msgVBox, groupBox);
-          ztoolkit.UI.insertElementBefore(this.createBulkMergeButton(win, this.innerButtonID), mergeButton);
-          ztoolkit.UI.appendElement(this.createBulkMergeButton(win, this.externalButtonID), groupBox);
+          ztoolkit.UI.appendElement(this.createBulkMergeButton(win, BulkDuplicates.externalButtonID), groupBox);
           if (this._isRunning && ZoteroPane.itemsView) {
             await ZoteroPane.itemsView.waitForLoad();
             ZoteroPane.itemsView.selection.clearSelection();
           }
         } else {
-          const externalButton = win.document.getElementById(this.externalButtonID);
+          const externalButton = win.document.getElementById(BulkDuplicates.externalButtonID);
           if (externalButton) {
-            mergeButton.parentNode?.removeChild(win.document.getElementById(this.innerButtonID)!);
             groupBox.removeChild(win.document.getElementById(msgID)!);
             groupBox.removeChild(externalButton);
           }
@@ -212,7 +209,7 @@ export class BulkDuplicates {
         ztoolkit.log("refresh");
         if (isInDuplicatesPane() && ZoteroPane.itemsView) {
           const disabled = ZoteroPane.itemsView.rowCount <= 0;
-          updateButtonDisabled(win!, disabled, this.innerButtonID, this.externalButtonID);
+          updateButtonDisabled(win!, disabled, BulkDuplicates.innerButtonID, BulkDuplicates.externalButtonID);
           if (this._isRunning) {
             ZoteroPane.itemsView.selection.clearSelection();
           }
