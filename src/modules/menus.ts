@@ -4,8 +4,9 @@ import { showingDuplicateStats } from "../utils/prefs";
 import { fetchAllDuplicates, fetchDuplicates } from "./duplicates";
 import { MenuManager } from "zotero-plugin-toolkit/dist/managers/menu";
 import { DB } from "./db";
-import { isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
+import { isInDuplicatesPane } from "../utils/zotero";
 import MenuPopup = XUL.MenuPopup;
+import { toggleNonDuplicates } from "./nonDuplicates";
 
 function registerMenus(win: Window) {
   const menuManager = new ztoolkit.Menu();
@@ -32,11 +33,7 @@ function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
         label: isDuplicateMenuTitle,
         id: `${config.addonRef}-menuitem-is-duplicate`,
         commandListener: async (ev) => {
-          const selectedItems = Zotero.getActiveZoteroPane().getSelectedItems();
-          await DB.getInstance().deleteNonDuplicates(selectedItems.map((item) => item.id));
-          if (isInDuplicatesPane()) {
-            refreshItemTree();
-          }
+          await toggleNonDuplicates("unmark");
         },
         getVisibility: (elem, ev) => {
           return showingIsDuplicate;
@@ -49,11 +46,7 @@ function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
         id: `${config.addonRef}-menuitem-not-duplicate`,
         icon: `chrome://${config.addonRef}/content/icons/menu/non-duplicate.svg`,
         commandListener: async (ev) => {
-          const selectedItems = Zotero.getActiveZoteroPane().getSelectedItems();
-          await DB.getInstance().insertNonDuplicates(selectedItems.map((item) => item.id));
-          if (isInDuplicatesPane()) {
-            refreshItemTree();
-          }
+          await toggleNonDuplicates("mark");
         },
         getVisibility: (elem, ev) => {
           return showingNotDuplicate;

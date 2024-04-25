@@ -5,11 +5,24 @@ import { getPref, setPref, Action, MasterItem } from "../utils/prefs";
 import { merge } from "./merger";
 import { goToDuplicatesPane } from "../utils/zotero";
 import { DuplicateItems } from "./duplicateItems";
+import { createNonDuplicateButton } from "./nonDuplicates";
+import { BulkDuplicates } from "./bulkDuplicates";
+
+export function registerButtonsInDuplicatePane(win: Window) {
+  const mergeButton = win.document.getElementById("zotero-duplicates-merge-button") as Element;
+  if (mergeButton) {
+    ztoolkit.UI.insertElementBefore(createNonDuplicateButton(), mergeButton);
+    ztoolkit.UI.insertElementBefore(
+      BulkDuplicates.getInstance().createBulkMergeButton(win, BulkDuplicates.innerButtonID),
+      mergeButton,
+    );
+  }
+}
 
 export async function fetchAllDuplicates(refresh = false) {
   const libraries = Zotero.Libraries.getAll();
   for (const library of libraries) {
-    await fetchDuplicates(library.libraryID, refresh);
+    await fetchDuplicates({ libraryID: library.libraryID, refresh });
   }
 }
 
@@ -18,10 +31,10 @@ export async function fetchAllDuplicates(refresh = false) {
  * @param libraryID Library ID
  * @param refresh Whether to refresh the search, default is false
  */
-export async function fetchDuplicates(
+export async function fetchDuplicates({
   libraryID = ZoteroPane.getSelectedLibraryID(),
   refresh = false,
-): Promise<{
+} = {}): Promise<{
   libraryID: number;
   duplicatesObj: { getSetItemsByItemID(itemID: number): number[] };
   duplicateItems: number[];
