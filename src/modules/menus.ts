@@ -23,12 +23,12 @@ function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
     label: config.addonName,
     id: `${config.addonRef}-itemsview-menu`,
     icon: `chrome://zotero/skin/16/universal/duplicate.svg`,
-    classList: ["zotero-menuitem-sync"],
+    classList: ["zotero-menuitem-show-duplicates"],
     children: [
       {
         tag: "menuitem",
-        icon: `chrome://${config.addonRef}/content/icons/link.svg`,
-        classList: ["zotero-menuitem-sync"],
+        icon: `chrome://zotero/skin/16/universal/duplicate.svg`,
+        classList: ["zotero-menuitem-show-duplicates"],
         label: isDuplicateMenuTitle,
         id: `${config.addonRef}-menuitem-is-duplicate`,
         commandListener: async (ev) => {
@@ -44,10 +44,10 @@ function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
       },
       {
         tag: "menuitem",
-        classList: ["zotero-menuitem-sync"],
+        classList: ["zotero-menuitem-show-duplicates"],
         label: nonDuplicateMenuTitle,
         id: `${config.addonRef}-menuitem-not-duplicate`,
-        icon: `chrome://${config.addonRef}/content/icons/unlink.svg`,
+        icon: `chrome://${config.addonRef}/content/icons/menu/non-duplicate.svg`,
         commandListener: async (ev) => {
           const selectedItems = Zotero.getActiveZoteroPane().getSelectedItems();
           await DB.getInstance().insertNonDuplicates(selectedItems.map((item) => item.id));
@@ -63,7 +63,6 @@ function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
   });
 
   function setVisibilityListeners(win: Window) {
-    // const menu = win.document.getElementById(`${config.addonRef}-itemsview-menu`) as HTMLElement;
     const menu = win.document.getElementById("zotero-itemmenu") as HTMLElement;
     menu.addEventListener("popupshowing", async (ev) => {
       const target = ev.target as MenuPopup;
