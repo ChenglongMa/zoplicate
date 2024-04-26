@@ -1,4 +1,4 @@
-import { DB } from "./db";
+import { SQLiteDB } from "./db";
 import { patchFindDuplicates } from "./patcher";
 import { config } from "../../package.json";
 import { isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
@@ -6,7 +6,7 @@ import { TagElementProps } from "zotero-plugin-toolkit/dist/tools/ui";
 import { getString } from "../utils/locale";
 import { areDuplicates, fetchDuplicates } from "./duplicates";
 
-export function registerNonDuplicatesSection(db: DB) {
+export function registerNonDuplicatesSection(db: SQLiteDB) {
   const key = Zotero.ItemPaneManager.registerSection({
     paneID: `sec-non-duplicates`,
     pluginID: config.addonID,
@@ -208,9 +208,9 @@ export async function toggleNonDuplicates(
   const selectedItems = items && items.length ? items : Zotero.getActiveZoteroPane().getSelectedItems();
   const itemIDs = selectedItems.map((item) => (typeof item === "number" ? item : item.id));
   if (action === "mark") {
-    await DB.getInstance().insertNonDuplicates(itemIDs);
+    await SQLiteDB.getInstance().insertNonDuplicates(itemIDs);
   } else if (action === "unmark") {
-    await DB.getInstance().deleteNonDuplicates(itemIDs);
+    await SQLiteDB.getInstance().deleteNonDuplicates(itemIDs);
   }
   await fetchDuplicates({ refresh: true });
   if (isInDuplicatesPane()) {
@@ -255,7 +255,7 @@ export class NonDuplicates {
     return NonDuplicates._instance;
   }
 
-  init(db: DB) {
+  init(db: SQLiteDB) {
     patchFindDuplicates(db);
   }
 }

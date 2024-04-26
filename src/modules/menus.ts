@@ -3,7 +3,7 @@ import { config } from "../../package.json";
 import { showingDuplicateStats } from "../utils/prefs";
 import { fetchAllDuplicates, fetchDuplicates } from "./duplicates";
 import { MenuManager } from "zotero-plugin-toolkit/dist/managers/menu";
-import { DB } from "./db";
+import { SQLiteDB } from "./db";
 import { isInDuplicatesPane } from "../utils/zotero";
 import MenuPopup = XUL.MenuPopup;
 import { toggleNonDuplicates } from "./nonDuplicates";
@@ -77,7 +77,7 @@ function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
         `${config.addonRef}-menuitem-not-duplicate`,
       ) as HTMLElement;
       const itemIDs = selectedItems.map((item) => item.id);
-      showingIsDuplicate = await DB.getInstance().existsNonDuplicates(itemIDs);
+      showingIsDuplicate = await SQLiteDB.getInstance().existsNonDuplicates(itemIDs);
       if (showingIsDuplicate) {
         isDuplicateMenuItem.removeAttribute("hidden");
         notDuplicateMenuItem.setAttribute("hidden", "true");

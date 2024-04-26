@@ -19,7 +19,7 @@
     "build": "tsc --noEmit && node scripts/build.mjs production",
     "stop": "node scripts/stop.mjs",
     "lint": "prettier --write . && eslint . --ext .ts --fix",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "release": "release-it --only-version --preReleaseId=beta",
     "update-deps": "npm update --save"
   },
@@ -34,6 +34,7 @@
   },
   "homepage": "https://chenglongma.com/zoplicate/",
   "dependencies": {
+    "dexie": "^4.0.4",
     "sqlite3": "^5.1.7",
     "zotero-plugin-toolkit": "^2.3.29"
   },
@@ -46,6 +47,7 @@
     "esbuild": "^0.20.2",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
+    "jest": "^29.7.0",
     "prettier": "^3.2.5",
     "release-it": "^17.1.1",
     "replace-in-file": "^7.1.0",

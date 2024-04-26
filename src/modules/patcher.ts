@@ -1,4 +1,4 @@
-import { DB } from "./db";
+import { SQLiteDB } from "./db";
 import { NonDuplicates } from "./nonDuplicates";
 import { refreshDuplicateStats } from "./duplicateStats";
 
@@ -9,7 +9,7 @@ import { refreshDuplicateStats } from "./duplicateStats";
  * 3. _saveData
  */
 
-export function patchFindDuplicates(db: DB) {
+export function patchFindDuplicates(db: SQLiteDB) {
   const patch = new ztoolkit.Patch();
   patch.setData({
     target: Zotero.Duplicates.prototype,
