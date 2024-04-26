@@ -19,6 +19,20 @@ export function registerButtonsInDuplicatePane(win: Window) {
   }
 }
 
+export async function areDuplicates(items: number[] | Zotero.Item[]) {
+  if (items.length < 2) return false;
+  const libraryIDs = new Set(
+    items.map((item) => (typeof item === "number" ? Zotero.Items.get(item).libraryID : item.libraryID)),
+  );
+
+  if (libraryIDs.size > 1) return false;
+  const { duplicatesObj } = await fetchDuplicates({ refresh: false });
+  const itemIDs = items.map((item) => (typeof item === "number" ? item : item.id));
+  const oneItem = itemIDs[0];
+  const duplicateSets = new Set(duplicatesObj.getSetItemsByItemID(oneItem));
+  return itemIDs.every((itemID) => duplicateSets.has(itemID));
+}
+
 export async function fetchAllDuplicates(refresh = false) {
   const libraries = Zotero.Libraries.getAll();
   for (const library of libraries) {
@@ -352,7 +366,7 @@ export class Duplicates {
     for (const [newItemID, { existingItemIDs }] of this.duplicateMaps || []) {
       if (existingItemIDs.length === 0) continue;
       const item = await Zotero.Items.getAsync(newItemID);
-      const title = item.getField("title");
+      const title = item.getDisplayTitle();
 
       tableRows.push({
         tag: "tr",

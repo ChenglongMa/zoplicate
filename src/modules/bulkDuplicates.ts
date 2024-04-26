@@ -159,7 +159,7 @@ export class BulkDuplicates {
         await item.saveTx();
         popWin.changeLine({
           text: getString("bulk-merge-popup-restore", {
-            args: { item: truncateString(item.getField("title")) },
+            args: { item: truncateString(item.getDisplayTitle()) },
           }),
           progress: Math.floor((i / deletedItems.length) * 100),
         });
@@ -206,7 +206,7 @@ export class BulkDuplicates {
 
     ZoteroPane.itemsView &&
       ZoteroPane.itemsView.onRefresh.addListener(() => {
-        ztoolkit.log("refresh");
+        // ztoolkit.log("refresh");
         if (isInDuplicatesPane() && ZoteroPane.itemsView) {
           const disabled = ZoteroPane.itemsView.rowCount <= 0;
           updateButtonDisabled(win!, disabled, BulkDuplicates.innerButtonID, BulkDuplicates.externalButtonID);

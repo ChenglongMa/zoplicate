@@ -1,0 +1,89 @@
+.non-duplicate-box>collapsible-section>.body {
+    max-height:25vh;
+    overflow-y:auto;
+    scrollbar-width:thin;
+    scrollbar-color:var(--color-scrollbar) var(--color-scrollbar-background);
+    padding-bottom:1px;
+}
+
+.non-duplicate-box {
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+}
+
+.non-duplicate-box[hidden] {
+    display:none
+}
+
+.non-duplicate-box[readonly] .add {
+    display:none
+}
+
+.non-duplicate-box.body {
+    display:flex;
+    flex-direction:column;
+    padding-inline-start:12px;
+    /*Copied from related-box>collapsible-section>.body*/
+    max-height:25vh;
+    overflow-y:auto;
+    scrollbar-width:thin;
+    scrollbar-color:var(--color-scrollbar) var(--color-scrollbar-background);
+    padding-bottom:1px;
+}
+
+.non-duplicate-box.body .row {
+    display:flex;
+    gap:4px;
+    align-items:flex-start;
+}
+
+[zoteroUIDensity=comfortable] .non-duplicate-box.body .row {
+    padding-block:2px
+}
+
+.non-duplicate-box.body .row .box {
+    display:flex;
+    align-items:flex-start;
+    gap:4px;
+    padding-inline-start:4px;
+    overflow:hidden;
+    border-radius:5px;
+    flex:1
+}
+
+.non-duplicate-box.body .row .box:not([disabled]):hover {
+    background-color:var(--fill-quinary)
+}
+
+.non-duplicate-box.body .row .box:not([disabled]):active {
+    background-color:var(--fill-quarternary)
+}
+
+.non-duplicate-box.body .row .box .icon {
+    height:calc(1.3333333333*var(--zotero-font-size))
+}
+
+.non-duplicate-box.body .row .box .label {
+    display:-webkit-box;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:10;
+    width:0;
+    flex:1;
+    overflow:hidden
+}
+
+.non-duplicate-box.body .row .box .icon,
+.non-duplicate-box.body .row .box .label {
+    padding-block:2px
+}
+
+.non-duplicate-box.body .row toolbarbutton {
+    margin-inline-start:auto;
+    visibility:hidden
+}
+
+.non-duplicate-box.body .row:is(:hover,
+:focus-within) toolbarbutton {
+    visibility:visible
+}

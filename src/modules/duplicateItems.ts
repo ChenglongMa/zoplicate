@@ -17,7 +17,7 @@ export class DuplicateItems {
   }
 
   get itemTitle(): string {
-    return this._items[0].getField("title");
+    return this._items[0].getDisplayTitle();
   }
 
   private readonly _items: Zotero.Item[];
