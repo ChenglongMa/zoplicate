@@ -1,14 +1,16 @@
 import { config } from "../../package.json";
 import Dexie, { Table } from "dexie";
 
-interface IDatabase {
+export interface IDatabase {
   init(): Promise<void>;
 
   get db(): Dexie | typeof Zotero.DBConnection;
 
   insertNonDuplicatePair(itemID: number, itemID2: number): Promise<void>;
 
-  insertNonDuplicatePairs(...rows: { itemID: number; itemID2: number }[]): Promise<void>;
+  insertNonDuplicatePairs(rows: { itemID: number; itemID2: number }[]): Promise<void>;
+
+  insertNonDuplicates(itemIDs: number[]): Promise<void>;
 
   deleteNonDuplicatePair(itemID: number, itemID2: number): Promise<void>;
 
@@ -25,78 +27,135 @@ interface IDatabase {
   close(): Promise<void>;
 }
 
-export interface NonDuplicatePair {
+export interface INonDuplicatePair {
   id?: number;
   itemID: number;
   itemID2: number;
+  libraryID: number;
 }
 
-export class DexieDB implements IDatabase {
-  private static _instance: DexieDB;
-  private readonly _db: Dexie;
-  nonDuplicates!: Table<NonDuplicatePair>;
+export class IndexedDB extends Dexie implements IDatabase {
+  nonDuplicates!: Table<INonDuplicatePair>;
 
-  private constructor() {
-    this._db = new Dexie(config.addonName);
-    this._db.version(1).stores({
-      nonDuplicates: "++id, itemID, itemID2",
+  private static _instance: IndexedDB;
+
+  private constructor(databaseName: string = config.addonName) {
+    super(databaseName);
+    this.version(1).stores({
+      nonDuplicates: "++id, &[itemID+itemID2], itemID, itemID2, libraryID",
     });
   }
 
-  public static getInstance(): DexieDB {
-    if (!DexieDB._instance) {
-      DexieDB._instance = new DexieDB();
+  public static getInstance(databaseName: string = config.addonName): IndexedDB {
+    if (!IndexedDB._instance) {
+      IndexedDB._instance = new IndexedDB(databaseName);
     }
-    return DexieDB._instance;
+    return IndexedDB._instance;
   }
 
-  public get db() {
-    return this._db;
+  get db(): Dexie | typeof Zotero.DBConnection {
+    return this;
   }
 
   async init() {
-    await this._db.open();
+    // await this._db.open();
   }
 
-  async insertNonDuplicatePair(itemID: number, itemID2: number) {
-    await this.nonDuplicates.put({ itemID, itemID2 });
+  async insertNonDuplicatePair(itemID: number, itemID2: number, libraryID?: number) {
+    if (await this.existsNonDuplicatePair(itemID, itemID2)) {
+      // ztoolkit.log("Pair already exists: ", itemID, itemID2);
+      return;
+    }
+    libraryID = libraryID ?? Zotero.Items.get(itemID).libraryID;
+    // Sort itemID and itemID2 to avoid duplicates
+    if (itemID > itemID2) {
+      [itemID, itemID2] = [itemID2, itemID];
+    }
+    await this.nonDuplicates.put({ itemID, itemID2, libraryID });
   }
 
-  insertNonDuplicatePairs(...rows: { itemID: number; itemID2: number }[]): Promise<void> {
-    return Promise.resolve(undefined);
+  async insertNonDuplicatePairs(rows: { itemID: number; itemID2: number }[], libraryID?: number): Promise<void> {
+    libraryID = libraryID ?? Zotero.Items.get(rows[0].itemID).libraryID;
+    await this.nonDuplicates.bulkPut(rows.map(({ itemID, itemID2 }) => ({ itemID, itemID2, libraryID })));
+  }
+
+  private getUniquePairs(
+    itemIDs: number[],
+    libraryID?: number,
+  ): {
+    itemID: number;
+    itemID2: number;
+    libraryID: number;
+  }[] {
+    libraryID = libraryID ?? Zotero.Items.get(itemIDs[0]).libraryID;
+    const rows: { itemID: number; itemID2: number; libraryID: number }[] = [];
+    const seenPairs: Set<string> = new Set();
+
+    for (let i = 0; i < itemIDs.length; i++) {
+      for (let j = i + 1; j < itemIDs.length; j++) {
+        const pairKey = `${itemIDs[i]}-${itemIDs[j]}`;
+        if (!seenPairs.has(pairKey)) {
+          rows.push({ itemID: itemIDs[i], itemID2: itemIDs[j], libraryID });
+          seenPairs.add(pairKey);
+        }
+      }
+    }
+    return rows;
+  }
+
+  async insertNonDuplicates(itemIDs: number[], libraryID?: number): Promise<void> {
+    await this.nonDuplicates.bulkPut(this.getUniquePairs(itemIDs, libraryID));
   }
 
   async deleteNonDuplicatePair(itemID: number, itemID2: number) {
-    await this.nonDuplicates.where({ itemID, itemID2 }).delete();
+    await this.nonDuplicates
+      .where("[itemID+itemID2]")
+      .between([itemID, itemID2], [itemID2, itemID], true, true)
+      .delete();
   }
 
-  deleteNonDuplicatePairs(...rows: { itemID: number; itemID2: number }[]): Promise<void> {
-    return Promise.resolve(undefined);
+  async deleteNonDuplicatePairs(...rows: { itemID: number; itemID2: number }[]) {
+    const sortedRows = rows.map(({ itemID, itemID2 }) => {
+      if (itemID < itemID2) {
+        return { itemID, itemID2 };
+      } else {
+        return { itemID: itemID2, itemID2: itemID };
+      }
+    });
+    await this.nonDuplicates.bulkDelete(sortedRows);
   }
 
-  deleteNonDuplicates(itemIDs: number[]): Promise<void> {
-    return Promise.resolve(undefined);
+  async deleteNonDuplicates(itemIDs: number[]) {
+    await this.nonDuplicates.bulkDelete(this.getUniquePairs(itemIDs));
   }
 
   async existsNonDuplicatePair(itemID: number, itemID2: number) {
-    const result = await this.nonDuplicates.where({ itemID, itemID2 }).count();
-    return result > 0;
+    const result = await this.nonDuplicates
+      .where("[itemID+itemID2]")
+      .anyOf([
+        [itemID, itemID2],
+        [itemID2, itemID],
+      ])
+      .first();
+    return result !== undefined;
   }
 
-  existsNonDuplicates(itemIDs: number[]): Promise<boolean> {
-    return Promise.resolve(false);
+  async existsNonDuplicates(itemIDs: number[]): Promise<boolean> {
+    const rows = itemIDs.flatMap((itemID, i) => itemIDs.slice(i + 1).map((itemID2) => [itemID, itemID2].sort()));
+    const result = await this.nonDuplicates.where("[itemID+itemID2]").anyOf(rows).toArray();
+    return result.length === rows.length;
   }
 
-  async getNonDuplicates(itemID?: number) {
+  async getNonDuplicates(itemID?: number): Promise<{ itemID: number; itemID2: number }[]> {
     if (itemID !== undefined && itemID !== null) {
-      return this.nonDuplicates.where("itemID").equals(itemID).toArray();
+      return this.nonDuplicates.where("itemID").equals(itemID).or("itemID2").equals(itemID).toArray();
     } else {
       return this.nonDuplicates.toArray();
     }
   }
 
   async close() {
-    this._db.close();
+    super.close();
   }
 }
 
@@ -146,7 +205,7 @@ export class SQLiteDB implements IDatabase {
     );
   }
 
-  async insertNonDuplicatePairs(...rows: { itemID: number; itemID2: number }[]) {
+  async insertNonDuplicatePairs(rows: { itemID: number; itemID2: number }[]) {
     const placeholders = rows.map(() => "(?, ?)").join(",");
     const values = rows.flatMap(({ itemID, itemID2 }) => [itemID, itemID2].sort());
     await this._db.queryAsync(
@@ -158,7 +217,7 @@ export class SQLiteDB implements IDatabase {
 
   async insertNonDuplicates(itemIDs: number[]) {
     const rows = itemIDs.flatMap((itemID, i) => itemIDs.slice(i + 1).map((itemID2) => ({ itemID, itemID2 })));
-    await this.insertNonDuplicatePairs(...rows);
+    await this.insertNonDuplicatePairs(rows);
   }
 
   async deleteNonDuplicatePair(itemID: number, itemID2: number) {
