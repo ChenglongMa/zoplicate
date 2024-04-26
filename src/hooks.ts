@@ -8,7 +8,7 @@ import { BulkDuplicates } from "./modules/bulkDuplicates";
 import { fetchDuplicates, registerButtonsInDuplicatePane } from "./modules/duplicates";
 import menus from "./modules/menus";
 // import "./modules/zduplicates.js";
-import { SQLiteDB } from "./modules/db";
+import { IndexedDB } from "./modules/db";
 import { NonDuplicates, registerNonDuplicatesSection } from "./modules/nonDuplicates";
 import { patchGetSearchObject, patchItemSaveData } from "./modules/patcher";
 import { containsRegularItem, isInDuplicatesPane, refreshItemTree } from "./utils/zotero";
@@ -29,7 +29,7 @@ async function onStartup() {
 
 async function onMainWindowLoad(win: Window): Promise<void> {
   addon.data.ztoolkit = createZToolkit();
-  const db = SQLiteDB.getInstance();
+  const db = IndexedDB.getInstance();
   await db.init();
   NonDuplicates.getInstance().init(db);
   registerNonDuplicatesSection(db);
@@ -45,15 +45,15 @@ async function onMainWindowLoad(win: Window): Promise<void> {
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {
-  await SQLiteDB.getInstance().close(true);
   ztoolkit.unregisterAll();
   addon.data.dialogs.dialog?.window?.close();
+  await IndexedDB.getInstance().close();
 }
 
 async function onShutdown() {
-  await SQLiteDB.getInstance().close(true);
   ztoolkit.unregisterAll();
   addon.data.dialogs.dialog?.window?.close();
+  await IndexedDB.getInstance().close();
   // Remove addon object
   addon.data.alive = false;
   delete Zotero[config.addonInstance];
