@@ -113,7 +113,7 @@ export class DB {
   async getNonDuplicates(itemID: number | undefined = undefined) {
     const params: number[] = [];
     let query = `SELECT itemID, itemID2
-                 FROM ${this.tables.nonDuplicates};`;
+                 FROM ${this.tables.nonDuplicates}`;
 
     if (itemID !== undefined && itemID !== null) {
       query += ` WHERE itemID = ? OR itemID2 = ?`;
@@ -121,7 +121,7 @@ export class DB {
     }
 
     const rows: { itemID: number; itemID2: number }[] = await this._db.queryAsync(query, params);
-    return new Set(rows.map(({ itemID, itemID2 }) => [itemID, itemID2].sort().join(",")));
+    return rows;
   }
 
   async close(permanent: boolean = false) {

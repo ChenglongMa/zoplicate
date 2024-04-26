@@ -17,7 +17,8 @@ export function patchFindDuplicates(db: DB) {
     enabled: true,
     patcher: (original) =>
       async function (this: any) {
-        NonDuplicates.getInstance().allNonDuplicates = await db.getNonDuplicates();
+        const duplicateSets =  await db.getNonDuplicates();
+        NonDuplicates.getInstance().allNonDuplicates = new Set(duplicateSets.map(({ itemID, itemID2 }) => [itemID, itemID2].sort().join(",")));
         await original.call(this);
       },
   });
@@ -76,8 +77,6 @@ export function patchItemSaveData() {
           !event.options.skipNotifier &&
           (this._changed.creators !== undefined || this._changed.itemData !== undefined) &&
           this.isRegularItem();
-        ztoolkit.log("refreshDuplicates in _saveData", refreshDuplicates);
-        ztoolkit.log("this._changed", this._changed);
         if (refreshDuplicates) {
           const notifierData = event.notifierData || {};
           notifierData.refreshDuplicates = true;
