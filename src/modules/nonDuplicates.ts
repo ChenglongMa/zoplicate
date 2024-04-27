@@ -1,4 +1,4 @@
-import { IDatabase, IndexedDB } from "./db";
+import database, {IDatabase} from "./db";
 import { patchFindDuplicates } from "./patcher";
 import { config } from "../../package.json";
 import { isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
@@ -158,7 +158,7 @@ export function registerNonDuplicatesSection(db: IDatabase) {
 
       body.replaceChildren();
 
-      const duplicateItems = await db.getNonDuplicates(item.id);
+      const duplicateItems = await db.getNonDuplicates({ itemID: item.id });
       for (const { itemID, itemID2 } of duplicateItems) {
         const otherItemID = itemID === item.id ? itemID2 : itemID;
         const otherItem = Zotero.Items.get(otherItemID);
@@ -203,14 +203,14 @@ export function registerNonDuplicatesSection(db: IDatabase) {
 
 export async function toggleNonDuplicates(
   action: "mark" | "unmark",
-  items: undefined | number[] | Zotero.Item[] = undefined,
+  items?: number[] | Zotero.Item[],
 ) {
   const selectedItems = items && items.length ? items : Zotero.getActiveZoteroPane().getSelectedItems();
   const itemIDs = selectedItems.map((item) => (typeof item === "number" ? item : item.id));
   if (action === "mark") {
-    await IndexedDB.getInstance().insertNonDuplicates(itemIDs);
+    await database.getDatabase().insertNonDuplicates(itemIDs, ZoteroPane.getSelectedLibraryID());
   } else if (action === "unmark") {
-    await IndexedDB.getInstance().deleteNonDuplicates(itemIDs);
+    await database.getDatabase().deleteNonDuplicates(itemIDs);
   }
   await fetchDuplicates({ refresh: true });
   if (isInDuplicatesPane()) {

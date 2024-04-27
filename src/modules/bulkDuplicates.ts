@@ -187,6 +187,8 @@ export class BulkDuplicates {
 
     ZoteroPane.collectionsView &&
       ZoteroPane.collectionsView.onSelect.addListener(async () => {
+        ztoolkit.log(`Main window loaded`, win.indexedDB);
+
         const groupBox = win.document.getElementById("zotero-item-pane-groupbox") as Element;
         if (isInDuplicatesPane()) {
           ztoolkit.UI.appendElement(msgVBox, groupBox);

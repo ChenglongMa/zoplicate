@@ -1,4 +1,4 @@
-import { IDatabase, SQLiteDB } from "./db";
+import { IDatabase } from "./db";
 import { NonDuplicates } from "./nonDuplicates";
 import { refreshDuplicateStats } from "./duplicateStats";
 
@@ -17,8 +17,10 @@ export function patchFindDuplicates(db: IDatabase) {
     enabled: true,
     patcher: (original) =>
       async function (this: any) {
-        const duplicateSets =  await db.getNonDuplicates();
-        NonDuplicates.getInstance().allNonDuplicates = new Set(duplicateSets.map(({ itemID, itemID2 }) => [itemID, itemID2].sort().join(",")));
+        const duplicateSets = await db.getNonDuplicates({ libraryID: this.libraryID });
+        NonDuplicates.getInstance().allNonDuplicates = new Set(
+          duplicateSets.map(({ itemID, itemID2 }) => [itemID, itemID2].sort().join(",")),
+        );
         await original.call(this);
       },
   });
