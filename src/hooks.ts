@@ -8,11 +8,13 @@ import { BulkDuplicates } from "./modules/bulkDuplicates";
 import { fetchDuplicates, registerButtonsInDuplicatePane } from "./modules/duplicates";
 import menus from "./modules/menus";
 // import "./modules/zduplicates.js";
-import { IndexedDB } from "./modules/db";
+import database from "./modules/db";
 import { NonDuplicates, registerNonDuplicatesSection } from "./modules/nonDuplicates";
 import { patchGetSearchObject, patchItemSaveData } from "./modules/patcher";
 import { containsRegularItem, isInDuplicatesPane, refreshItemTree } from "./utils/zotero";
 import { registerDuplicateStats } from "./modules/duplicateStats";
+import { waitUtilAsync } from "./utils/wait";
+import Dexie from "dexie";
 
 async function onStartup() {
   await Promise.all([Zotero.initializationPromise, Zotero.unlockPromise, Zotero.uiReadyPromise]);
@@ -27,10 +29,34 @@ async function onStartup() {
   await onMainWindowLoad(window);
 }
 
+function handleError(e:any) {
+  switch (e.name) {
+    case "AbortError":
+      if (e.inner) {
+        return handleError(e.inner);
+      }
+      ztoolkit.log("Abort error " + e.message);
+      break;
+    case "QuotaExceededError":
+      ztoolkit.log("QuotaExceededError " + e.message);
+      break;
+    default:
+      ztoolkit.log(e);
+      break;
+  }
+}
+
 async function onMainWindowLoad(win: Window): Promise<void> {
+  await waitUtilAsync(() => document.readyState === "complete");
+  // Dexie.dependencies.indexedDB = window.indexedDB;
+  // Dexie.dependencies.IDBKeyRange = window.IDBKeyRange;
   addon.data.ztoolkit = createZToolkit();
-  const db = IndexedDB.getInstance();
+  const db = database.getDatabase();
+  ztoolkit.log("onMainWindowLoad before db init", window.IDBKeyRange);
   await db.init();
+  db.insertNonDuplicatePair(1, 2, 1);//.catch((e) => handleError(e));
+  ztoolkit.log("insert done");
+
   NonDuplicates.getInstance().init(db);
   registerNonDuplicatesSection(db);
   registerStyleSheets();
@@ -42,18 +68,19 @@ async function onMainWindowLoad(win: Window): Promise<void> {
   patchItemSaveData();
   await registerDuplicateStats();
   registerButtonsInDuplicatePane(win);
+  ztoolkit.log("onMainWindowLoad done");
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {
   ztoolkit.unregisterAll();
   addon.data.dialogs.dialog?.window?.close();
-  await IndexedDB.getInstance().close();
+  await database.getDatabase().close();
 }
 
 async function onShutdown() {
   ztoolkit.unregisterAll();
   addon.data.dialogs.dialog?.window?.close();
-  await IndexedDB.getInstance().close();
+  await database.getDatabase().close();
   // Remove addon object
   addon.data.alive = false;
   delete Zotero[config.addonInstance];

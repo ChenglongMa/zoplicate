@@ -1,13 +1,13 @@
 import { describe, expect, test, jest, beforeAll, it, afterAll, afterEach } from "@jest/globals";
-import { IndexedDB, INonDuplicatePair } from "../src/modules/db";
+import { DexieDB, INonDuplicatePair } from "../src/modules/db";
 import Dexie from "dexie";
 
 describe("DexieDB", () => {
-  let db: IndexedDB;
+  let db: DexieDB;
   const dbName = "TestDB";
 
   beforeAll(async () => {
-    db = IndexedDB.getInstance(dbName);
+    db = DexieDB.getInstance(dbName);
     await db.init();
   });
 
@@ -51,6 +51,18 @@ describe("DexieDB", () => {
     expect(exists).toBe(true);
   });
 
+  it("should insert non-duplicate pairs", async () => {
+    const itemIDs = [1, 2, 3];
+    const expected = [
+      { itemID: 1, itemID2: 2 },
+      { itemID: 1, itemID2: 3 },
+      { itemID: 2, itemID2: 3 },
+    ];
+    await db.insertNonDuplicates(itemIDs, 1);
+    const actual = await db.nonDuplicates.toArray();
+    arrayEqual(actual, expected);
+  });
+
   it("should sort itemIDs before inserting", async () => {
     const itemID = 1;
     const itemID2 = 2;
@@ -85,3 +97,13 @@ describe("DexieDB", () => {
     expect(actual).toEqual(expected);
   });
 });
+
+function arrayEqual(actual: INonDuplicatePair[], expected: { itemID: number; itemID2: number }[]) {
+  const actualSet = new Set(
+    actual.map((p) => {
+      return { itemID: p.itemID, itemID2: p.itemID2 };
+    }),
+  );
+  const expectedSet = new Set(expected);
+  expect(actualSet).toEqual(expectedSet);
+}

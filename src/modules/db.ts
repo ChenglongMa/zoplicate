@@ -1,16 +1,16 @@
 import { config } from "../../package.json";
-import Dexie, { Table } from "dexie";
+import Dexie, { DexieOptions, Table } from "dexie";
 
 export interface IDatabase {
   init(): Promise<void>;
 
   get db(): Dexie | typeof Zotero.DBConnection;
 
-  insertNonDuplicatePair(itemID: number, itemID2: number): Promise<void>;
+  insertNonDuplicatePair(itemID: number, itemID2: number, libraryID?: number): Promise<void>;
 
-  insertNonDuplicatePairs(rows: { itemID: number; itemID2: number }[]): Promise<void>;
+  insertNonDuplicatePairs(rows: { itemID: number; itemID2: number }[], libraryID?: number): Promise<void>;
 
-  insertNonDuplicates(itemIDs: number[]): Promise<void>;
+  insertNonDuplicates(itemIDs: number[], libraryID?: number): Promise<void>;
 
   deleteNonDuplicatePair(itemID: number, itemID2: number): Promise<void>;
 
@@ -22,7 +22,12 @@ export interface IDatabase {
 
   existsNonDuplicates(itemIDs: number[]): Promise<boolean>;
 
-  getNonDuplicates(itemID?: number): Promise<{ itemID: number; itemID2: number }[]>;
+  getNonDuplicates({ itemID, libraryID }: { itemID?: number; libraryID?: number }): Promise<
+    {
+      itemID: number;
+      itemID2: number;
+    }[]
+  >;
 
   close(): Promise<void>;
 }
@@ -34,23 +39,23 @@ export interface INonDuplicatePair {
   libraryID: number;
 }
 
-export class IndexedDB extends Dexie implements IDatabase {
+class DexieDB extends Dexie implements IDatabase {
   nonDuplicates!: Table<INonDuplicatePair>;
 
-  private static _instance: IndexedDB;
+  private static _instance: DexieDB;
 
-  private constructor(databaseName: string = config.addonName) {
-    super(databaseName);
+  private constructor(databaseName: string = config.addonName, options?: DexieOptions) {
+    super(databaseName, options);
     this.version(1).stores({
       nonDuplicates: "++id, &[itemID+itemID2], itemID, itemID2, libraryID",
     });
   }
 
-  public static getInstance(databaseName: string = config.addonName): IndexedDB {
-    if (!IndexedDB._instance) {
-      IndexedDB._instance = new IndexedDB(databaseName);
+  public static getInstance(databaseName: string = config.addonName, options?: DexieOptions): DexieDB {
+    if (!DexieDB._instance) {
+      DexieDB._instance = new DexieDB(databaseName, options);
     }
-    return IndexedDB._instance;
+    return DexieDB._instance;
   }
 
   get db(): Dexie | typeof Zotero.DBConnection {
@@ -58,12 +63,12 @@ export class IndexedDB extends Dexie implements IDatabase {
   }
 
   async init() {
-    // await this._db.open();
+    // await this.open();
   }
 
   async insertNonDuplicatePair(itemID: number, itemID2: number, libraryID?: number) {
     if (await this.existsNonDuplicatePair(itemID, itemID2)) {
-      // ztoolkit.log("Pair already exists: ", itemID, itemID2);
+      ztoolkit.log("Pair already exists: ", itemID, itemID2);
       return;
     }
     libraryID = libraryID ?? Zotero.Items.get(itemID).libraryID;
@@ -79,14 +84,7 @@ export class IndexedDB extends Dexie implements IDatabase {
     await this.nonDuplicates.bulkPut(rows.map(({ itemID, itemID2 }) => ({ itemID, itemID2, libraryID })));
   }
 
-  private getUniquePairs(
-    itemIDs: number[],
-    libraryID?: number,
-  ): {
-    itemID: number;
-    itemID2: number;
-    libraryID: number;
-  }[] {
+  private getUniquePairs(itemIDs: number[], libraryID?: number): INonDuplicatePair[] {
     libraryID = libraryID ?? Zotero.Items.get(itemIDs[0]).libraryID;
     const rows: { itemID: number; itemID2: number; libraryID: number }[] = [];
     const seenPairs: Set<string> = new Set();
@@ -95,16 +93,21 @@ export class IndexedDB extends Dexie implements IDatabase {
       for (let j = i + 1; j < itemIDs.length; j++) {
         const pairKey = `${itemIDs[i]}-${itemIDs[j]}`;
         if (!seenPairs.has(pairKey)) {
-          rows.push({ itemID: itemIDs[i], itemID2: itemIDs[j], libraryID });
+          const itemID = Math.min(itemIDs[i], itemIDs[j]);
+          const itemID2 = Math.max(itemIDs[i], itemIDs[j]);
+          rows.push({ itemID, itemID2, libraryID });
           seenPairs.add(pairKey);
         }
       }
     }
+    ztoolkit.log("Unique pairs:", rows);
     return rows;
   }
 
   async insertNonDuplicates(itemIDs: number[], libraryID?: number): Promise<void> {
-    await this.nonDuplicates.bulkPut(this.getUniquePairs(itemIDs, libraryID));
+    const records = this.getUniquePairs(itemIDs, libraryID);
+    await this.nonDuplicates.bulkPut(records);
+    ztoolkit.log("Inserted non-duplicates done");
   }
 
   async deleteNonDuplicatePair(itemID: number, itemID2: number) {
@@ -146,7 +149,12 @@ export class IndexedDB extends Dexie implements IDatabase {
     return result.length === rows.length;
   }
 
-  async getNonDuplicates(itemID?: number): Promise<{ itemID: number; itemID2: number }[]> {
+  async getNonDuplicates({ itemID, libraryID }: { itemID?: number; libraryID?: number }): Promise<
+    {
+      itemID: number;
+      itemID2: number;
+    }[]
+  > {
     if (itemID !== undefined && itemID !== null) {
       return this.nonDuplicates.where("itemID").equals(itemID).or("itemID2").equals(itemID).toArray();
     } else {
@@ -159,10 +167,10 @@ export class IndexedDB extends Dexie implements IDatabase {
   }
 }
 
-export class SQLiteDB implements IDatabase {
+class SQLiteDB implements IDatabase {
   private static _instance: SQLiteDB;
   private readonly _db: typeof Zotero.DBConnection;
-  private tables = {
+  private readonly tables = {
     nonDuplicates: "nonDuplicates",
   };
 
@@ -190,34 +198,42 @@ export class SQLiteDB implements IDatabase {
     await this._db.queryAsync(
       `CREATE TABLE IF NOT EXISTS ${this.tables.nonDuplicates}
        (
-           itemID  INTEGER,
-           itemID2 INTEGER,
+           itemID    INTEGER,
+           itemID2   INTEGER,
+           libraryID INTEGER,
            PRIMARY KEY (itemID, itemID2)
        );`,
     );
   }
 
-  async insertNonDuplicatePair(itemID: number, itemID2: number) {
+  private buildRow(itemID: number, itemID2: number, libraryID: number) {
+    return itemID > itemID2 ? [itemID2, itemID, libraryID] : [itemID, itemID2, libraryID];
+  }
+
+  async insertNonDuplicatePair(itemID: number, itemID2: number, libraryID?: number) {
+    libraryID = libraryID ?? Zotero.Items.get(itemID).libraryID;
+    const row = this.buildRow(itemID, itemID2, libraryID);
     await this._db.queryAsync(
-      `INSERT OR IGNORE INTO ${this.tables.nonDuplicates} (itemID, itemID2)
-       VALUES (?, ?);`,
-      [itemID, itemID2].sort(),
+      `INSERT OR IGNORE INTO ${this.tables.nonDuplicates} (itemID, itemID2, libraryID)
+       VALUES (?, ?, ?);`,
+      row,
     );
   }
 
-  async insertNonDuplicatePairs(rows: { itemID: number; itemID2: number }[]) {
-    const placeholders = rows.map(() => "(?, ?)").join(",");
-    const values = rows.flatMap(({ itemID, itemID2 }) => [itemID, itemID2].sort());
+  async insertNonDuplicatePairs(rows: { itemID: number; itemID2: number }[], libraryID?: number) {
+    libraryID = libraryID ?? Zotero.Items.get(rows[0].itemID).libraryID;
+    const placeholders = rows.map(() => "(?, ?, ?)").join(",");
+    const values = rows.flatMap(({ itemID, itemID2 }) => this.buildRow(itemID, itemID2, libraryID));
     await this._db.queryAsync(
-      `INSERT OR IGNORE INTO ${this.tables.nonDuplicates} (itemID, itemID2)
+      `INSERT OR IGNORE INTO ${this.tables.nonDuplicates} (itemID, itemID2, libraryID)
        VALUES ${placeholders};`,
       values,
     );
   }
 
-  async insertNonDuplicates(itemIDs: number[]) {
+  async insertNonDuplicates(itemIDs: number[], libraryID?: number) {
     const rows = itemIDs.flatMap((itemID, i) => itemIDs.slice(i + 1).map((itemID2) => ({ itemID, itemID2 })));
-    await this.insertNonDuplicatePairs(rows);
+    await this.insertNonDuplicatePairs(rows, libraryID);
   }
 
   async deleteNonDuplicatePair(itemID: number, itemID2: number) {
@@ -269,7 +285,7 @@ export class SQLiteDB implements IDatabase {
     return result[0].count === rows.length;
   }
 
-  async getNonDuplicates(itemID: number | undefined = undefined) {
+  async getNonDuplicates({ itemID, libraryID }: { itemID?: number; libraryID?: number }) {
     const params: number[] = [];
     let query = `SELECT itemID, itemID2
                  FROM ${this.tables.nonDuplicates}`;
@@ -277,6 +293,11 @@ export class SQLiteDB implements IDatabase {
     if (itemID !== undefined && itemID !== null) {
       query += ` WHERE itemID = ? OR itemID2 = ?`;
       params.push(itemID, itemID);
+    }
+
+    if (libraryID !== undefined && libraryID !== null) {
+      query += ` WHERE libraryID = ?`;
+      params.push(libraryID);
     }
 
     const rows: { itemID: number; itemID2: number }[] = await this._db.queryAsync(query, params);
@@ -287,3 +308,13 @@ export class SQLiteDB implements IDatabase {
     await this._db.closeDatabase(permanent);
   }
 }
+
+export default {
+  getDatabase: (dbType: "IndexedDB" | "SQLite" = addon.data.database): IDatabase => {
+    if (dbType === "IndexedDB") {
+      return DexieDB.getInstance();
+    } else {
+      return SQLiteDB.getInstance();
+    }
+  },
+};

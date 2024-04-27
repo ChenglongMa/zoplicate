@@ -9,6 +9,7 @@ class Addon {
     alive: boolean;
     // Env type, see build.mjs
     env: "development" | "production";
+    database: "SQLite" | "IndexedDB";
     ztoolkit: ZToolkit;
     locale?: {
       current: any;
@@ -36,6 +37,7 @@ class Addon {
     this.data = {
       alive: true,
       env: __env__,
+      database: "SQLite",
       ztoolkit: createZToolkit(),
       dialogs: {},
       needResetDuplicateSearch: {},
@@ -52,6 +54,7 @@ class Addon {
     this.data = {
       alive: true,
       env: __env__,
+      database: "SQLite",
       ztoolkit: createZToolkit(),
       dialogs: {},
       needResetDuplicateSearch: {},
