@@ -288,7 +288,6 @@ class SQLiteDB implements IDatabase {
                    FROM ${this.tables.nonDuplicates}
                    WHERE (itemID, itemID2) IN (${placeholders});`;
     const result = await this._db.queryAsync(query, rows.flat());
-    ztoolkit.log("existsNonDuplicates called");
     return result[0].count === rows.length;
   }
 

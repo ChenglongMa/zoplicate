@@ -71,4 +71,5 @@ menuitem-is-duplicate = 标记为重复条目
 
 # Add non-duplicate
 add-not-duplicates-alert-error-duplicates = 所选条目没有被识别为重复条目。
+add-not-duplicates-alert-error-exist = 所选条目已存在。
 add-not-duplicates-alert-error-diff-library = 无法添加不同库中的条目。
