@@ -68,3 +68,7 @@ refresh-duplicates-done = 重复条目已刷新
 
 menuitem-not-duplicate = 标记为非重复条目
 menuitem-is-duplicate = 标记为重复条目
+
+# Add non-duplicate
+add-not-duplicates-alert-error-duplicates = 所选条目没有被识别为重复条目。
+add-not-duplicates-alert-error-diff-library = 无法添加不同库中的条目。

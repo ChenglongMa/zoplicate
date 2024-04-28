@@ -1,4 +1,4 @@
-import database, {IDatabase} from "./db";
+import database, { IDatabase } from "./db";
 import { patchFindDuplicates } from "./patcher";
 import { config } from "../../package.json";
 import { isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
@@ -55,40 +55,26 @@ export function registerNonDuplicatesSection(db: IDatabase) {
             return;
           }
           const itemIDs = [...io.dataOut, item.id];
-          if (!(await areDuplicates(itemIDs))) {
-            Zotero.alert(
-              body.ownerDocument.defaultView!,
-              config.addonName,
-              getString("add-not-duplicates-alert-error"),
-            );
+
+          if(new Set(itemIDs).size < 2) {
             return;
           }
 
-          // TODO: exist?
-          await toggleNonDuplicates("mark", itemIDs);
+          let message: string = "";
+          const libraryIDs = new Set(itemIDs.map((item) => Zotero.Items.get(item).libraryID));
 
-          // let relItems = await Zotero.Items.getAsync(io.dataOut);
-          // if (!relItems.length) {
-          //   return;
-          // }
-          // if (relItems[0].libraryID != item.libraryID) {
-          //   Zotero.alert(body.ownerDocument.defaultView!, "", "You cannot relate items in different libraries.");
-          //   return;
-          // }
-          // await Zotero.DB.executeTransaction(async () => {
-          //   for (let relItem of relItems) {
-          //     if (this._item.addRelatedItem(relItem)) {
-          //       await this._item.save({
-          //         skipDateModifiedUpdate: true
-          //       });
-          //     }
-          //     if (relItem.addRelatedItem(this._item)) {
-          //       await relItem.save({
-          //         skipDateModifiedUpdate: true
-          //       });
-          //     }
-          //   }
-          // });
+          if (libraryIDs.size > 1) {
+            message = "add-not-duplicates-alert-error-diff-library";
+          } else if (!(await areDuplicates(itemIDs))) {
+            message = "add-not-duplicates-alert-error-duplicates";
+          }
+
+          if (message !== "") {
+            Zotero.alert(body.ownerDocument.defaultView!, config.addonName, getString(message));
+            return;
+          }
+
+          await toggleNonDuplicates("mark", itemIDs);
           // End of OnClick
         },
       },
@@ -111,19 +97,17 @@ export function registerNonDuplicatesSection(db: IDatabase) {
       const notifierKey = Zotero.Notifier.registerObserver(
         {
           notify: (event, type, ids, extraData) => {
-            // const item = Zotero.Items.get(body.dataset.itemID || "");
+            const itemID = body.dataset.itemID;
+            const item = itemID && Zotero.Items.get(itemID);
+            ztoolkit.log(`non duplicate notify ${type}`, ids, item);
             if (
               item &&
               // @ts-ignore
-              event === "updateNonDuplicates" &&
+              event === "refreshNonDuplicate" &&
               type === "item" &&
               (ids as number[]).includes(item.id)
             ) {
-              ztoolkit.log(
-                `non duplicate notify update ${type}`,
-                ids,
-                item.id,
-              );
+              ztoolkit.log(`non duplicate notify [removeNonDuplicate] ${type}`, ids, item.id);
               refresh();
             }
           },
@@ -142,7 +126,8 @@ export function registerNonDuplicatesSection(db: IDatabase) {
       }
     },
     onItemChange: ({ body, item, setEnabled }) => {
-      ztoolkit.log("onItemChange non duplicates");
+      // ztoolkit.log("debug flag onItemChange non duplicates", item.getDisplayTitle(), body);
+      body.dataset.itemID = String(item.id);
       // if (body.closest("bn-workspace") as HTMLElement | undefined) {
       //   setEnabled(true);
       //   body.dataset.itemID = String(item.id);
@@ -152,8 +137,6 @@ export function registerNonDuplicatesSection(db: IDatabase) {
     },
     onRender: () => {},
     onAsyncRender: async ({ body, item, editable }) => {
-      // await renderGraph(body, item);
-
       ztoolkit.log("onAsyncRender non duplicates", body);
 
       body.replaceChildren();
@@ -188,7 +171,8 @@ export function registerNonDuplicatesSection(db: IDatabase) {
           // @ts-ignore
           let remove = document.createXULElement("toolbarbutton");
           remove.addEventListener("command", () => {
-            toggleNonDuplicates("unmark", [item.id, otherItemID]);
+            const itemIDs = [item.id, otherItemID];
+            toggleNonDuplicates("unmark", itemIDs);
           });
           remove.className = "zotero-clicky zotero-clicky-minus";
           remove.setAttribute("data-l10n-id", "section-button-remove");
@@ -201,10 +185,7 @@ export function registerNonDuplicatesSection(db: IDatabase) {
   });
 }
 
-export async function toggleNonDuplicates(
-  action: "mark" | "unmark",
-  items?: number[] | Zotero.Item[],
-) {
+export async function toggleNonDuplicates(action: "mark" | "unmark", items?: number[] | Zotero.Item[]) {
   const selectedItems = items && items.length ? items : Zotero.getActiveZoteroPane().getSelectedItems();
   const itemIDs = selectedItems.map((item) => (typeof item === "number" ? item : item.id));
   if (action === "mark") {
@@ -216,6 +197,14 @@ export async function toggleNonDuplicates(
   if (isInDuplicatesPane()) {
     refreshItemTree();
   }
+  await Zotero.Notifier.trigger(
+    // @ts-ignore
+    "refreshNonDuplicate",
+    "item",
+    itemIDs,
+    {},
+    true,
+  );
 }
 
 export function createNonDuplicateButton(): TagElementProps {
