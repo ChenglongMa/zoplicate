@@ -8,5 +8,3 @@ section-non-duplicate-sidenav =
 non-duplicate-add =
     .tooltiptext = Add to Non Duplicates
 
-# Add non-duplicate
-add-not-duplicates-alert-error = The selected items are not identified as Duplicates.

@@ -67,3 +67,7 @@ refresh-duplicates-done = Duplicate items has been refreshed.
 
 menuitem-not-duplicate = They are NOT duplicates
 menuitem-is-duplicate = They are duplicates
+
+# Add non-duplicate
+add-not-duplicates-alert-error-duplicates = The selected items are not identified as Duplicates.
+add-not-duplicates-alert-error-diff-library = Cannot add items from different libraries.

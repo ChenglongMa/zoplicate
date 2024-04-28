@@ -7,6 +7,3 @@ section-non-duplicate-sidenav =
 
 non-duplicate-add =
     .tooltiptext = 添加到非重复条目
-
-# Add non-duplicate
-add-not-duplicates-alert-error = 所选条目没有被识别为重复条目。

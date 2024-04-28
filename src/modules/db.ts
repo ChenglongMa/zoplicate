@@ -211,6 +211,9 @@ class SQLiteDB implements IDatabase {
   }
 
   async insertNonDuplicatePair(itemID: number, itemID2: number, libraryID?: number) {
+    if (itemID === itemID2) {
+      return;
+    }
     libraryID = libraryID ?? Zotero.Items.get(itemID).libraryID;
     const row = this.buildRow(itemID, itemID2, libraryID);
     await this._db.queryAsync(
@@ -221,6 +224,10 @@ class SQLiteDB implements IDatabase {
   }
 
   async insertNonDuplicatePairs(rows: { itemID: number; itemID2: number }[], libraryID?: number) {
+    rows = rows.filter(row => row.itemID !== row.itemID2);
+    if (rows.length === 0) {
+      return;
+    }
     libraryID = libraryID ?? Zotero.Items.get(rows[0].itemID).libraryID;
     const placeholders = rows.map(() => "(?, ?, ?)").join(",");
     const values = rows.flatMap(({ itemID, itemID2 }) => this.buildRow(itemID, itemID2, libraryID));
