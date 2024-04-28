@@ -19,19 +19,21 @@
 
 A plugin that does one thing only: **Detect** and **Manage** duplicate items in [![zotero](https://www.zotero.org/support/lib/exe/fetch.php?tok=2735f1&media=https%3A%2F%2Fwww.zotero.org%2Fstatic%2Fimages%2Fpromote%2Fzotero-logo-128x31.png)](https://www.zotero.org/).
 
-The plugin can detect if the newly imported item is a duplicate of an existing item in the library.
-If so, it will prompt you to process the duplicate items.
+# Main Features
 
-The actions you can take are:
-
-1. **Keep This**: Save the last imported item and delete the rest.
-2. **Keep Others**: Delete the last imported item and save the rest.
-3. **Keep All**: Keep both the new item and the existing item.
-4. **Merge Manually**: Go to the Duplicate Panel and merge the duplicate item manually.
-
-Starting from **Version 2.0.0**, the plugin will support **Bulk Merge** functionality.
-
-* **Bulk Merge**: Merge all duplicate items in the library automatically.
+* **Duplicates Detection**
+  * Detects if newly imported items are duplicates of existing ones in the Zotero library.
+  * You can:
+    1. **Keep This**: Save the last imported item and delete the rest.
+    2. **Keep Others**: Delete the last imported item and save the rest.
+    3. **Keep All**: Keep both the new item and the existing item.
+    4. **Merge Manually**: Go to the Duplicate Panel and merge the duplicate item manually.
+* **Auto-Bulk Merge**
+  * Merges all duplicate items in the library automatically.
+  * Introduced in Version 2.0.0.
+* **Non-duplicates Management**
+  * Allows marking items as "Non-duplicates" if mistakenly identified as duplicates by Zotero.
+  * Introduced in Version 3.0.0.
 
 *If you find this project helpful, please consider [giving it a star](https://github.com/ChenglongMa/zoplicate)* ⭐. *It would be a great encouragement for me!*
 
