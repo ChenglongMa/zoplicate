@@ -70,4 +70,5 @@ menuitem-is-duplicate = They are duplicates
 
 # Add non-duplicate
 add-not-duplicates-alert-error-duplicates = The selected items are not identified as Duplicates.
+add-not-duplicates-alert-error-exist = The selected items already exist.
 add-not-duplicates-alert-error-diff-library = Cannot add items from different libraries.

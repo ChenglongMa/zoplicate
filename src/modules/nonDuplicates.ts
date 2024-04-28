@@ -65,7 +65,10 @@ export function registerNonDuplicatesSection(db: IDatabase) {
 
           if (libraryIDs.size > 1) {
             message = "add-not-duplicates-alert-error-diff-library";
-          } else if (!(await areDuplicates(itemIDs))) {
+          } else if (await db.existsNonDuplicates(itemIDs)) {
+            message = "add-not-duplicates-alert-error-exist";
+          }
+          else if (!(await areDuplicates(itemIDs))) {
             message = "add-not-duplicates-alert-error-duplicates";
           }
 

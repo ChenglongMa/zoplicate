@@ -7,7 +7,7 @@ export function registerPrefs() {
     pluginID: config.addonID,
     src: rootURI + "chrome/content/preferences.xhtml",
     label: getString("prefs-title"),
-    image: `chrome://${config.addonRef}/content/icons/favicon.png`,
+    image: `chrome://${config.addonRef}/content/icons/preficon.svg`,
     stylesheets:[`chrome://${config.addonRef}/content/prefs.css`],
     helpURL: homepage,
   });

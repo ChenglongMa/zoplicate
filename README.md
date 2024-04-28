@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="https://raw.githubusercontent.com/ChenglongMa/zoplicate/main/docs/banner.png" alt="zoplicate banner">
+    <img src="./docs/banner.png" alt="zoplicate banner">
 </div>
 
 👉
@@ -42,9 +42,29 @@ Starting from **Version 2.0.0**, the plugin will support **Bulk Merge** function
 
 # Changelog
 
-## v2.3.0
+## v3.0.0
 
 <details markdown="1" open>
+  <summary><i>Click here to show more.</i></summary>
+
+In this version, we have made the following changes:
+
+1. 🐛 **FIX!**: We have fixed a **memory leak** bug that caused the app to freeze when editing PDF annotations.
+   * Thanks [vancleve](https://github.com/vancleve) and [pencilheart](https://github.com/pencilheart) for reporting this bug in [issue #30](https://github.com/ChenglongMa/zoplicate/issues/30) and [issue #31](https://github.com/ChenglongMa/zoplicate/issues/31) respectively.
+2. ✨ **NEW!**: We have added the **Non-duplicates** functionality.
+   * You can mark items as **Non-duplicates** when they are mistakenly identified as "duplicates" by Zotero.
+   * Selecting two "false duplicates", you can find the `They are NOT duplicates` **menu items** in the context menu.
+     * ![menu_not_duplicates](./docs/non_duplicates/menu_not_duplicates.png)
+   * You can also find the `They are NOT duplicates` button in the `Duplicate Items` panel.
+     * ![button_not_duplicates](./docs/non_duplicates/button_not_duplicates.png)
+   * For more details, please see [Non-duplicates](#non-duplicates) section below.
+   * Thanks [dschaehi](https://github.com/dschaehi) for the discussion in [issue #25](https://github.com/ChenglongMa/zoplicate/issues/25).
+
+</details>
+
+## v2.3.0
+
+<details markdown="1">
   <summary><i>Click here to show more.</i></summary>
 
 In this version, we have made the following changes:
@@ -65,7 +85,7 @@ In this version, we have made the following changes:
 
 ## v2.2.0
 
-<details markdown="1" open>
+<details markdown="1">
   <summary><i>Click here to show more.</i></summary>
 
 In this version, we have made the following changes:
@@ -238,6 +258,35 @@ When your mouse hovers over the <kbd>Duplicate Items</kbd> entry, a tooltip will
 The duplicate count will be updated automatically. You can also find the <kbd>Refresh Duplicate Count</kbd> menu to update the count manually.
 
 ![Refresh duplicate count](docs/refresh-duplicate-count.png)
+
+## Non-duplicates
+
+Starting from **Version 3.0.0**, we have added the **Non-duplicates** functionality.
+
+You can mark items as **Non-duplicates** when they are mistakenly identified as "duplicates" by Zotero.
+
+Selecting an item, you can manage the **Non-duplicates** items in the side panel:
+![side_panel_not_duplicates](./docs/non_duplicates/side_panel_non_duplicates.png)
+
+* Click the <kbd>![non-duplicate button](./addon/chrome/content/icons/non-duplicate.svg)</kbd> button to show the **Non-duplicates** section.
+* Click the <kbd>+</kbd> button to add the selected item to the **Non-duplicates** list.
+* Click the <kbd>-</kbd> button to remove the selected entry from the **Non-duplicates** list.
+
+There are some ways to mark and unmark items as **Non-duplicates**:
+
+### Mark as Non-duplicates
+
+1. Click the <kbd>+</kbd> button to add the selected item to the **Non-duplicates** list.
+2. Selecting two "false duplicates", you can find the `They are NOT duplicates` **menu items** in the context menu.
+   * ![menu_not_duplicates](./docs/non_duplicates/menu_not_duplicates.png)
+3. You can also find the `They are NOT duplicates` button in the `Duplicate Items` panel.
+   * ![button_not_duplicates](./docs/non_duplicates/button_not_duplicates.png)
+
+### Unmark as Non-duplicates
+
+1. Click the <kbd>-</kbd> button to remove the selected entry from the **Non-duplicates** list.
+2. Selecting two "non duplicates", you can find the `They are duplicates` **menu items** in the context menu.
+   * ![menu_not_duplicates](./docs/non_duplicates/menu_duplicates.png)
 
 # Contributing
 
