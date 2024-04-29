@@ -36,11 +36,13 @@ export function registerNonDuplicatesSection(db: IDatabase) {
             dataOut: null | number[];
             deferred: any;
             itemTreeID: string;
+            filterLibraryIDs: number[];
           } = {
             dataIn: null,
             dataOut: null,
             deferred: Zotero.Promise.defer(),
             itemTreeID: "non-duplicate-box-select-item-dialog",
+            filterLibraryIDs: [item.libraryID]
           };
           window.openDialog(
             "chrome://zotero/content/selectItemsDialog.xhtml",
