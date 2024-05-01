@@ -51,7 +51,7 @@ async function onMainWindowUnload({ window }, reason) {
   Zotero.__addonInstance__?.hooks.onMainWindowUnload(window);
 }
 
-async function shutdown({ id, version, resourceURI, rootURI }, reason) {
+function shutdown({ id, version, resourceURI, rootURI }, reason) {
   if (reason === APP_SHUTDOWN) {
     return;
   }
@@ -61,7 +61,7 @@ async function shutdown({ id, version, resourceURI, rootURI }, reason) {
       Components.interfaces.nsISupports,
     ).wrappedJSObject;
   }
-  await Zotero.__addonInstance__?.hooks.onShutdown();
+  Zotero.__addonInstance__?.hooks.onShutdown();
 
   Cc["@mozilla.org/intl/stringbundle;1"]
     .getService(Components.interfaces.nsIStringBundleService)

@@ -1,86 +1,104 @@
+import {
+  BasicExampleFactory,
+  HelperExampleFactory,
+  KeyExampleFactory,
+  PromptExampleFactory,
+  UIExampleFactory,
+} from "./modules/examples";
 import { config } from "../package.json";
-import { initLocale } from "./utils/locale";
-import { registerPrefs, registerPrefsScripts } from "./modules/preferenceScript";
+import { getString, initLocale } from "./utils/locale";
+import { registerPrefsScripts } from "./modules/preferenceScript";
 import { createZToolkit } from "./utils/ztoolkit";
-import { Notifier } from "./modules/notifier";
-import { registerStyleSheets } from "./utils/window";
-import { BulkDuplicates } from "./modules/bulkDuplicates";
-import { fetchDuplicates, registerButtonsInDuplicatePane } from "./modules/duplicates";
-import menus from "./modules/menus";
-// import "./modules/zduplicates.js";
-import database from "./modules/db";
-import { NonDuplicates, registerNonDuplicatesSection } from "./modules/nonDuplicates";
-import { patchGetSearchObject, patchItemSaveData } from "./modules/patcher";
-import { containsRegularItem, isInDuplicatesPane, refreshItemTree } from "./utils/zotero";
-import { registerDuplicateStats } from "./modules/duplicateStats";
-import { waitUtilAsync } from "./utils/wait";
-import Dexie from "dexie";
 
 async function onStartup() {
-  await Promise.all([Zotero.initializationPromise, Zotero.unlockPromise, Zotero.uiReadyPromise]);
+  await Promise.all([
+    Zotero.initializationPromise,
+    Zotero.unlockPromise,
+    Zotero.uiReadyPromise,
+  ]);
+
   // TODO: Remove this after zotero#3387 is merged
-  // https://github.com/zotero/zotero/pull/3387
   if (__env__ === "development") {
     // Keep in sync with the scripts/startup.mjs
     const loadDevToolWhen = `Plugin ${config.addonID} startup`;
     ztoolkit.log(loadDevToolWhen);
   }
+
   initLocale();
+
+  BasicExampleFactory.registerPrefs();
+
+  BasicExampleFactory.registerNotifier();
+
+  KeyExampleFactory.registerShortcuts();
+
   await onMainWindowLoad(window);
 }
 
-function handleError(e:any) {
-  switch (e.name) {
-    case "AbortError":
-      if (e.inner) {
-        return handleError(e.inner);
-      }
-      ztoolkit.log("Abort error " + e.message);
-      break;
-    case "QuotaExceededError":
-      ztoolkit.log("QuotaExceededError " + e.message);
-      break;
-    default:
-      ztoolkit.log(e);
-      break;
-  }
-}
-
 async function onMainWindowLoad(win: Window): Promise<void> {
-  await waitUtilAsync(() => document.readyState === "complete");
-  // Dexie.dependencies.indexedDB = window.indexedDB;
-  // Dexie.dependencies.IDBKeyRange = window.IDBKeyRange;
+  // Create ztoolkit for every window
   addon.data.ztoolkit = createZToolkit();
-  const db = database.getDatabase();
-  ztoolkit.log("onMainWindowLoad before db init", window.IDBKeyRange);
-  await db.init();
-  db.insertNonDuplicatePair(1, 2, 1);//.catch((e) => handleError(e));
-  ztoolkit.log("insert done");
 
-  NonDuplicates.getInstance().init(db);
-  registerNonDuplicatesSection(db);
-  registerStyleSheets();
-  registerPrefs();
-  Notifier.registerNotifier();
-  BulkDuplicates.getInstance().registerUIElements(win);
-  menus.registerMenus(win);
-  patchGetSearchObject();
-  patchItemSaveData();
-  await registerDuplicateStats();
-  registerButtonsInDuplicatePane(win);
-  ztoolkit.log("onMainWindowLoad done");
+  const popupWin = new ztoolkit.ProgressWindow(config.addonName, {
+    closeOnClick: true,
+    closeTime: -1,
+  })
+    .createLine({
+      text: getString("startup-begin"),
+      type: "default",
+      progress: 0,
+    })
+    .show();
+
+  await Zotero.Promise.delay(1000);
+  popupWin.changeLine({
+    progress: 30,
+    text: `[30%] ${getString("startup-begin")}`,
+  });
+
+  UIExampleFactory.registerStyleSheet();
+
+  UIExampleFactory.registerRightClickMenuItem();
+
+  UIExampleFactory.registerRightClickMenuPopup();
+
+  UIExampleFactory.registerWindowMenuWithSeparator();
+
+  await UIExampleFactory.registerExtraColumn();
+
+  await UIExampleFactory.registerExtraColumnWithCustomCell();
+
+  await UIExampleFactory.registerCustomItemBoxRow();
+
+  UIExampleFactory.registerLibraryTabPanel();
+
+  await UIExampleFactory.registerReaderTabPanel();
+
+  PromptExampleFactory.registerNormalCommandExample();
+
+  PromptExampleFactory.registerAnonymousCommandExample();
+
+  PromptExampleFactory.registerConditionalCommandExample();
+
+  await Zotero.Promise.delay(1000);
+
+  popupWin.changeLine({
+    progress: 100,
+    text: `[100%] ${getString("startup-finish")}`,
+  });
+  popupWin.startCloseTimer(5000);
+
+  addon.hooks.onDialogEvents("dialogExample");
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {
   ztoolkit.unregisterAll();
-  addon.data.dialogs.dialog?.window?.close();
-  await database.getDatabase().close();
+  addon.data.dialog?.window?.close();
 }
 
-async function onShutdown() {
+function onShutdown(): void {
   ztoolkit.unregisterAll();
-  addon.data.dialogs.dialog?.window?.close();
-  await database.getDatabase().close();
+  addon.data.dialog?.window?.close();
   // Remove addon object
   addon.data.alive = false;
   delete Zotero[config.addonInstance];
@@ -88,49 +106,24 @@ async function onShutdown() {
 
 /**
  * This function is just an example of dispatcher for Notify events.
- * Any operations should be placed in a function to keep this function clear.
- *
- * Refer to: https://github.com/zotero/zotero/blob/main/chrome/content/zotero/xpcom/notifier.js
+ * Any operations should be placed in a function to keep this funcion clear.
  */
-async function onNotify(event: string, type: string, ids: number[] | string[], extraData: { [key: string]: any }) {
-  // You can add your code to the corresponding `notify type`
+async function onNotify(
+  event: string,
+  type: string,
+  ids: Array<string | number>,
+  extraData: { [key: string]: any },
+) {
+  // You can add your code to the corresponding notify type
   ztoolkit.log("notify", event, type, ids, extraData);
-  const precondition = ids && ids.length > 0 && !BulkDuplicates.getInstance().isRunning;
-
-  if (!precondition) {
-    // ignore when bulk duplicates is running and no ids
+  if (
+    event == "select" &&
+    type == "tab" &&
+    extraData[ids[0]].type == "reader"
+  ) {
+    BasicExampleFactory.exampleNotifierCallback();
+  } else {
     return;
-  }
-
-  if (type == "item" && event == "removeDuplicatesMaster" && isInDuplicatesPane()) {
-    refreshItemTree();
-    return;
-  }
-
-  let libraryIDs = [ZoteroPane.getSelectedLibraryID()];
-
-  const toRefresh =
-    // subset of "modify" event (modification on item data and authors) on regular items
-    (extraData && Object.values(extraData).some((data) => data.refreshDuplicates)) ||
-    // "add" event on regular items
-    (type == "item" && event == "add" && containsRegularItem(ids)) ||
-    // "refresh" event on trash
-    (type == "trash" && event == "refresh");
-
-  ztoolkit.log("refreshDuplicates", toRefresh);
-
-  if (toRefresh) {
-    if (type == "item") {
-      libraryIDs = ids.map((id) => Zotero.Items.get(id).libraryID);
-    }
-    if (type == "trash") {
-      libraryIDs = ids as number[];
-    }
-    const libraryID = libraryIDs[0]; // normally only one libraryID
-    const { duplicatesObj } = await fetchDuplicates({ libraryID, refresh: true });
-    if (type == "item" && event == "add") {
-      await Notifier.whenItemsAdded(duplicatesObj, ids as number[]);
-    }
   }
 }
 
@@ -143,16 +136,47 @@ async function onNotify(event: string, type: string, ids: number[] | string[], e
 async function onPrefsEvent(type: string, data: { [key: string]: any }) {
   switch (type) {
     case "load":
-      await registerPrefsScripts(data.window);
+      registerPrefsScripts(data.window);
       break;
     default:
       return;
   }
 }
 
-function onShortcuts(type: string) {}
+function onShortcuts(type: string) {
+  switch (type) {
+    case "larger":
+      KeyExampleFactory.exampleShortcutLargerCallback();
+      break;
+    case "smaller":
+      KeyExampleFactory.exampleShortcutSmallerCallback();
+      break;
+    default:
+      break;
+  }
+}
 
-async function onDialogEvents(type: string) {}
+function onDialogEvents(type: string) {
+  switch (type) {
+    case "dialogExample":
+      HelperExampleFactory.dialogExample();
+      break;
+    case "clipboardExample":
+      HelperExampleFactory.clipboardExample();
+      break;
+    case "filePickerExample":
+      HelperExampleFactory.filePickerExample();
+      break;
+    case "progressWindowExample":
+      HelperExampleFactory.progressWindowExample();
+      break;
+    case "vtableExample":
+      HelperExampleFactory.vtableExample();
+      break;
+    default:
+      break;
+  }
+}
 
 // Add your hooks here. For element click, etc.
 // Keep in mind hooks only do dispatch. Don't add code that does real jobs in hooks.

@@ -8,8 +8,7 @@ import chokidar from "chokidar";
 import { context } from "esbuild";
 import { exit } from "process";
 
-process.env.NODE_ENV = process.argv[2] === "production" ? "production" : "development";
-const autoReload = process.argv[3] === "reload";
+process.env.NODE_ENV = "development";
 
 const { zoteroBinPath, profilePath } = cmd.exec;
 
@@ -18,7 +17,7 @@ const startZoteroCmd = `"${zoteroBinPath}" --debugger --purgecaches -profile "${
 async function watch() {
   const watcher = chokidar.watch(["src/**", "addon/**"], {
     ignored: /(^|[\/\\])\../, // ignore dotfiles
-    persistent: true
+    persistent: true,
   });
 
   let esbuildCTX = await context(esbuildOptions);
@@ -49,7 +48,7 @@ async function watch() {
 function reload() {
   Logger.debug("Reloading...");
   const url = `zotero://ztoolkit-debug/?run=${encodeURIComponent(
-    reloadScript
+    reloadScript,
   )}`;
   const command = `${startZoteroCmd} -url "${url}"`;
   execSync(command);
@@ -58,7 +57,7 @@ function reload() {
 function openDevTool() {
   Logger.debug("Open dev tools...");
   const url = `zotero://ztoolkit-debug/?run=${encodeURIComponent(
-    openDevToolScript
+    openDevToolScript,
   )}`;
   const command = `${startZoteroCmd} -url "${url}"`;
   execSync(command);
@@ -72,7 +71,7 @@ async function main() {
   startZotero(openDevTool);
 
   // watch
-  autoReload && await watch();
+  await watch();
 }
 
 main().catch((err) => {
