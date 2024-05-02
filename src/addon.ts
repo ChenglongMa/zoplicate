@@ -27,6 +27,7 @@ class Addon {
     duplicateSearchObj: { [libraryID: number]: Zotero.Search };
     duplicateCounts: { [libraryID: number]: { total: number; unique: number } };
     duplicateSets: { [libraryID: number]: typeof Zotero.DisjointSetForest };
+    nonDuplicateSectionID: string | false;
   };
   // Lifecycle hooks
   public hooks: typeof hooks;
@@ -44,6 +45,7 @@ class Addon {
       duplicateSearchObj: {},
       duplicateCounts: {},
       duplicateSets: {},
+      nonDuplicateSectionID: false,
     };
     this.hooks = hooks;
     this.api = {};
@@ -61,6 +63,7 @@ class Addon {
       duplicateSearchObj: {},
       duplicateCounts: {},
       duplicateSets: {},
+      nonDuplicateSectionID: false,
     };
     this.hooks = hooks;
     this.api = {};

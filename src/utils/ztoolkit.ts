@@ -50,5 +50,8 @@ class MyToolkit extends BasicTool {
 
   unregisterAll() {
     unregister(this);
+    if (addon.data.nonDuplicateSectionID) {
+      Zotero.ItemPaneManager.unregisterSection(addon.data.nonDuplicateSectionID);
+    }
   }
 }
