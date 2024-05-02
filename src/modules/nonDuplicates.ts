@@ -1,5 +1,4 @@
 import database, { IDatabase } from "./db";
-import { patchFindDuplicates } from "./patcher";
 import { config } from "../../package.json";
 import { isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
 import { TagElementProps } from "zotero-plugin-toolkit/dist/tools/ui";
@@ -42,7 +41,7 @@ export function registerNonDuplicatesSection(db: IDatabase) {
             dataOut: null,
             deferred: Zotero.Promise.defer(),
             itemTreeID: "non-duplicate-box-select-item-dialog",
-            filterLibraryIDs: [item.libraryID]
+            filterLibraryIDs: [item.libraryID],
           };
           window.openDialog(
             "chrome://zotero/content/selectItemsDialog.xhtml",
@@ -58,7 +57,7 @@ export function registerNonDuplicatesSection(db: IDatabase) {
           }
           const itemIDs = [...io.dataOut, item.id];
 
-          if(new Set(itemIDs).size < 2) {
+          if (new Set(itemIDs).size < 2) {
             return;
           }
 
@@ -69,8 +68,7 @@ export function registerNonDuplicatesSection(db: IDatabase) {
             message = "add-not-duplicates-alert-error-diff-library";
           } else if (await db.existsNonDuplicates(itemIDs)) {
             message = "add-not-duplicates-alert-error-exist";
-          }
-          else if (!(await areDuplicates(itemIDs))) {
+          } else if (!(await areDuplicates(itemIDs))) {
             message = "add-not-duplicates-alert-error-duplicates";
           }
 
@@ -212,16 +210,15 @@ export async function toggleNonDuplicates(action: "mark" | "unmark", items?: num
   );
 }
 
-export function createNonDuplicateButton(): TagElementProps {
+export function createNonDuplicateButton(id: string, showing = true): TagElementProps {
   return {
     tag: "button",
-    id: "non-duplicates-button",
+    id: id,
     attributes: {
       label: getString("menuitem-not-duplicate"),
       image: `chrome://${config.addonRef}/content/icons/non-duplicate.svg`,
-      disabled: false,
+      hidden: !showing,
     },
-    classList: ["duplicate-box-button"],
     namespace: "xul",
     listeners: [
       {
@@ -239,6 +236,9 @@ export class NonDuplicates {
   private static _instance: NonDuplicates;
 
   public allNonDuplicates: Set<string> = new Set();
+  public static readonly nonDuplicateButtonID = "non-duplicates-button";
+  public static readonly innerButtonID = this.nonDuplicateButtonID + "-inner";
+  public static readonly externalButtonID = this.nonDuplicateButtonID + "-external";
 
   private constructor() {}
 
@@ -247,9 +247,5 @@ export class NonDuplicates {
       NonDuplicates._instance = new NonDuplicates();
     }
     return NonDuplicates._instance;
-  }
-
-  init(db: IDatabase) {
-    patchFindDuplicates(db);
   }
 }
