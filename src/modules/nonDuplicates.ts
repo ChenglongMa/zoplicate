@@ -6,7 +6,7 @@ import { getString } from "../utils/locale";
 import { areDuplicates, fetchDuplicates } from "./duplicates";
 
 export function registerNonDuplicatesSection(db: IDatabase) {
-  const key = Zotero.ItemPaneManager.registerSection({
+  addon.data.nonDuplicateSectionID = Zotero.ItemPaneManager.registerSection({
     paneID: `sec-non-duplicates`,
     pluginID: config.addonID,
     header: {
@@ -129,14 +129,7 @@ export function registerNonDuplicatesSection(db: IDatabase) {
       }
     },
     onItemChange: ({ body, item, setEnabled }) => {
-      // ztoolkit.log("debug flag onItemChange non duplicates", item.getDisplayTitle(), body);
       body.dataset.itemID = String(item.id);
-      // if (body.closest("bn-workspace") as HTMLElement | undefined) {
-      //   setEnabled(true);
-      //   body.dataset.itemID = String(item.id);
-      //   return;
-      // }
-      // setEnabled(false);
     },
     onRender: () => {},
     onAsyncRender: async ({ body, item, editable }) => {
