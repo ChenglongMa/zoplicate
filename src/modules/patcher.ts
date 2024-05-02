@@ -15,7 +15,7 @@ export function patchFindDuplicates(db: IDatabase) {
     target: Zotero.Duplicates.prototype,
     funcSign: "_findDuplicates",
     enabled: true,
-    patcher: (original) =>
+    patcher: (original: any) =>
       async function (this: any) {
         const duplicateSets = await db.getNonDuplicates({ libraryID: this.libraryID });
         NonDuplicates.getInstance().allNonDuplicates = new Set(

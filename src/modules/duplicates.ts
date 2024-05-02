@@ -3,23 +3,55 @@ import { DialogHelper } from "zotero-plugin-toolkit/dist/helpers/dialog";
 import { TagElementProps } from "zotero-plugin-toolkit/dist/tools/ui";
 import { getPref, setPref, Action, MasterItem } from "../utils/prefs";
 import { merge } from "./merger";
-import { goToDuplicatesPane } from "../utils/zotero";
+import { goToDuplicatesPane, isInDuplicatesPane } from "../utils/zotero";
 import { DuplicateItems } from "./duplicateItems";
-import { createNonDuplicateButton } from "./nonDuplicates";
+import { createNonDuplicateButton, NonDuplicates } from "./nonDuplicates";
 import { BulkDuplicates } from "./bulkDuplicates";
+import { toggleButtonHidden } from "../utils/view";
 
-export function registerButtonsInDuplicatePane(win: Window) {
-  const mergeButton = win.document.getElementById("zotero-duplicates-merge-button") as Element;
-  if (mergeButton) {
-    ztoolkit.UI.insertElementBefore(createNonDuplicateButton(), mergeButton);
-    ztoolkit.UI.insertElementBefore(
-      BulkDuplicates.getInstance().createBulkMergeButton(win, BulkDuplicates.innerButtonID),
-      mergeButton,
-    );
-  }
+function addButtonsInDuplicatePanes(innerButton: boolean, siblingElement: Element) {
+  const mergeButtonID = innerButton ? BulkDuplicates.innerButtonID : BulkDuplicates.externalButtonID;
+  const nonDuplicateButtonID = innerButton ? NonDuplicates.innerButtonID : NonDuplicates.externalButtonID;
+  ztoolkit.UI.insertElementBefore(
+    {
+      tag: "div",
+      namespace: "html",
+      classList: ["duplicate-custom-head", "empty"],
+      children: [
+        BulkDuplicates.getInstance().createBulkMergeButton(siblingElement.ownerDocument.defaultView!, mergeButtonID),
+        createNonDuplicateButton(nonDuplicateButtonID),
+      ],
+    },
+    siblingElement,
+  );
 }
 
-export async function areDuplicates(items: number[] | Zotero.Item[]) {
+export async function registerButtonsInDuplicatePane(win: Window) {
+  // const duplicatePane = win.document.getElementById("zotero-duplicates-merge-pane");
+  // 1. when selecting items in duplicatePane
+  const mergeButton = win.document.getElementById("zotero-duplicates-merge-button");
+  if (mergeButton) {
+    const groupBox = mergeButton.parentElement as Element;
+    addButtonsInDuplicatePanes(true, groupBox);
+  }
+  // 2. when not selecting items, i.e., in itemMessagePane
+  const customHead = win.document.querySelector("item-message-pane .custom-head");
+  if (customHead) {
+    addButtonsInDuplicatePanes(false, customHead);
+  }
+
+  await updateDuplicateButtonsVisibilities();
+}
+
+export async function updateDuplicateButtonsVisibilities() {
+  const inDuplicatePane = isInDuplicatesPane();
+  const showBulkMergeButton = inDuplicatePane && ZoteroPane.itemsView && ZoteroPane.itemsView.rowCount > 0;
+  const showNonDuplicateButton = inDuplicatePane && (await areDuplicates());
+  toggleButtonHidden(window, !showBulkMergeButton, BulkDuplicates.innerButtonID, BulkDuplicates.externalButtonID);
+  toggleButtonHidden(window, !showNonDuplicateButton, NonDuplicates.innerButtonID, NonDuplicates.externalButtonID);
+}
+
+export async function areDuplicates(items: number[] | Zotero.Item[] = ZoteroPane.getSelectedItems()) {
   if (items.length < 2) return false;
   const libraryIDs = new Set(
     items.map((item) => (typeof item === "number" ? Zotero.Items.get(item).libraryID : item.libraryID)),

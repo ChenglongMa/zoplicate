@@ -44,6 +44,18 @@ A plugin that does one thing only: **Detect** and **Manage** duplicate items in 
 
 # Changelog
 
+## v3.0.1
+
+<details markdown="1" open>
+  <summary><i>Click here to show more.</i></summary>
+
+In this version, we have made the following changes:
+
+1. 🧬 **CHANGE!**: We have updated the UI of buttons in the duplicate pane.
+2. 🐛 **FIX!**: We have optimized the performance of duplicate search and detection.
+
+</details>
+
 ## v3.0.0
 
 <details markdown="1" open>

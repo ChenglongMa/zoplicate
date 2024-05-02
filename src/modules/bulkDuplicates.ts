@@ -3,10 +3,9 @@ import { getString } from "../utils/locale";
 import { config } from "../../package.json";
 import { getPref, MasterItem } from "../utils/prefs";
 import { truncateString } from "../utils/utils";
-import { fetchDuplicates } from "./duplicates";
+import { fetchDuplicates, updateDuplicateButtonsVisibilities } from "./duplicates";
 import { merge } from "./merger";
 import { isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
-import { updateButtonDisabled } from "../utils/view";
 import { DuplicateItems } from "./duplicateItems";
 
 export class BulkDuplicates {
@@ -45,18 +44,21 @@ export class BulkDuplicates {
   }
 
   private getBulkMergeButtons(win: Window) {
-    return [win.document.getElementById(BulkDuplicates.innerButtonID), win.document.getElementById(BulkDuplicates.externalButtonID)];
+    return [
+      win.document.getElementById(BulkDuplicates.innerButtonID),
+      win.document.getElementById(BulkDuplicates.externalButtonID),
+    ];
   }
 
-  public createBulkMergeButton(win: Window, id: string): TagElementProps {
+  public createBulkMergeButton(win: Window, id: string, showing = true): TagElementProps {
     return {
       tag: "button",
       id: id,
       attributes: {
         label: getString("bulk-merge-title"),
         image: `chrome://${config.addonRef}/content/icons/merge.svg`,
+        hidden: !showing,
       },
-      classList: ["duplicate-box-button"],
       namespace: "xul",
       listeners: [
         {
@@ -175,47 +177,30 @@ export class BulkDuplicates {
 
   registerUIElements(win: Window): void {
     this.win = win;
-    const msgID = "zoplicate-bulk-merge-message";
-    const msgVBox: TagElementProps = {
-      tag: "vbox",
-      id: msgID,
-      properties: {
-        textContent: getString("duplicate-panel-message"),
-      },
-      ignoreIfExists: true,
-    };
-
     ZoteroPane.collectionsView &&
       ZoteroPane.collectionsView.onSelect.addListener(async () => {
-        ztoolkit.log(`Main window loaded`, win.indexedDB);
-
-        const groupBox = win.document.getElementById("zotero-item-pane-groupbox") as Element;
-        if (isInDuplicatesPane()) {
-          ztoolkit.UI.appendElement(msgVBox, groupBox);
-          ztoolkit.UI.appendElement(this.createBulkMergeButton(win, BulkDuplicates.externalButtonID), groupBox);
-          if (this._isRunning && ZoteroPane.itemsView) {
-            await ZoteroPane.itemsView.waitForLoad();
-            ZoteroPane.itemsView.selection.clearSelection();
-          }
-        } else {
-          const externalButton = win.document.getElementById(BulkDuplicates.externalButtonID);
-          if (externalButton) {
-            groupBox.removeChild(win.document.getElementById(msgID)!);
-            groupBox.removeChild(externalButton);
-          }
+        ztoolkit.log("collectionsView onSelect");
+        const inDuplicatePane = isInDuplicatesPane();
+        if (ZoteroPane.itemsView && inDuplicatePane && this._isRunning) {
+          await ZoteroPane.itemsView.waitForLoad();
+          ZoteroPane.itemsView.selection.clearSelection();
         }
       });
 
     ZoteroPane.itemsView &&
-      ZoteroPane.itemsView.onRefresh.addListener(() => {
-        // ztoolkit.log("refresh");
-        if (isInDuplicatesPane() && ZoteroPane.itemsView) {
-          const disabled = ZoteroPane.itemsView.rowCount <= 0;
-          updateButtonDisabled(win!, disabled, BulkDuplicates.innerButtonID, BulkDuplicates.externalButtonID);
-          if (this._isRunning) {
-            ZoteroPane.itemsView.selection.clearSelection();
-          }
+      ZoteroPane.itemsView.onRefresh.addListener(async () => {
+        ztoolkit.log("refresh");
+        const precondition = isInDuplicatesPane();
+        if (precondition && ZoteroPane.itemsView && this._isRunning) {
+          ZoteroPane.itemsView.selection.clearSelection();
         }
+        await updateDuplicateButtonsVisibilities();
       });
+
+    ZoteroPane.itemsView &&
+    ZoteroPane.itemsView.onSelect.addListener(async () => {
+      ztoolkit.log("itemsView.onSelect");
+      await updateDuplicateButtonsVisibilities();
+    });
   }
 }
