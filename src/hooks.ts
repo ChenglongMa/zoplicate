@@ -9,12 +9,15 @@ import { fetchDuplicates, registerButtonsInDuplicatePane } from "./modules/dupli
 import menus from "./modules/menus";
 // import "./modules/zduplicates.js";
 import database from "./modules/db";
-import { NonDuplicates, registerNonDuplicatesSection } from "./modules/nonDuplicates";
-import { patchGetSearchObject, patchItemSaveData } from "./modules/patcher";
+import { registerNonDuplicatesSection } from "./modules/nonDuplicates";
+import {
+  patchFindDuplicates,
+  patchGetSearchObject,
+  patchItemSaveData
+} from "./modules/patcher";
 import { containsRegularItem, isInDuplicatesPane, refreshItemTree } from "./utils/zotero";
 import { registerDuplicateStats } from "./modules/duplicateStats";
 import { waitUtilAsync } from "./utils/wait";
-import Dexie from "dexie";
 
 async function onStartup() {
   await Promise.all([Zotero.initializationPromise, Zotero.unlockPromise, Zotero.uiReadyPromise]);
@@ -29,46 +32,33 @@ async function onStartup() {
   await onMainWindowLoad(window);
 }
 
-function handleError(e:any) {
-  switch (e.name) {
-    case "AbortError":
-      if (e.inner) {
-        return handleError(e.inner);
-      }
-      ztoolkit.log("Abort error " + e.message);
-      break;
-    case "QuotaExceededError":
-      ztoolkit.log("QuotaExceededError " + e.message);
-      break;
-    default:
-      ztoolkit.log(e);
-      break;
-  }
-}
-
 async function onMainWindowLoad(win: Window): Promise<void> {
-  await waitUtilAsync(() => document.readyState === "complete");
-  // Dexie.dependencies.indexedDB = window.indexedDB;
-  // Dexie.dependencies.IDBKeyRange = window.IDBKeyRange;
-  addon.data.ztoolkit = createZToolkit();
-  const db = database.getDatabase();
-  ztoolkit.log("onMainWindowLoad before db init", window.IDBKeyRange);
-  await db.init();
-  db.insertNonDuplicatePair(1, 2, 1);//.catch((e) => handleError(e));
-  ztoolkit.log("insert done");
+  // await waitUtilAsync(() => document.readyState === "complete");
 
-  NonDuplicates.getInstance().init(db);
-  registerNonDuplicatesSection(db);
+  // create ztoolkit
+  addon.data.ztoolkit = createZToolkit();
+
+  // init database
+  const db = database.getDatabase();
+  await db.init();
+
+  // register stylesheets and preferences
   registerStyleSheets();
   registerPrefs();
+
+  // patch Zotero duplicate search object and events
   Notifier.registerNotifier();
-  BulkDuplicates.getInstance().registerUIElements(win);
-  menus.registerMenus(win);
+  patchFindDuplicates(db);
   patchGetSearchObject();
   patchItemSaveData();
+
+  // register duplicate UI elements
   await registerDuplicateStats();
-  registerButtonsInDuplicatePane(win);
-  ztoolkit.log("onMainWindowLoad done");
+  await registerButtonsInDuplicatePane(win);
+  BulkDuplicates.getInstance().registerUIElements(win);
+  registerNonDuplicatesSection(db);
+
+  menus.registerMenus(win);
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {
