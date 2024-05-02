@@ -14,12 +14,18 @@ function updateButtonAttribute(win: Window, attribute: string, value: { toString
     const button = win.document.getElementById(id);
     if (button) {
       button.setAttribute(attribute, value.toString());
+    } else {
+      ztoolkit.log(`Element with id ${id} not found`);
     }
   });
 }
 
-function updateButtonDisabled(win: Window, disabled: boolean, ...ids: string[]) {
+function toggleButtonDisabled(win: Window, disabled: boolean, ...ids: string[]) {
   updateButtonAttribute(win, "disabled", disabled, ...ids);
 }
 
-export { removeSiblings, updateButtonAttribute, updateButtonDisabled };
+function toggleButtonHidden(win: Window, hidden: boolean, ...ids: string[]) {
+  updateButtonAttribute(win, "hidden", hidden, ...ids);
+}
+
+export { removeSiblings, updateButtonAttribute, toggleButtonDisabled, toggleButtonHidden };

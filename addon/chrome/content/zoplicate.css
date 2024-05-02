@@ -1,30 +1,21 @@
-.duplicate-box-button {
-    -moz-appearance: none;
-    border-radius: 12px;
-    border: 1px solid rgba(0, 0, 0, .65);
-    background: -moz-linear-gradient(rgba(110, 110, 110, .9), rgba(70, 70, 70, .9) 49%, rgba(50, 50, 50, .9) 51%, rgba(40, 40, 40, .9));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), inset 0 0 1px rgba(255, 255, 255, .1), 0 1px 0 rgba(255, 255, 255, .1);
-    background-clip: padding-box;
-    background-origin: padding-box;
-    padding: 2px 9px;
-    margin: 6px;
-    min-height: 22px;
+.duplicate-custom-head {
+    display: flex;
+    flex-direction: row;
+    align-self: stretch;
+    gap: 6px;
+    padding: 6px 8px;
+    background: var(--material-toolbar);
+    border-bottom: var(--material-panedivider);
+    height: 28px;
 }
 
-.duplicate-box-button[disabled="false"]:-moz-focusring {
-    box-shadow: 0 0 1px -moz-mac-focusring inset, 0 0 4px 1px -moz-mac-focusring, 0 0 2px 1px -moz-mac-focusring;
-}
-
-.duplicate-box-button[disabled="false"]:hover{
-    background: white;
+.duplicate-custom-head button {
+    height: 26px;
+    margin: 0;
+    flex-grow: 1;
     cursor: pointer;
 }
 
-.duplicate-box-button[disabled="false"]:hover:active {
-    background: -moz-linear-gradient(rgba(83, 128, 232, .9), rgba(91, 118, 255, .9));
-    box-shadow: inset 0 0 3px rgba(0, 0, 0, .2), inset 0 1px 7px rgba(0, 0, 0, .4), 0 1px 0 rgba(255, 255, 255, .1);
-}
-
-.duplicate-box-button[disabled="true"] {
-    filter: grayscale(100%);
+.duplicate-custom-head:empty {
+    display: none;
 }
