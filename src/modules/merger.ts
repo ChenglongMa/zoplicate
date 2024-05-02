@@ -2,11 +2,16 @@ export async function merge(
   masterItem: Zotero.Item,
   otherItems: Zotero.Item[], // Already sorted
 ): Promise<any> {
-
   Zotero.CollectionTreeCache.clear();
 
-  const masterJSON = masterItem.toJSON();
+  const masterItemType = masterItem.itemTypeID;
+  otherItems = otherItems.filter((item) => item.itemTypeID === masterItemType);
+  if (otherItems.length === 0) {
 
+    return;
+  }
+
+  const masterJSON = masterItem.toJSON();
   const candidateJSON: {
     [field in Zotero.Item.DataType]?: string | unknown;
   } = otherItems.reduce((acc, obj) => ({ ...acc, ...obj.toJSON() }), {});
