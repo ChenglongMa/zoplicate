@@ -158,6 +158,25 @@ export class Duplicates {
       savePreference: false,
       defaultAction: Action.CANCEL,
       loadCallback: () => {
+        const cssFiles = [
+          "chrome://global/skin/",
+          "chrome://zotero/skin/zotero.css",
+          "chrome://zotero/skin/overlay.css",
+          "chrome://zotero-platform/content/overlay.css",
+          "chrome://zotero-platform/content/zotero.css",
+        ];
+        ztoolkit.log("this.document", this.document)
+        cssFiles.forEach((css) => {
+          this.document?.head.appendChild(
+            ztoolkit.UI.createElement(this.document, "link", {
+              properties: {
+                rel: "stylesheet",
+                href: css,
+              },
+            }),
+          );
+        });
+
         const defaultActionOptions = this.document?.getElementById(
           `act_${this.dialogData.defaultAction}`,
         ) as HTMLInputElement;
