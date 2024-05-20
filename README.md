@@ -44,9 +44,23 @@ A plugin that does one thing only: **Detect** and **Manage** duplicate items in 
 
 # Changelog
 
-## v3.0.1
+## v3.0.2
 
 <details markdown="1" open>
+  <summary><i>Click here to show more.</i></summary>
+
+In this version, we have made the following changes:
+
+1. 🐛 **FIX!**: We have fixed the progress window icon bug in Zotero 7.0.0-beta.77.
+2. 🧬 **CHANGE!**: We have updated the style of duplicate detection dialog.
+3. 🧬 **CHANGE!**: We have updated the icon style in preference pane.
+4. 🧬 **CHANGE!**: Items with different `itemType` will not be considered as duplicates.
+
+</details>
+
+## v3.0.1
+
+<details markdown="1">
   <summary><i>Click here to show more.</i></summary>
 
 In this version, we have made the following changes:
@@ -58,7 +72,7 @@ In this version, we have made the following changes:
 
 ## v3.0.0
 
-<details markdown="1" open>
+<details markdown="1">
   <summary><i>Click here to show more.</i></summary>
 
 In this version, we have made the following changes:
