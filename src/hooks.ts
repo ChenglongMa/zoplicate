@@ -21,13 +21,6 @@ import { waitUtilAsync } from "./utils/wait";
 
 async function onStartup() {
   await Promise.all([Zotero.initializationPromise, Zotero.unlockPromise, Zotero.uiReadyPromise]);
-  // TODO: Remove this after zotero#3387 is merged
-  // https://github.com/zotero/zotero/pull/3387
-  if (__env__ === "development") {
-    // Keep in sync with the scripts/startup.mjs
-    const loadDevToolWhen = `Plugin ${config.addonID} startup`;
-    ztoolkit.log(loadDevToolWhen);
-  }
   initLocale();
   await onMainWindowLoad(window);
 }
@@ -37,6 +30,7 @@ async function onMainWindowLoad(win: Window): Promise<void> {
 
   // create ztoolkit
   addon.data.ztoolkit = createZToolkit();
+  window.MozXULElement.insertFTLIfNeeded(`${config.addonRef}-itemSection.ftl`);
 
   // init database
   const db = database.getDatabase();

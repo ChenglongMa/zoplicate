@@ -17,11 +17,11 @@ export function registerNonDuplicatesSection(db: IDatabase) {
       icon: `chrome://${config.addonRef}/content/icons/non-duplicate.svg`, //20x20
       l10nID: `${config.addonRef}-section-non-duplicate-sidenav`,
     },
-    bodyXHTML: `
-<linkset>
-    <html:link rel="localization" href="${config.addonRef}-itemSection.ftl" />
-</linkset>
-`,
+//     bodyXHTML: `
+// <linkset>
+//     <html:link rel="localization" href="${config.addonRef}-itemSection.ftl" />
+// </linkset>
+// `,
 
     sectionButtons: [
       {
