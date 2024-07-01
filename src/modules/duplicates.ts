@@ -68,6 +68,7 @@ export async function areDuplicates(items: number[] | Zotero.Item[] = ZoteroPane
 export async function fetchAllDuplicates(refresh = false) {
   const libraries = Zotero.Libraries.getAll();
   for (const library of libraries) {
+    ztoolkit.log("library type", library.libraryType);
     await fetchDuplicates({ libraryID: library.libraryID, refresh });
   }
 }
@@ -165,7 +166,7 @@ export class Duplicates {
           "chrome://zotero-platform/content/overlay.css",
           "chrome://zotero-platform/content/zotero.css",
         ];
-        ztoolkit.log("this.document", this.document)
+        ztoolkit.log("this.document", this.document);
         cssFiles.forEach((css) => {
           this.document?.head.appendChild(
             ztoolkit.UI.createElement(this.document, "link", {
@@ -223,14 +224,21 @@ export class Duplicates {
     } else {
       // If dialog is not opened, create dialog
       this.dialog = await this.createDialog();
-      this.dialog.open(getString("du-dialog-title"), {
-        centerscreen: true,
-        resizable: true,
-        fitContent: true,
-        noDialogMode: false,
-        alwaysRaised: true,
+
+      // Prevent the dialog from blocking the main thread
+      new Promise((resolve) => {
+        resolve(
+          this.dialog?.open(getString("du-dialog-title"), {
+            centerscreen: true,
+            resizable: true,
+            fitContent: true,
+            noDialogMode: false,
+            alwaysRaised: true,
+          }),
+        );
+      }).then(async () => {
+        await this.dialogData.unloadLock.promise;
       });
-      await this.dialogData.unloadLock.promise;
     }
   }
 
@@ -293,7 +301,7 @@ export class Duplicates {
 
   private checkDefaultRadio(selectAll: boolean, defaultAction: Action) {
     // Set disabled status of "as default" checkbox
-    const asDefaultDiv = this.document?.getElementById("act_as_default_div");
+    const asDefaultDiv = this.document?.getElementById("act_as_default_div") as HTMLElement;
     asDefaultDiv && (asDefaultDiv.style.visibility = selectAll ? "visible" : "hidden");
 
     if (selectAll) {
