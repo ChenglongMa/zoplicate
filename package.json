@@ -52,7 +52,7 @@
     "jest": "^29.7.0",
     "prettier": "^3.2.5",
     "release-it": "^17.2.1",
-    "replace-in-file": "^7.1.0",
+    "replace-in-file": "^8.0.1",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5",
