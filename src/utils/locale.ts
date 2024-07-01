@@ -1,6 +1,6 @@
 import { config } from "../../package.json";
 
-export { initLocale, getString };
+export { initLocale, getString, getLocaleID };
 
 /**
  * Initialize locale data
@@ -43,7 +43,7 @@ function getString(localString: string): string;
 function getString(localString: string, branch: string): string;
 function getString(
   localeString: string,
-  options: { branch?: string; args?: Record<string, unknown> },
+  options: { branch?: string | undefined; args?: Record<string, unknown> },
 ): string;
 function getString(...inputs: any[]) {
   if (inputs.length === 1) {
@@ -61,7 +61,7 @@ function getString(...inputs: any[]) {
 
 function _getString(
   localeString: string,
-  options: { branch?: string; args?: Record<string, unknown> } = {},
+  options: { branch?: string | undefined; args?: Record<string, unknown> } = {},
 ): string {
   const localStringWithPrefix = `${config.addonRef}-${localeString}`;
   const { branch, args } = options;
@@ -72,8 +72,17 @@ function _getString(
     return localStringWithPrefix;
   }
   if (branch && pattern.attributes) {
+    for (const attr of pattern.attributes) {
+      if (attr.name === branch) {
+        return attr.value;
+      }
+    }
     return pattern.attributes[branch] || localStringWithPrefix;
   } else {
     return pattern.value || localStringWithPrefix;
   }
+}
+
+function getLocaleID(id: string) {
+  return `${config.addonRef}-${id}`;
 }

@@ -27,27 +27,3 @@ export function setPref(key: string, value: string | number | boolean) {
 export function clearPref(key: string) {
   return Zotero.Prefs.clear(`${config.prefsPrefix}.${key}`, true);
 }
-
-export function showingDuplicateStats() {
-  return getPref("duplicate.stats.enable") as boolean;
-}
-
-/**
- * NOTE: Corresponding to radio values in addon/chrome/content/preferences.xhtml.
- */
-export enum Action {
-  KEEP = "keep",
-  DISCARD = "discard",
-  CANCEL = "cancel",
-  ASK = "ask",
-}
-
-/**
- * NOTE: Corresponding to radio values in addon/chrome/content/preferences.xhtml.
- */
-export enum MasterItem {
-  OLDEST = "oldest",
-  NEWEST = "newest",
-  MODIFIED = "modified",
-  DETAILED = "detailed",
-}
