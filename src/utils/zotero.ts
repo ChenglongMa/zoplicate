@@ -29,6 +29,6 @@ export function isInDuplicatesPane(index: number | undefined = undefined) {
 
 export function containsRegularItem(ids: number[] | string[]) {
   return Zotero.Items.get(ids).some((item) => {
-    return item && item.isRegularItem();
+    return item && item.library.libraryType != "feed" && item.isRegularItem();
   });
 }

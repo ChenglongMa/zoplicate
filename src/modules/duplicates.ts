@@ -70,7 +70,8 @@ export async function areDuplicates(items: number[] | Zotero.Item[] = ZoteroPane
 export async function fetchAllDuplicates(refresh = false) {
   const libraries = Zotero.Libraries.getAll();
   for (const library of libraries) {
-    // ztoolkit.log("library type", library.libraryType);
+    const libraryType = library.libraryType;
+    if (libraryType == "feed") continue;
     await fetchDuplicates({ libraryID: library.libraryID, refresh });
   }
 }
@@ -207,6 +208,7 @@ export class Duplicates {
   async showDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
     this.updateDuplicateMaps(duplicateMaps);
 
+    // TODO: show this when zotero is in background
     await showHintWithLink(getString("du-dialog-title"), "", getString("du-dialog-hint"), async () => {
       bringToFront();
     });
