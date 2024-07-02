@@ -179,7 +179,7 @@ export class BulkDuplicates {
     this.win = win;
     ZoteroPane.collectionsView &&
       ZoteroPane.collectionsView.onSelect.addListener(async () => {
-        ztoolkit.log("collectionsView onSelect");
+        // ztoolkit.log("collectionsView onSelect");
         const inDuplicatePane = isInDuplicatesPane();
         if (ZoteroPane.itemsView && inDuplicatePane && this._isRunning) {
           await ZoteroPane.itemsView.waitForLoad();
@@ -189,7 +189,7 @@ export class BulkDuplicates {
 
     ZoteroPane.itemsView &&
       ZoteroPane.itemsView.onRefresh.addListener(async () => {
-        ztoolkit.log("refresh");
+        // ztoolkit.log("refresh");
         const precondition = isInDuplicatesPane();
         if (precondition && ZoteroPane.itemsView && this._isRunning) {
           ZoteroPane.itemsView.selection.clearSelection();
@@ -199,7 +199,7 @@ export class BulkDuplicates {
 
     ZoteroPane.itemsView &&
     ZoteroPane.itemsView.onSelect.addListener(async () => {
-      ztoolkit.log("itemsView.onSelect");
+      // ztoolkit.log("itemsView.onSelect");
       await updateDuplicateButtonsVisibilities();
     });
   }

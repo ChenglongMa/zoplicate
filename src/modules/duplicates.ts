@@ -8,6 +8,8 @@ import { DuplicateItems } from "./duplicateItems";
 import { createNonDuplicateButton, NonDuplicates } from "./nonDuplicates";
 import { BulkDuplicates } from "./bulkDuplicates";
 import { toggleButtonHidden } from "../utils/view";
+import { bringToFront } from "../utils/window";
+import { showHintWithLink } from "../utils/utils";
 
 function addButtonsInDuplicatePanes(innerButton: boolean, siblingElement: Element) {
   const mergeButtonID = innerButton ? BulkDuplicates.innerButtonID : BulkDuplicates.externalButtonID;
@@ -68,7 +70,7 @@ export async function areDuplicates(items: number[] | Zotero.Item[] = ZoteroPane
 export async function fetchAllDuplicates(refresh = false) {
   const libraries = Zotero.Libraries.getAll();
   for (const library of libraries) {
-    ztoolkit.log("library type", library.libraryType);
+    // ztoolkit.log("library type", library.libraryType);
     await fetchDuplicates({ libraryID: library.libraryID, refresh });
   }
 }
@@ -166,7 +168,7 @@ export class Duplicates {
           "chrome://zotero-platform/content/overlay.css",
           "chrome://zotero-platform/content/zotero.css",
         ];
-        ztoolkit.log("this.document", this.document);
+        // ztoolkit.log("this.document", this.document);
         cssFiles.forEach((css) => {
           this.document?.head.appendChild(
             ztoolkit.UI.createElement(this.document, "link", {
@@ -189,7 +191,7 @@ export class Duplicates {
             (this.window as any).sizeToContent();
             this.window?.resizeBy(20, 0); // Add 20px to width for scrollbar
           }
-          ztoolkit.log("currentHeight: ", currentHeight);
+          // ztoolkit.log("currentHeight: ", currentHeight);
         }, 500);
       },
       unloadCallback: () => {
@@ -204,6 +206,10 @@ export class Duplicates {
 
   async showDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
     this.updateDuplicateMaps(duplicateMaps);
+
+    await showHintWithLink(getString("du-dialog-title"), "", getString("du-dialog-hint"), async () => {
+      bringToFront();
+    });
 
     if (this.dialog) {
       // const prevScrollWidth = this.document?.body.scrollWidth || 0;
@@ -224,7 +230,6 @@ export class Duplicates {
     } else {
       // If dialog is not opened, create dialog
       this.dialog = await this.createDialog();
-
       // Prevent the dialog from blocking the main thread
       new Promise((resolve) => {
         resolve(

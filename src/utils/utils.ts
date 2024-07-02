@@ -1,3 +1,5 @@
+import { waitUtilAsync } from "./wait";
+
 export function truncateString(inputString: string, maxLength: number = 24): string {
   if (inputString.length <= maxLength) {
     return inputString;
@@ -33,4 +35,32 @@ export function uniqueItemPairs(itemPairs: { itemID: number; itemID2: number }[]
     }
   }
   return uniqueRecords;
+}
+
+// Refer to https://github.com/windingwind/zotero-better-notes/blob/master/src/utils/hint.ts#L18-L43
+export async function showHintWithLink(
+  title: string,
+  text: string,
+  linkText: string,
+  linkCallback: (ev: MouseEvent) => any,
+) {
+  const progress = new ztoolkit.ProgressWindow(title)
+    .createLine({ text, progress: 100, type: "default" })
+    .show(-1);
+  // Just a placeholder
+  progress.addDescription(`<a href="javascript:void(0)">${linkText}</a>`);
+
+  await waitUtilAsync(() =>
+    // @ts-ignore
+    Boolean(progress.lines && progress.lines[0]._itemText),
+  );
+  // @ts-ignore
+  progress.lines[0]._hbox.ownerDocument
+    .querySelector("label[href]")
+    .addEventListener("click", async (ev: MouseEvent) => {
+      ev.stopPropagation();
+      ev.preventDefault();
+      linkCallback(ev);
+    });
+  return progress;
 }

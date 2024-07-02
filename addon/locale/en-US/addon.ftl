@@ -17,6 +17,7 @@ general-empty = Empty
 # Duplicate Dialog
 du-dialog-title = Found Duplicate Items
 du-dialog-header = The following items have existed in your library. How would you like to process them?
+du-dialog-hint = Click here for details.
 
 du-dialog-table-title = Title
 du-dialog-table-keep = Keep This
