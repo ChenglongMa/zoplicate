@@ -48,10 +48,10 @@ export function patchGetSearchObject() {
     enabled: true,
     patcher: (original) =>
       async function (this: any): Promise<Zotero.Search> {
-        ztoolkit.log("Get Search Object is called.");
+        // ztoolkit.log("Get Search Object is called.");
         const libraryID = this._libraryID;
         if (addon.data.needResetDuplicateSearch[libraryID] || !addon.data.duplicateSearchObj[libraryID]) {
-          ztoolkit.log("debug flag: Reset duplicate search", libraryID);
+          // ztoolkit.log("debug flag: Reset duplicate search", libraryID);
           const search = await original.call(this);
           addon.data.duplicateSearchObj[libraryID] = search;
           addon.data.duplicateSets[libraryID] = this._sets;
@@ -84,6 +84,20 @@ export function patchItemSaveData() {
           notifierData.refreshDuplicates = true;
           Zotero.Notifier.queue("modify", "item", this.id, notifierData, event.options.notifierQueue);
         }
+      },
+  });
+}
+
+export function patchMergePDFAttachments() {
+  const patch = new ztoolkit.Patch();
+  patch.setData({
+    target: Zotero.Items,
+    funcSign: "_mergePDFAttachments",
+    enabled: true,
+    patcher: (original) =>
+      async function (this: any, items: Zotero.Item[]) {
+        ztoolkit.log("Merging PDF attachments");
+        await original.call(this, items);
       },
   });
 }

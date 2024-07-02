@@ -29,7 +29,7 @@ export function registerNonDuplicatesSection(db: IDatabase) {
         icon: "chrome://zotero/skin/16/universal/plus.svg",
         l10nID: `${config.addonRef}-non-duplicate-add`,
         onClick: async ({ body, item }) => {
-          ztoolkit.log("add non duplicate");
+          // ztoolkit.log("add non duplicate");
           let io: {
             dataIn: null | number[];
             dataOut: null | number[];
@@ -50,7 +50,7 @@ export function registerNonDuplicatesSection(db: IDatabase) {
             io,
           );
           await io.deferred.promise;
-          ztoolkit.log("io.dataOut", io);
+          // ztoolkit.log("io.dataOut", io);
 
           if (!io.dataOut || !io.dataOut.length) {
             return;
@@ -95,14 +95,14 @@ export function registerNonDuplicatesSection(db: IDatabase) {
       setSectionButtonStatus,
       refresh,
     }) {
-      ztoolkit.log("onInit non duplicates");
+      // ztoolkit.log("onInit non duplicates");
 
       const notifierKey = Zotero.Notifier.registerObserver(
         {
           notify: (event, type, ids, extraData) => {
             const itemID = body.dataset.itemID;
             const item = itemID && Zotero.Items.get(itemID);
-            ztoolkit.log(`non duplicate notify ${type}`, ids, item);
+            // ztoolkit.log(`non duplicate notify ${type}`, ids, item);
             if (
               item &&
               // @ts-ignore
@@ -110,7 +110,7 @@ export function registerNonDuplicatesSection(db: IDatabase) {
               type === "item" &&
               (ids as number[]).includes(item.id)
             ) {
-              ztoolkit.log(`non duplicate notify [removeNonDuplicate] ${type}`, ids, item.id);
+              // ztoolkit.log(`non duplicate notify [removeNonDuplicate] ${type}`, ids, item.id);
               refresh();
             }
           },
@@ -122,7 +122,7 @@ export function registerNonDuplicatesSection(db: IDatabase) {
       body.dataset.notifierKey = notifierKey;
     },
     onDestroy({ body }) {
-      ztoolkit.log("onDestroy non duplicates");
+      // ztoolkit.log("onDestroy non duplicates");
       const notifierKey = body.dataset.notifierKey;
       if (notifierKey) {
         Zotero.Notifier.unregisterObserver(notifierKey);
@@ -133,7 +133,7 @@ export function registerNonDuplicatesSection(db: IDatabase) {
     },
     onRender: () => {},
     onAsyncRender: async ({ body, item, editable }) => {
-      ztoolkit.log("onAsyncRender non duplicates", body);
+      // ztoolkit.log("onAsyncRender non duplicates", body);
 
       body.replaceChildren();
 

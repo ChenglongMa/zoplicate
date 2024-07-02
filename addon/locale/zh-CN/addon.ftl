@@ -18,6 +18,7 @@ general-empty = 空
 # Duplicate Dialog
 du-dialog-title = 检测到重复条目
 du-dialog-header = 以下条目已存在于您的库中。您想如何处理它们？
+du-dialog-hint = 点击此处查看详情。
 
 du-dialog-table-title = 标题
 du-dialog-table-keep = 保留最新的

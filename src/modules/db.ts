@@ -68,7 +68,7 @@ class DexieDB extends Dexie implements IDatabase {
 
   async insertNonDuplicatePair(itemID: number, itemID2: number, libraryID?: number) {
     if (await this.existsNonDuplicatePair(itemID, itemID2)) {
-      ztoolkit.log("Pair already exists: ", itemID, itemID2);
+      // ztoolkit.log("Pair already exists: ", itemID, itemID2);
       return;
     }
     libraryID = libraryID ?? Zotero.Items.get(itemID).libraryID;
@@ -100,14 +100,14 @@ class DexieDB extends Dexie implements IDatabase {
         }
       }
     }
-    ztoolkit.log("Unique pairs:", rows);
+    // ztoolkit.log("Unique pairs:", rows);
     return rows;
   }
 
   async insertNonDuplicates(itemIDs: number[], libraryID?: number): Promise<void> {
     const records = this.getUniquePairs(itemIDs, libraryID);
     await this.nonDuplicates.bulkPut(records);
-    ztoolkit.log("Inserted non-duplicates done");
+    // ztoolkit.log("Inserted non-duplicates done");
   }
 
   async deleteNonDuplicatePair(itemID: number, itemID2: number) {
@@ -191,7 +191,7 @@ class SQLiteDB implements IDatabase {
 
   async init() {
     await this.createNonDuplicateTable();
-    ztoolkit.log("DB initialized");
+    // ztoolkit.log("DB initialized");
   }
 
   private async createNonDuplicateTable() {

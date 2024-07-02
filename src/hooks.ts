@@ -13,7 +13,7 @@ import { registerNonDuplicatesSection } from "./modules/nonDuplicates";
 import {
   patchFindDuplicates,
   patchGetSearchObject,
-  patchItemSaveData
+  patchItemSaveData, patchMergePDFAttachments
 } from "./modules/patcher";
 import { containsRegularItem, isInDuplicatesPane, refreshItemTree } from "./utils/zotero";
 import { registerDuplicateStats } from "./modules/duplicateStats";
@@ -53,6 +53,8 @@ async function onMainWindowLoad(win: Window): Promise<void> {
   registerNonDuplicatesSection(db);
 
   menus.registerMenus(win);
+
+  patchMergePDFAttachments();
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {
@@ -78,7 +80,7 @@ async function onShutdown() {
  */
 async function onNotify(event: string, type: string, ids: number[] | string[], extraData: { [key: string]: any }) {
   // You can add your code to the corresponding `notify type`
-  ztoolkit.log("notify", event, type, ids, extraData);
+  // ztoolkit.log("notify", event, type, ids, extraData);
   const precondition = ids && ids.length > 0 && !BulkDuplicates.getInstance().isRunning;
 
   if (!precondition) {
@@ -101,7 +103,7 @@ async function onNotify(event: string, type: string, ids: number[] | string[], e
     // "refresh" event on trash
     (type == "trash" && event == "refresh");
 
-  ztoolkit.log("refreshDuplicates", toRefresh);
+  // ztoolkit.log("refreshDuplicates", toRefresh);
 
   if (toRefresh) {
     if (type == "item") {
