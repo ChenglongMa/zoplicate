@@ -1,11 +1,11 @@
-import database, { IDatabase } from "../db/db";
 import { config } from "../../package.json";
 import { isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
 import { TagElementProps } from "zotero-plugin-toolkit/dist/tools/ui";
 import { getString } from "../utils/locale";
 import { areDuplicates, fetchDuplicates } from "./duplicates";
+import { NonDuplicatesDB } from "../db/nonDuplicates";
 
-export function registerNonDuplicatesSection(db: IDatabase) {
+export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
   addon.data.nonDuplicateSectionID = Zotero.ItemPaneManager.registerSection({
     paneID: `sec-non-duplicates`,
     pluginID: config.addonID,
@@ -189,9 +189,9 @@ export async function toggleNonDuplicates(action: "mark" | "unmark", items?: num
   const selectedItems = items && items.length ? items : Zotero.getActiveZoteroPane().getSelectedItems();
   const itemIDs = selectedItems.map((item) => (typeof item === "number" ? item : item.id));
   if (action === "mark") {
-    await database.getDatabase().insertNonDuplicates(itemIDs, ZoteroPane.getSelectedLibraryID());
+    await NonDuplicatesDB.instance.insertNonDuplicates(itemIDs, ZoteroPane.getSelectedLibraryID());
   } else if (action === "unmark") {
-    await database.getDatabase().deleteNonDuplicates(itemIDs);
+    await NonDuplicatesDB.instance.deleteNonDuplicates(itemIDs);
   }
   await fetchDuplicates({ refresh: true });
   if (isInDuplicatesPane()) {

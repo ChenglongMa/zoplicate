@@ -30,7 +30,6 @@
   },
   "homepage": "https://chenglongma.com/zoplicate/",
   "dependencies": {
-    "dexie": "^4.0.7",
     "zotero-plugin-toolkit": "^2.3.36"
   },
   "devDependencies": {

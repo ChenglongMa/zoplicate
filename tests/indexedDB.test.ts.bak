@@ -1,5 +1,5 @@
 import { describe, expect, test, jest, beforeAll, it, afterAll, afterEach } from "@jest/globals";
-import { DexieDB, INonDuplicatePair } from "../src/modules/db";
+import { DexieDB, INonDuplicatePair } from "../src/db/db";
 import Dexie from "dexie";
 
 describe("DexieDB", () => {
