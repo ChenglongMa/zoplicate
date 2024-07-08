@@ -2,22 +2,23 @@ import { config } from "../package.json";
 import { initLocale } from "./utils/locale";
 import { registerPrefs, registerPrefsScripts } from "./modules/preferenceScript";
 import { createZToolkit } from "./utils/ztoolkit";
-import { Notifier } from "./modules/notifier";
+import { whenItemsAdded, whenItemsDeleted, registerNotifier } from "./modules/notifier";
 import { registerStyleSheets } from "./utils/window";
 import { BulkDuplicates } from "./modules/bulkDuplicates";
 import { fetchDuplicates, registerButtonsInDuplicatePane } from "./modules/duplicates";
 import menus from "./modules/menus";
 // import "./modules/zduplicates.js";
-import database from "./modules/db";
 import { registerNonDuplicatesSection } from "./modules/nonDuplicates";
 import {
   patchFindDuplicates,
   patchGetSearchObject,
-  patchItemSaveData, patchMergePDFAttachments
+  patchItemSaveData,
+  patchMergePDFAttachments,
 } from "./modules/patcher";
 import { containsRegularItem, isInDuplicatesPane, refreshItemTree } from "./utils/zotero";
 import { registerDuplicateStats } from "./modules/duplicateStats";
-import { waitUtilAsync } from "./utils/wait";
+import { waitUntilAsync } from "./utils/wait";
+import { NonDuplicatesDB } from "./db/nonDuplicates";
 
 async function onStartup() {
   await Promise.all([Zotero.initializationPromise, Zotero.unlockPromise, Zotero.uiReadyPromise]);
@@ -26,23 +27,23 @@ async function onStartup() {
 }
 
 async function onMainWindowLoad(win: Window): Promise<void> {
-  // await waitUtilAsync(() => document.readyState === "complete");
+  // await waitUntilAsync(() => document.readyState === "complete");
 
   // create ztoolkit
   addon.data.ztoolkit = createZToolkit();
   window.MozXULElement.insertFTLIfNeeded(`${config.addonRef}-itemSection.ftl`);
 
   // init database
-  const db = database.getDatabase();
-  await db.init();
+  const nonDuplicatesDB = NonDuplicatesDB.instance;
+  await nonDuplicatesDB.init();
 
   // register stylesheets and preferences
   registerStyleSheets();
   registerPrefs();
 
   // patch Zotero duplicate search object and events
-  Notifier.registerNotifier();
-  patchFindDuplicates(db);
+  registerNotifier();
+  patchFindDuplicates(nonDuplicatesDB);
   patchGetSearchObject();
   patchItemSaveData();
 
@@ -50,26 +51,44 @@ async function onMainWindowLoad(win: Window): Promise<void> {
   await registerDuplicateStats();
   await registerButtonsInDuplicatePane(win);
   BulkDuplicates.getInstance().registerUIElements(win);
-  registerNonDuplicatesSection(db);
+  registerNonDuplicatesSection(nonDuplicatesDB);
 
   menus.registerMenus(win);
 
   patchMergePDFAttachments();
+  if (addon.data.env === "development") {
+    await registerDevColumn();
+  }
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {
   ztoolkit.unregisterAll();
   addon.data.dialogs.dialog?.window?.close();
-  await database.getDatabase().close();
+  await NonDuplicatesDB.instance.close();
 }
 
 async function onShutdown() {
   ztoolkit.unregisterAll();
   addon.data.dialogs.dialog?.window?.close();
-  await database.getDatabase().close();
+  await NonDuplicatesDB.instance.close();
   // Remove addon object
   addon.data.alive = false;
   delete Zotero[config.addonInstance];
+}
+
+/**
+ * Register a custom column for development purpose.
+ */
+async function registerDevColumn() {
+  const field = "Item ID";
+  await Zotero.ItemTreeManager.registerColumns({
+    pluginID: config.addonID,
+    dataKey: field,
+    label: "Item ID",
+    dataProvider: (item: Zotero.Item, dataKey: string) => {
+      return String(item.id) + " " + item.key;
+    },
+  });
 }
 
 /**
@@ -80,7 +99,15 @@ async function onShutdown() {
  */
 async function onNotify(event: string, type: string, ids: number[] | string[], extraData: { [key: string]: any }) {
   // You can add your code to the corresponding `notify type`
-  // ztoolkit.log("notify", event, type, ids, extraData);
+  ztoolkit.log("notify", event, type, ids, extraData);
+
+  const isDeleted = type == "item" && event == "delete" && ids.length > 0;
+
+  if (isDeleted) {
+    await whenItemsDeleted(ids as number[]);
+    return;
+  }
+
   const precondition = ids && ids.length > 0 && !BulkDuplicates.getInstance().isRunning;
 
   if (!precondition) {
@@ -103,7 +130,7 @@ async function onNotify(event: string, type: string, ids: number[] | string[], e
     // "refresh" event on trash
     (type == "trash" && event == "refresh");
 
-  // ztoolkit.log("refreshDuplicates", toRefresh);
+  ztoolkit.log("refreshDuplicates", toRefresh);
 
   if (toRefresh) {
     if (type == "item") {
@@ -115,7 +142,7 @@ async function onNotify(event: string, type: string, ids: number[] | string[], e
     const libraryID = libraryIDs[0]; // normally only one libraryID
     const { duplicatesObj } = await fetchDuplicates({ libraryID, refresh: true });
     if (type == "item" && event == "add") {
-      await Notifier.whenItemsAdded(duplicatesObj, ids as number[]);
+      await whenItemsAdded(duplicatesObj, ids as number[]);
     }
   }
 }

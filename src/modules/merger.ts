@@ -11,19 +11,15 @@ export async function merge(
   }
 
   const masterJSON = masterItem.toJSON();
-  // ztoolkit.log("pure masterJSON: ", masterJSON);
   const candidateJSON: {
     [field in Zotero.Item.DataType]?: string | unknown;
   } = otherItems.reduce((acc, obj) => ({ ...acc, ...obj.toJSON() }), {});
-  // ztoolkit.log("pure candidateJSON: ", candidateJSON);
 
   // Refer to https://github.com/zotero/zotero/blob/main/chrome/content/zotero/duplicatesMerge.js#L151
   // New link since 02/02/2024: https://github.com/zotero/zotero/blob/main/chrome/content/zotero/elements/duplicatesMergePane.js#L172
   // Exclude certain properties that are empty in the cloned object, so we don't clobber them
   const { relations, collections, tags, ...keep } = candidateJSON;
-  // ztoolkit.log("pure keep: ", keep);
-
   masterItem.fromJSON({ ...keep, ...masterJSON });
-  // ztoolkit.log("final masterItem ", masterItem.toJSON());
+
   return await Zotero.Items.merge(masterItem, otherItems);
 }

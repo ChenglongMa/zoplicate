@@ -8,3 +8,7 @@ yarn.lock
 zotero-cmd.json
 .DS_Store
 .env
+*.bak
+playground.*
+temp.*
+tmp.*

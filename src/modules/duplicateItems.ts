@@ -26,12 +26,7 @@ export class DuplicateItems {
 
   constructor(items: Zotero.Item[] | number[], masterItemPref: MasterItem) {
     this._masterItemPref = masterItemPref;
-    this._items = items.map((item) => {
-      if (typeof item === "number") {
-        return Zotero.Items.get(item);
-      }
-      return item;
-    });
+    this._items = items.map((item) => (typeof item === "number" ? Zotero.Items.get(item) : item));
   }
 
   private analyze() {
@@ -52,7 +47,7 @@ export class DuplicateItems {
         break;
     }
     this._items.sort(compare);
-    this._masterItem = this._items.pop();
+    this._masterItem = this._items.pop(); // REMOVE the last item
   }
 
   getOtherItems() {

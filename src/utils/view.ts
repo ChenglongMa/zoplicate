@@ -15,7 +15,7 @@ function updateButtonAttribute(win: Window, attribute: string, value: { toString
     if (button) {
       button.setAttribute(attribute, value.toString());
     } else {
-      // ztoolkit.log(`Element with id ${id} not found`);
+      ztoolkit.log(`Element with id ${id} not found`);
     }
   });
 }
