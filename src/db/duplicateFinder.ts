@@ -13,6 +13,8 @@ export class DuplicateFinder {
 
   async find() {
     ztoolkit.log("Finding duplicates for item", this.item.id, this.item.getDisplayTitle());
+    await this.findByDcReplacesRelation();
+    ztoolkit.log("Finding duplicates Candidates after dc:replaces", this.candidateItemIDs);
     await this.findByDOI();
     ztoolkit.log("Finding duplicates Candidates after DOI", this.candidateItemIDs);
     await this.findBookByISBN();
@@ -26,11 +28,24 @@ export class DuplicateFinder {
     return this.candidateItemIDs;
   }
 
+  private async findByDcReplacesRelation() {
+    const predicate = Zotero.Relations.replacedItemPredicate;
+    const thisURI = Zotero.URI.getItemURI(this.item);
+    const mergeItems: Zotero.Item[] = await Zotero.Relations.getByPredicateAndObject("item", predicate, thisURI);
+    this.candidateItemIDs = mergeItems.map((item) => item.id);
+    return this;
+  }
+
   private async findByDOI() {
+    if (this.candidateItemIDs.length === 1) {
+      return this;
+    }
+
     const dois = cleanDOI(this.item);
     if (dois.length === 0) {
       return this;
     }
+    const candidateAndClause = buildCandidateAndClause(this.candidateItemIDs);
     // Match by DOI
     // NOTE: according to `likeSqlRegex = /\bLIKE\b\s(?![@:?])/i;` (at Sqlite.sys.mjs#L26)
     // `LIKE` can be followed by `@`, `:`, or `?`
@@ -46,9 +61,9 @@ export class DuplicateFinder {
                      AND libraryID = ?
                      AND itemTypeID = ?
                      AND fieldID IN (${fieldIDInClause})
-                     AND (${partialWhereClause});`;
+                     AND (${partialWhereClause}) ${candidateAndClause};`;
     const doiParams = dois.map((doi) => `%${doi}%`);
-    const params = [this.item.libraryID, this.itemTypeID, ...fieldIDs, ...doiParams];
+    const params = [this.item.libraryID, this.itemTypeID, ...fieldIDs, ...doiParams, ...this.candidateItemIDs];
     const rows: { itemID: number }[] = await Zotero.DB.queryAsync(query, params);
     this.candidateItemIDs = rows.map((row) => row.itemID);
     return this;

@@ -232,7 +232,6 @@ export class Duplicates {
   async showDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
     this.updateDuplicateMaps(duplicateMaps);
 
-    // TODO: show this when zotero is in background
     if (!window.document.hasFocus()) {
       await showHintWithLink(getString("du-dialog-title"), "", getString("du-dialog-hint"), async () => {
         bringToFront();
