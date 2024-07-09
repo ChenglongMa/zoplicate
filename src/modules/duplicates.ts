@@ -233,9 +233,11 @@ export class Duplicates {
     this.updateDuplicateMaps(duplicateMaps);
 
     // TODO: show this when zotero is in background
-    await showHintWithLink(getString("du-dialog-title"), "", getString("du-dialog-hint"), async () => {
-      bringToFront();
-    });
+    if (!window.document.hasFocus()) {
+      await showHintWithLink(getString("du-dialog-title"), "", getString("du-dialog-hint"), async () => {
+        bringToFront();
+      });
+    }
 
     if (this.dialog) {
       // const prevScrollWidth = this.document?.body.scrollWidth || 0;
