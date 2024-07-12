@@ -1,13 +1,16 @@
 import { getString } from "../utils/locale";
 import { DialogHelper } from "zotero-plugin-toolkit/dist/helpers/dialog";
 import { TagElementProps } from "zotero-plugin-toolkit/dist/tools/ui";
-import { getPref, setPref, Action, MasterItem } from "../utils/prefs";
+import { Action, getPref, MasterItem, setPref } from "../utils/prefs";
 import { merge } from "./merger";
 import { goToDuplicatesPane, isInDuplicatesPane } from "../utils/zotero";
 import { DuplicateItems } from "./duplicateItems";
 import { createNonDuplicateButton, NonDuplicates } from "./nonDuplicates";
 import { BulkDuplicates } from "./bulkDuplicates";
 import { toggleButtonHidden } from "../utils/view";
+import { bringToFront } from "../utils/window";
+import { showHintWithLink } from "../utils/utils";
+import { waitUntilAsync } from "../utils/wait";
 
 function addButtonsInDuplicatePanes(innerButton: boolean, siblingElement: Element) {
   const mergeButtonID = innerButton ? BulkDuplicates.innerButtonID : BulkDuplicates.externalButtonID;
@@ -51,6 +54,19 @@ export async function updateDuplicateButtonsVisibilities() {
   toggleButtonHidden(window, !showNonDuplicateButton, NonDuplicates.innerButtonID, NonDuplicates.externalButtonID);
 }
 
+/**
+ * @deprecated
+ * Find the retained duplicate of the deleted item
+ * @param deletedItem
+ */
+export async function findRetainedDuplicate(deletedItem: Zotero.Item | number) {
+  const item = typeof deletedItem === "number" ? Zotero.Items.get(deletedItem) : deletedItem;
+  const libraryID = item.libraryID;
+  const { duplicatesObj } = await fetchDuplicates({ libraryID, refresh: false });
+  const duplicates = duplicatesObj.getSetItemsByItemID(item.id);
+  return duplicates.map((id) => Zotero.Items.get(id)).find((item) => !item.deleted);
+}
+
 export async function areDuplicates(items: number[] | Zotero.Item[] = ZoteroPane.getSelectedItems()) {
   if (items.length < 2) return false;
   const libraryIDs = new Set(
@@ -68,6 +84,8 @@ export async function areDuplicates(items: number[] | Zotero.Item[] = ZoteroPane
 export async function fetchAllDuplicates(refresh = false) {
   const libraries = Zotero.Libraries.getAll();
   for (const library of libraries) {
+    const libraryType = library.libraryType;
+    if (libraryType == "feed") continue;
     await fetchDuplicates({ libraryID: library.libraryID, refresh });
   }
 }
@@ -107,9 +125,19 @@ export async function processDuplicates(duplicateMaps: Map<number, { existingIte
       progress: 0,
     })
     .show();
-
+  addon.data.processing = true;
   const masterItemPref = getPref("bulk.master.item") as MasterItem;
   for (const [newItemID, { existingItemIDs, action }] of duplicateMaps) {
+    ztoolkit.log("Processing duplicate: ", newItemID);
+
+    // TODO: Further check if the block is necessary
+    // try {
+    //   // Wait for potential attachments to be downloaded
+    //   await waitUntilAsync(() => Zotero.Items.get(newItemID).numAttachments() > 0, 100, 300);
+    // } catch (e) {
+    //   ztoolkit.log(e);
+    // }
+
     const newItem = Zotero.Items.get(newItemID);
     if (action === Action.KEEP) {
       items.push({
@@ -137,6 +165,8 @@ export async function processDuplicates(duplicateMaps: Map<number, { existingIte
     selectedItemIDs.push(masterItem.id);
     await merge(masterItem, otherItems);
   }
+  addon.data.processing = false;
+
   popWin.changeLine({
     text: getString("du-progress-text"),
     type: "default",
@@ -165,7 +195,6 @@ export class Duplicates {
           "chrome://zotero-platform/content/overlay.css",
           "chrome://zotero-platform/content/zotero.css",
         ];
-        ztoolkit.log("this.document", this.document)
         cssFiles.forEach((css) => {
           this.document?.head.appendChild(
             ztoolkit.UI.createElement(this.document, "link", {
@@ -188,7 +217,6 @@ export class Duplicates {
             (this.window as any).sizeToContent();
             this.window?.resizeBy(20, 0); // Add 20px to width for scrollbar
           }
-          ztoolkit.log("currentHeight: ", currentHeight);
         }, 500);
       },
       unloadCallback: () => {
@@ -203,6 +231,12 @@ export class Duplicates {
 
   async showDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
     this.updateDuplicateMaps(duplicateMaps);
+
+    if (!window.document.hasFocus()) {
+      await showHintWithLink(getString("du-dialog-title"), "", getString("du-dialog-hint"), async () => {
+        bringToFront();
+      });
+    }
 
     if (this.dialog) {
       // const prevScrollWidth = this.document?.body.scrollWidth || 0;
@@ -223,14 +257,20 @@ export class Duplicates {
     } else {
       // If dialog is not opened, create dialog
       this.dialog = await this.createDialog();
-      this.dialog.open(getString("du-dialog-title"), {
-        centerscreen: true,
-        resizable: true,
-        fitContent: true,
-        noDialogMode: false,
-        alwaysRaised: true,
+      // Prevent the dialog from blocking the main thread
+      new Promise((resolve) => {
+        resolve(
+          this.dialog?.open(getString("du-dialog-title"), {
+            centerscreen: true,
+            resizable: true,
+            fitContent: true,
+            noDialogMode: false,
+            alwaysRaised: true,
+          }),
+        );
+      }).then(async () => {
+        await this.dialogData.unloadLock.promise;
       });
-      await this.dialogData.unloadLock.promise;
     }
   }
 
@@ -293,7 +333,7 @@ export class Duplicates {
 
   private checkDefaultRadio(selectAll: boolean, defaultAction: Action) {
     // Set disabled status of "as default" checkbox
-    const asDefaultDiv = this.document?.getElementById("act_as_default_div");
+    const asDefaultDiv = this.document?.getElementById("act_as_default_div") as HTMLElement;
     asDefaultDiv && (asDefaultDiv.style.visibility = selectAll ? "visible" : "hidden");
 
     if (selectAll) {
@@ -400,8 +440,8 @@ export class Duplicates {
         ],
       })
       .addButton(getString("du-dialog-button-apply"), "btn_process", {
-        callback: async (e) => {
-          await processDuplicates(this.duplicateMaps!);
+        callback: (e) => {
+          processDuplicates(this.duplicateMaps!);
         },
       })
       .addButton(getString("du-dialog-button-go-duplicates"), "btn_go_duplicate", {

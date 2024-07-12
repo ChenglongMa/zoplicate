@@ -19,9 +19,14 @@ function registerStyleSheets() {
         rel: "stylesheet",
         href: `chrome://${config.addonRef}/content/${href}.css`,
       },
-    })
+    });
     document.documentElement.appendChild(styles);
   }
 }
 
-export { isWindowAlive, registerStyleSheets };
+function bringToFront() {
+  window.focus();
+  window.document.documentElement.scrollIntoView();
+}
+
+export { isWindowAlive, registerStyleSheets, bringToFront };
