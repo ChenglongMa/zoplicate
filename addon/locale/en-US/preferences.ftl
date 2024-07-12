@@ -4,9 +4,9 @@ pref-action-title = Action Preferences
 pref-default-action-description = Default action to process duplicate items
 
 pref-default-action-keep-this =
-    .label = [Keep This]: Save the last imported item and delete the rest
+    .label = [Keep New]: Set the last imported item as the master item and merge the duplicates.
 pref-default-action-keep-others =
-    .label = [Keep Others]: Delete the last imported item and save the rest
+    .label = [Keep Old]: Set the existing item as the master item and merge the duplicates.
 pref-default-action-keep-all =
     .label = [Keep All]: Save all items
 pref-default-action-always-ask =

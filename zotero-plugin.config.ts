@@ -8,12 +8,8 @@ export default defineConfig({
   name: pkg.config.addonName,
   id: pkg.config.addonID,
   namespace: pkg.config.addonRef,
-  updateURL: `https://github.com/{{owner}}/{{repo}}/releases/download/release/${
-    pkg.version.includes("-") ? "update-beta.json" : "update.json"
-  }`,
-  xpiDownloadLink:
-    "https://github.com/{{owner}}/{{repo}}/releases/download/v{{version}}/{{xpiName}}.xpi",
-
+  updateURL: "https://raw.githubusercontent.com/ChenglongMa/zoplicate/main/update.json",
+  xpiDownloadLink: "https://github.com/ChenglongMa/zoplicate/releases/latest/download/zoplicate.xpi",
   server: {
     asProxy: true,
   },
@@ -40,15 +36,15 @@ export default defineConfig({
       },
     ],
     // If you want to checkout update.json into the repository, uncomment the following lines:
-    // makeUpdateJson: {
-    //   hash: false,
-    // },
-    // hooks: {
-    //   "build:makeUpdateJSON": (ctx) => {
-    //     copyFileSync("build/update.json", "update.json");
-    //     copyFileSync("build/update-beta.json", "update-beta.json");
-    //   },
-    // },
+    makeUpdateJson: {
+      hash: false,
+    },
+    hooks: {
+      "build:makeUpdateJSON": (ctx) => {
+        copyFileSync("build/update.json", "update.json");
+        copyFileSync("build/update-beta.json", "update-beta.json");
+      },
+    },
   },
   // release: {
   //   bumpp: {
