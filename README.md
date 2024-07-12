@@ -12,10 +12,13 @@
 
 ![GitHub License](https://img.shields.io/github/license/ChenglongMa/zoplicate)
 [![Using Zotero Plugin Template](https://img.shields.io/badge/Using-Zotero%20Plugin%20Template-blue?style=flat-square&logo=github)](https://github.com/windingwind/zotero-plugin-template)
-[![Discord](https://img.shields.io/discord/1217704439612313631)](https://discord.gg/qFdNpSNb)
 [![GitHub Repo stars](https://img.shields.io/github/stars/ChenglongMa/zoplicate)](https://github.com/ChenglongMa/zoplicate)
 
 ----
+
+<div align="center">
+    English | <a href="./README_CN.md">简体中文</a>
+</div>
 
 A plugin that does one thing only: **Detect** and **Manage** duplicate items in [![zotero](https://www.zotero.org/support/lib/exe/fetch.php?tok=2735f1&media=https%3A%2F%2Fwww.zotero.org%2Fstatic%2Fimages%2Fpromote%2Fzotero-logo-128x31.png)](https://www.zotero.org/).
 
@@ -23,26 +26,56 @@ A plugin that does one thing only: **Detect** and **Manage** duplicate items in 
 
 * **Duplicates Detection**
   * Detects if newly imported items are duplicates of existing ones in the Zotero library.
-  * You can:
-    1. **Keep This**: Save the last imported item and delete the rest.
-    2. **Keep Others**: Delete the last imported item and save the rest.
+  * You can choose which version of duplicate items to use as the **master item** and **merge** them.
+  * The actions you can take:
+    1. **Keep New**: Set the **new item** as the master item and merge the duplicates.
+    2. **Keep Old**: Set the **existing item** as the master item and merge the duplicates.
     3. **Keep All**: Keep both the new item and the existing item.
-    4. **Merge Manually**: Go to the Duplicate Panel and merge the duplicate item manually.
+    4. **Merge Manually**: Go to the Duplicate Items Panel and merge the duplicate item manually.
 * **Auto-Bulk Merge**
   * Merges all duplicate items in the library automatically.
   * Introduced in Version 2.0.0.
 * **Non-duplicates Management**
   * Allows marking items as "Non-duplicates" if mistakenly identified as duplicates by Zotero.
   * Introduced in Version 3.0.0.
+* **Show Duplicate Statistics**
+  * Append the duplicate count on the label of Duplicate Items pane.
+  * Introduced in Version 2.3.0.
 
 *If you find this project helpful, please consider [giving it a star](https://github.com/ChenglongMa/zoplicate)* ⭐. *It would be a great encouragement for me!*
 
-> [!NOTE]
-> We use the same method as Zotero to *detect* and *merge* duplicate items.
+> [!IMPORTANT]
 > 
-> See [Zotero Documentation - Duplicate Detection](https://www.zotero.org/support/duplicate_detection) for more details.
+> Zoplicate does NOT delete the duplicate items arbitrarily.
+> 
+> Instead, it extracts the useful information from the duplicate items and merges them into the retained item.
+> 
+> It makes some improvements based on [the official detection and merging methods of Zotero](https://www.zotero.org/support/duplicate_detection).
+>
 
 # Changelog
+
+## v3.0.3
+
+<details markdown="1" open>
+  <summary><i>Click here to show more.</i></summary>
+
+In this version, we have made the following changes:
+
+1. 🐛 **FIX!**: We have fixed the bug that caused the attachment to be lost when merging duplicate items.
+    * Thanks to [tommyhosman](https://github.com/tommyhosman) for reporting this bug in [issue #43](https://github.com/ChenglongMa/zoplicate/issues/43).
+    * Thanks to [csdaboluo](https://github.com/csdaboluo) for reporting this bug in [issue #51](https://github.com/ChenglongMa/zoplicate/issues/51).
+2. 🐛 **FIX!**: Zoplicate will now ignore the **Feed** items when detecting duplicates.
+    * Thanks to [Raphael-Hao](https://github.com/Raphael-Hao) for reporting this bug in [issue #54](https://github.com/ChenglongMa/zoplicate/issues/54).
+3. 🐛 **FIX!**: We have fixed the bug that caused the detection dialog blocking the main thread.
+4. 🐛 **FIX!**: We have fixed the bug that caused the deleted items to be showing in NonDuplicates panel.
+5. 🐛 **FIX!**: Now, the NonDuplicates panel won't show up when clicking attachment items.
+6. ✨ **NEW!**: We added a prompt to remind the duplicates when Zotero is in background.
+
+</details>
+
+<details markdown="1">
+  <summary><i>Click here to show more.</i></summary>
 
 ## v3.0.2
 
@@ -182,14 +215,30 @@ Thanks [ChinJCheung](https://github.com/ChinJCheung)'s idea mentioned in [issue 
 
 </details>
 
+</details>
+
 # Install
+
+## From GitHub
 
 1. Download `.xpi` file according to the version of Zotero you are using.
    - **For Zotero 7**: Visit the [release page](https://github.com/ChenglongMa/zoplicate/releases/latest) and download [the latest `.xpi` file](https://github.com/ChenglongMa/zoplicate/releases/latest/download/zoplicate.xpi).
    - **For Zotero 6**: Visit the [release page](https://github.com/ChenglongMa/zoplicate/releases/tag/zotero6) and download [the `.xpi` file for Zotero 6](https://github.com/ChenglongMa/zoplicate/releases/download/zotero6/zoplicate.xpi).
    - If you are using FireFox, right-click on the link of the XPI file and select "Save As...".
 2. Then, in Zotero, click `Tools` -> `Add-ons` and drag the `.xpi` onto the Add-ons window.
-   See [how to install a Zotero addon](https://www.zotero.org/support/plugins).
+   - See [how to install a Zotero addon](https://www.zotero.org/support/plugins).
+
+## From Add-on Market Plugin for Zotero
+
+_Additional third-party plugin is required._
+
+1. Install Add-on Market for Zotero from [here](https://github.com/syt2/zotero-addons).
+2. Search `Zoplicate` in the Add-on Market and install it.
+
+## 通过 Zotero 插件商店 安装 (For Chinese Users)
+
+1. 前往 [Zotero 插件商店](https://zotero-chinese.com/plugins/).
+2. 搜索 `Zoplicate` 然后单击 `下载` 按钮。
 
 # Usage
 
@@ -236,7 +285,7 @@ the dialog will show all the duplicate items and the actions you can take.
 Inspired by [csdaboluo](https://github.com/csdaboluo)'s idea and [ZoteroDuplicatesMerger](https://github.com/frangoud/ZoteroDuplicatesMerger),
 we have added the **Bulk Merge** functionality in **Version 2.0.0**.
 
-In the `Duplicate Items` panel, you can find the **Bulk Merge** button:
+In the `Duplicate Items` panel, you can find the <kbd>Bulk Merge All Duplicate Items</kbd> button:
 
 ![zoplicate bulk merge](docs/bulk-merge-nonselection.png)
 
@@ -283,7 +332,7 @@ When your mouse hovers over the <kbd>Duplicate Items</kbd> entry, a tooltip will
 
 ![Show duplicate count](docs/show-duplicate-count.png)
 
-The duplicate count will be updated automatically. You can also find the <kbd>Refresh Duplicate Count</kbd> menu to update the count manually.
+The duplicate count will be updated automatically. You can also find the <kbd>Refresh</kbd> menu to update the count manually.
 
 ![Refresh duplicate count](docs/refresh-duplicate-count.png)
 

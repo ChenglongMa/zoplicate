@@ -17,11 +17,6 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
       icon: `chrome://${config.addonRef}/content/icons/non-duplicate.svg`, //20x20
       l10nID: `${config.addonRef}-section-non-duplicate-sidenav`,
     },
-    //     bodyXHTML: `
-    // <linkset>
-    //     <html:link rel="localization" href="${config.addonRef}-itemSection.ftl" />
-    // </linkset>
-    // `,
 
     sectionButtons: [
       {
@@ -129,9 +124,13 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
       }
     },
     onItemChange: ({ body, item, setEnabled }) => {
+      ztoolkit.log("onItemChange non duplicates", item);
+      setEnabled(item?.isRegularItem());
       body.dataset.itemID = String(item.id);
     },
-    onRender: () => {},
+    onRender: ({ body, item, editable }) => {
+      ztoolkit.log("onRender non duplicates", item);
+    },
     onAsyncRender: async ({ body, item, editable }) => {
       ztoolkit.log("onAsyncRender non duplicates", body);
 
