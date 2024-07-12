@@ -28,11 +28,48 @@ export class DuplicateFinder {
     return this.candidateItemIDs;
   }
 
+  public static async findByRelations(item: Zotero.Item, predicate: _ZoteroTypes.RelationsPredicate, asIDs = true) {
+    let queue: Zotero.Item[] = [item];
+    let candidates = [];
+    let processedURIs = new Set<string>();
+
+    while (queue.length > 0) {
+      const currentItem = queue.shift();
+      if (!currentItem) {
+        continue;
+      }
+
+      const currentURI = Zotero.URI.getItemURI(currentItem);
+      if (processedURIs.has(currentURI)) {
+        continue;
+      }
+
+      const prevVersionItems: Zotero.Item[] = await Zotero.Relations.getByPredicateAndObject(
+        "item",
+        predicate,
+        currentURI,
+      );
+      // If there are no previous versions, then this is a candidate
+      if (prevVersionItems.length === 0 && !currentItem.deleted) {
+        ztoolkit.log("Found candidate", currentItem.id, currentItem.getDisplayTitle());
+        candidates.push(asIDs ? currentItem.id : currentItem);
+      }
+      // Otherwise, add the previous versions to the queue
+      for (const prevItem of prevVersionItems) {
+        const uri = Zotero.URI.getItemURI(prevItem);
+        if (!processedURIs.has(uri)) {
+          queue.push(prevItem);
+        }
+      }
+      processedURIs.add(currentURI);
+    }
+
+    return candidates;
+  }
+
   private async findByDcReplacesRelation() {
     const predicate = Zotero.Relations.replacedItemPredicate;
-    const thisURI = Zotero.URI.getItemURI(this.item);
-    const mergeItems: Zotero.Item[] = await Zotero.Relations.getByPredicateAndObject("item", predicate, thisURI);
-    this.candidateItemIDs = mergeItems.map((item) => item.id);
+    this.candidateItemIDs = (await DuplicateFinder.findByRelations(this.item, predicate, true)) as number[];
     return this;
   }
 

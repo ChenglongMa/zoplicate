@@ -4,11 +4,11 @@ pref-action-title = 默认操作设置
 pref-default-action-description = 处理重复条目的默认操作
 
 pref-default-action-keep-this =
-    .label = [保留最新的]: 保留新导入条目，删除库中原有的
+    .label = [保留最新的]: 以新导入条目为主条目，合并重复条目
 pref-default-action-keep-others =
-    .label = [保留已有的]: 保留库中原有条目，删除新导入的
+    .label = [保留已有的]: 以已有条目为主条目，合并重复条目
 pref-default-action-keep-all =
-    .label = [保留全部]: 保留所有条目，不删除任何项
+    .label = [保留全部]: 保留所有条目，不合并任何项
 pref-default-action-always-ask =
     .label = [始终询问]: 每次都询问我该如何处理
 
@@ -30,6 +30,6 @@ pref-default-master-item-always-ask =
 pref-view-title = 视图设置
 pref-view-description = 选择重复条目的显示方式
 pref-view-duplicate-stats =
-    .label = 在“重复条目”选项后显示重复条目数量。如，重复条目 2/6
+    .label = 在"重复条目"标签后显示重复条目数量。如，重复条目 2/6
 
 pref-help = { $name } Build { $version } { $time }
