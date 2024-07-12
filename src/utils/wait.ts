@@ -23,13 +23,8 @@ export function waitUntil(
   }, interval);
 }
 
-/**
- * Wait async until the condition is `true` or timeout.
- * @param condition
- * @param interval
- * @param timeout
- */
-export function waitUtilAsync(
+
+export function waitUntilAsync(
   condition: () => boolean,
   interval = 100,
   timeout = 10000,
@@ -37,12 +32,15 @@ export function waitUtilAsync(
   return new Promise<void>((resolve, reject) => {
     const start = Date.now();
     const intervalId = ztoolkit.getGlobal("setInterval")(() => {
+      ztoolkit.log("waitUntilAsync trying...");
       if (condition()) {
         ztoolkit.getGlobal("clearInterval")(intervalId);
+        ztoolkit.log("waitUtilAsync condition true");
         resolve();
       } else if (Date.now() - start > timeout) {
         ztoolkit.getGlobal("clearInterval")(intervalId);
-        reject();
+        ztoolkit.log("waitUtilAsync Timeout");
+        reject(new Error("Timeout waiting for condition to be true"));
       }
     }, interval);
   });

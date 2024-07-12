@@ -1,6 +1,9 @@
-import { IDatabase } from "./db";
 import { NonDuplicates } from "./nonDuplicates";
 import { refreshDuplicateStats } from "./duplicateStats";
+import { NonDuplicatesDB } from "../db/nonDuplicates";
+import { DuplicateItems } from "./duplicateItems";
+import { getPref, MasterItem } from "../utils/prefs";
+import { DuplicateFinder } from "../db/duplicateFinder";
 
 /**
  * Execution order:
@@ -9,7 +12,7 @@ import { refreshDuplicateStats } from "./duplicateStats";
  * 3. _saveData
  */
 
-export function patchFindDuplicates(db: IDatabase) {
+export function patchFindDuplicates(db: NonDuplicatesDB) {
   const patch = new ztoolkit.Patch();
   patch.setData({
     target: Zotero.Duplicates.prototype,
@@ -72,6 +75,20 @@ export function patchItemSaveData() {
     enabled: true,
     patcher: (original) =>
       async function (this: any, event: any) {
+        const parentID = this.parentID;
+        if (parentID) {
+          const parentItem = Zotero.Items.get(parentID);
+          ztoolkit.log("Parent item", parentID, "deleted?", parentItem?.deleted);
+          if (parentItem && parentItem.deleted) {
+            const newParents = await new DuplicateFinder(parentItem).find();
+            const masterItemPref = getPref("bulk.master.item") as MasterItem;
+            const duItems = new DuplicateItems(newParents, masterItemPref);
+
+            if (newParents.length > 0) {
+              this.parentID = duItems.masterItem.id;
+            }
+          }
+        }
         await original.call(this, event);
 
         const refreshDuplicates =
@@ -84,6 +101,22 @@ export function patchItemSaveData() {
           notifierData.refreshDuplicates = true;
           Zotero.Notifier.queue("modify", "item", this.id, notifierData, event.options.notifierQueue);
         }
+      },
+  });
+}
+
+export function patchMergePDFAttachments() {
+  const patch = new ztoolkit.Patch();
+  patch.setData({
+    target: Zotero.Items,
+    funcSign: "_mergePDFAttachments",
+    enabled: false,  // TODO: finish this
+    patcher: (original) =>
+      async function (this: any, item: Zotero.Item, otherItems: Zotero.Item[]) {
+        ztoolkit.log("Merging PDF attachments");
+        const otherAttachments = otherItems.flatMap((i) => i.getAttachments());
+        ztoolkit.log("Other attachments", otherAttachments);
+        return await original.call(this, item, otherItems);
       },
   });
 }

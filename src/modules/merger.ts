@@ -7,7 +7,6 @@ export async function merge(
   const masterItemType = masterItem.itemTypeID;
   otherItems = otherItems.filter((item) => item.itemTypeID === masterItemType);
   if (otherItems.length === 0) {
-
     return;
   }
 
@@ -20,7 +19,7 @@ export async function merge(
   // New link since 02/02/2024: https://github.com/zotero/zotero/blob/main/chrome/content/zotero/elements/duplicatesMergePane.js#L172
   // Exclude certain properties that are empty in the cloned object, so we don't clobber them
   const { relations, collections, tags, ...keep } = candidateJSON;
-
   masterItem.fromJSON({ ...keep, ...masterJSON });
+
   return await Zotero.Items.merge(masterItem, otherItems);
 }

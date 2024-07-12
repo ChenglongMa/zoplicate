@@ -1,9 +1,0 @@
-./doc
-./addon/chrome
-./addon/locale
-./addon/prefs.js
-./README.md
-./update.json
-./.github
-src/modules/preferenceScript.ts
-src/modules/examples.ts

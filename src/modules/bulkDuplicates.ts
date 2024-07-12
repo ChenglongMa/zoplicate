@@ -155,7 +155,8 @@ export class BulkDuplicates {
     }
 
     if (toCancel && restoreCheckbox.value) {
-      for (let i = deletedItems.length - 1; i >= 0; i--) {
+      const deletedCount = deletedItems.length;
+      for (let i = deletedCount - 1; i >= 0; i--) {
         const item = deletedItems[i];
         item.deleted = false;
         await item.saveTx();
@@ -163,7 +164,7 @@ export class BulkDuplicates {
           text: getString("bulk-merge-popup-restore", {
             args: { item: truncateString(item.getDisplayTitle()) },
           }),
-          progress: Math.floor((i / deletedItems.length) * 100),
+          progress: Math.floor((i / deletedCount) * 100),
         });
       }
     }
@@ -179,7 +180,6 @@ export class BulkDuplicates {
     this.win = win;
     ZoteroPane.collectionsView &&
       ZoteroPane.collectionsView.onSelect.addListener(async () => {
-        ztoolkit.log("collectionsView onSelect");
         const inDuplicatePane = isInDuplicatesPane();
         if (ZoteroPane.itemsView && inDuplicatePane && this._isRunning) {
           await ZoteroPane.itemsView.waitForLoad();
@@ -198,9 +198,21 @@ export class BulkDuplicates {
       });
 
     ZoteroPane.itemsView &&
-    ZoteroPane.itemsView.onSelect.addListener(async () => {
-      ztoolkit.log("itemsView.onSelect");
-      await updateDuplicateButtonsVisibilities();
-    });
+      ZoteroPane.itemsView.onSelect.addListener(async () => {
+        ztoolkit.log("itemsView.onSelect", ZoteroPane.getSelectedItems(true));
+        // TODO: Further investigate the requirement of this
+        // ZoteroPane.itemPane && ZoteroPane.itemPane.setAttribute("collapsed", "true");
+        // TODO: Or this
+        // if (ZoteroPane.itemPane) {
+          // @ts-ignore
+          // ZoteroPane.itemPane._itemDetails.skipRender = addon.data.processing;
+          // ZoteroPane.itemPane._itemDetails.getPane("zotero-attachment-box")
+          // const usePreview = Zotero.Prefs.get("showAttachmentPreview");
+          // @ts-ignore
+          // ZoteroPane.itemPane._itemDetails.getPane("attachments").usePreview =
+          //   !addon.data.processing && usePreview;
+        // }
+        await updateDuplicateButtonsVisibilities();
+      });
   }
 }
