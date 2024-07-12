@@ -85,6 +85,8 @@ export function patchItemSaveData() {
             const duItems = new DuplicateItems(newParents, masterItemPref);
 
             if (newParents.length > 0) {
+              // TODO: check if this is correct, should use official API
+              // Such as Zotero.Items.moveChildItems, etc.
               this.parentID = duItems.masterItem.id;
             }
           }

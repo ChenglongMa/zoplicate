@@ -131,12 +131,12 @@ export async function processDuplicates(duplicateMaps: Map<number, { existingIte
     ztoolkit.log("Processing duplicate: ", newItemID);
 
     // TODO: Further check if the block is necessary
-    // try {
-    //   // Wait for potential attachments to be downloaded
-    //   await waitUntilAsync(() => Zotero.Items.get(newItemID).numAttachments() > 0, 100, 300);
-    // } catch (e) {
-    //   ztoolkit.log(e);
-    // }
+    try {
+      // Wait for potential attachments to be downloaded
+      await waitUntilAsync(() => Zotero.Items.get(newItemID).numAttachments() > 0, 1000, 5000);
+    } catch (e) {
+      ztoolkit.log(e);
+    }
 
     const newItem = Zotero.Items.get(newItemID);
     if (action === Action.KEEP) {
