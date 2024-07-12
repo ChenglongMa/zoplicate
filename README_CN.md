@@ -53,6 +53,7 @@ _如果你觉得这个插件对你有帮助，欢迎给它一个 ⭐️。感谢
 
 # 视频教程
 
+[![tutorial](./docs/tutorial_cn.png)](https://www.bilibili.com/video/BV1WnaseEEvB/?share_source=copy_web)
 
 # 安装
 
