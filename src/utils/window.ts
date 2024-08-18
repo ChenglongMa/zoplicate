@@ -9,24 +9,30 @@ function isWindowAlive(win?: Window) {
   return win && !Components.utils.isDeadWrapper(win) && !win.closed;
 }
 
-function registerStyleSheets() {
+function registerStyleSheets(win?: Window) {
   const hrefs = ["zoplicate", "itemSection"];
 
+  if (!win) {
+    win = window;
+  }
   for (const href of hrefs) {
-    const styles = ztoolkit.UI.createElement(document, "link", {
+    const styles = ztoolkit.UI.createElement(win.document, "link", {
       properties: {
         type: "text/css",
         rel: "stylesheet",
         href: `chrome://${config.addonRef}/content/${href}.css`,
       },
     });
-    document.documentElement.appendChild(styles);
+    win.document.documentElement.appendChild(styles);
   }
 }
 
-function bringToFront() {
-  window.focus();
-  window.document.documentElement.scrollIntoView();
+function bringToFront(win?: Window) {
+  if (!win) {
+    win = window;
+  }
+  win.focus();
+  win.document.documentElement.scrollIntoView();
 }
 
 export { isWindowAlive, registerStyleSheets, bringToFront };

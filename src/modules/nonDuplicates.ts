@@ -1,13 +1,14 @@
 import { config } from "../../package.json";
-import { isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
+import { debug, isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
 import { TagElementProps } from "zotero-plugin-toolkit/dist/tools/ui";
 import { getString } from "../utils/locale";
 import { areDuplicates, fetchDuplicates } from "./duplicates";
 import { NonDuplicatesDB } from "../db/nonDuplicates";
 
 export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
+  unregisterNonDuplicatesSection();
   addon.data.nonDuplicateSectionID = Zotero.ItemPaneManager.registerSection({
-    paneID: `sec-non-duplicates`,
+    paneID: `non-duplicates-section`,
     pluginID: config.addonID,
     header: {
       icon: `chrome://${config.addonRef}/content/icons/non-duplicate.svg`, //16x16
@@ -117,7 +118,7 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
       body.dataset.notifierKey = notifierKey;
     },
     onDestroy({ body }) {
-      ztoolkit.log("onDestroy non duplicates");
+      debug("onDestroy non duplicates");
       const notifierKey = body.dataset.notifierKey;
       if (notifierKey) {
         Zotero.Notifier.unregisterObserver(notifierKey);
@@ -182,6 +183,13 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
       }
     },
   });
+}
+
+export function unregisterNonDuplicatesSection() {
+  if (addon.data.nonDuplicateSectionID) {
+    Zotero.ItemPaneManager.unregisterSection(addon.data.nonDuplicateSectionID);
+    addon.data.nonDuplicateSectionID = false;
+  }
 }
 
 export async function toggleNonDuplicates(action: "mark" | "unmark", items?: number[] | Zotero.Item[]) {

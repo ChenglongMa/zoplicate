@@ -9,11 +9,11 @@ import { isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
 import { DuplicateItems } from "./duplicateItems";
 
 export class BulkDuplicates {
-  static getInstance(): BulkDuplicates {
-    if (!BulkDuplicates.instance) {
-      BulkDuplicates.instance = new BulkDuplicates();
+  public static get instance(): BulkDuplicates {
+    if (!BulkDuplicates._instance) {
+      BulkDuplicates._instance = new BulkDuplicates();
     }
-    return BulkDuplicates.instance;
+    return BulkDuplicates._instance;
   }
 
   private constructor() {}
@@ -22,7 +22,7 @@ export class BulkDuplicates {
   public static readonly innerButtonID = this.bulkMergeButtonID + "-inner";
   public static readonly externalButtonID = this.bulkMergeButtonID + "-external";
   private win: Window | undefined;
-  private static instance: BulkDuplicates;
+  private static _instance: BulkDuplicates;
   private _isRunning = false;
   public get isRunning(): boolean {
     return this._isRunning;
