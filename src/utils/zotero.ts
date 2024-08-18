@@ -40,3 +40,19 @@ export function existsInLibrary(...ids: number[] | string[]) {
 export function filterNonTrashedItems(...ids: number[] | string[]) {
   return Zotero.Items.get(ids).filter((item) => item && !item.deleted);
 }
+
+export function debug(...args: any[]) {
+  Zotero.debug(
+    "[zoplicate] " +
+      args
+        .map((d: any) => {
+          try {
+            return typeof d === "object" ? JSON.stringify(d) : String(d);
+          } catch (e) {
+            Zotero.debug(d);
+            return "";
+          }
+        })
+        .join("\n"),
+  );
+}

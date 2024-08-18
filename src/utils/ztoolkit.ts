@@ -22,8 +22,7 @@ function initZToolkit(_ztoolkit: ReturnType<typeof createZToolkit>) {
   _ztoolkit.UI.basicOptions.ui.enableElementDOMLog = enableUILog;
   _ztoolkit.basicOptions.debug.disableDebugBridgePassword = __env__ === "development";
   _ztoolkit.basicOptions.api.pluginID = config.addonID;
-  // TODO: Uncomment the following line to set the icon URI for the progress window
-  // _ztoolkit.ProgressWindow.setIconURI("default", `chrome://${config.addonRef}/content/icons/preficon.svg`);
+  _ztoolkit.ProgressWindow.setIconURI("default", `chrome://${config.addonRef}/content/icons/preficon.svg`);
 }
 
 import { BasicTool, makeHelperTool, unregister } from "zotero-plugin-toolkit/dist/basic";
@@ -32,6 +31,8 @@ import { DialogHelper } from "zotero-plugin-toolkit/dist/helpers/dialog";
 import { ProgressWindowHelper } from "zotero-plugin-toolkit/dist/helpers/progressWindow";
 import { PatchHelper } from "zotero-plugin-toolkit/dist/helpers/patch";
 import { MenuManager } from "zotero-plugin-toolkit/dist/managers/menu";
+import { debug } from "./zotero";
+import { unregisterNonDuplicatesSection } from "../modules/nonDuplicates";
 
 class MyToolkit extends BasicTool {
   UI: UITool;
@@ -51,8 +52,7 @@ class MyToolkit extends BasicTool {
 
   unregisterAll() {
     unregister(this);
-    if (addon.data.nonDuplicateSectionID) {
-      Zotero.ItemPaneManager.unregisterSection(addon.data.nonDuplicateSectionID);
-    }
+    unregisterNonDuplicatesSection();
+    debug("zoplicate addon unregisterAll");
   }
 }
