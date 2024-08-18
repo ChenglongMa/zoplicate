@@ -1,3 +1,4 @@
+import { config } from "../../package.json";
 import { getString } from "../utils/locale";
 import { DialogHelper } from "zotero-plugin-toolkit/dist/helpers/dialog";
 import { TagElementProps } from "zotero-plugin-toolkit/dist/tools/ui";
@@ -233,7 +234,7 @@ export class Duplicates {
     this.updateDuplicateMaps(duplicateMaps);
 
     if (!window.document.hasFocus()) {
-      await showHintWithLink(getString("du-dialog-title"), "", getString("du-dialog-hint"), async () => {
+      await showHintWithLink(config.addonName, getString("du-dialog-title"), getString("du-dialog-hint"), async () => {
         bringToFront();
       });
     }

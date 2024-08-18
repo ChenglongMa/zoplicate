@@ -43,9 +43,15 @@ export async function showHintWithLink(
   text: string,
   linkText: string,
   linkCallback: (ev: MouseEvent) => any,
+  closeTime: number | undefined = 15000, // time unit: ms
 ) {
-  const progress = new ztoolkit.ProgressWindow(title).createLine({ text, progress: 100, type: "default" }).show(5000); // time unit: ms
-  // Just a placeholder
+  const progress = new ztoolkit.ProgressWindow(title)
+    .createLine({
+      text,
+      progress: 100,
+      type: "default",
+    })
+    .show(closeTime);
   progress.addDescription(`<a href="javascript:void(0)">${linkText}</a>`);
 
   try {
@@ -73,7 +79,10 @@ export function normalizeString(input: string, wildcard = "%") {
   // Use a regular expression to match one or more occurrences of non-letter and non-space characters
   // and replace them with a single wildcard character
   // return ("" + input).replace(/[^a-zA-Z\s]+/g, wildcard);
-  return ("" + input).replace(/[^a-zA-Z]+/g, wildcard).trim().toUpperCase(); // Ignore non-letter characters
+  return ("" + input)
+    .replace(/[^a-zA-Z]+/g, wildcard)
+    .trim()
+    .toUpperCase(); // Ignore non-letter characters
 }
 
 /**
@@ -130,6 +139,6 @@ export function cleanISBNString(isbnStr?: string): string[] {
   if (!matches) {
     return [];
   }
-  const isbns = new Set(matches.map(isbn => isbn.replace(/\s+/g, "").replace(/^978/, "")));
+  const isbns = new Set(matches.map((isbn) => isbn.replace(/\s+/g, "").replace(/^978/, "")));
   return Array.from(isbns);
 }
