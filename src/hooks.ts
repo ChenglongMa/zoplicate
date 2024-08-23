@@ -2,10 +2,10 @@ import { config } from "../package.json";
 import { initLocale } from "./utils/locale";
 import { registerPrefs, registerPrefsScripts } from "./modules/preferenceScript";
 import { createZToolkit } from "./utils/ztoolkit";
-import { whenItemsAdded, whenItemsDeleted, registerNotifier } from "./modules/notifier";
+import { whenItemsDeleted, registerNotifier } from "./modules/notifier";
 import { registerStyleSheets } from "./utils/window";
 import { BulkDuplicates } from "./modules/bulkDuplicates";
-import { fetchDuplicates, registerButtonsInDuplicatePane } from "./modules/duplicates";
+import { Duplicates, registerButtonsInDuplicatePane } from "./modules/duplicates";
 import menus from "./modules/menus";
 // import "./modules/zduplicates.js";
 import { registerNonDuplicatesSection, unregisterNonDuplicatesSection } from "./modules/nonDuplicates";
@@ -19,6 +19,7 @@ import { containsRegularItem, debug, isInDuplicatesPane, refreshItemTree } from 
 import { registerDuplicateStats } from "./modules/duplicateStats";
 import { waitUntilAsync } from "./utils/wait";
 import { NonDuplicatesDB } from "./db/nonDuplicates";
+import { fetchDuplicates } from "./utils/duplicates";
 
 let mainWindowLoaded = false;
 const notifyQueue: { event: string; type: string; ids: number[] | string[]; extraData: { [key: string]: any } }[] = [];
@@ -163,7 +164,7 @@ async function onNotify(event: string, type: string, ids: number[] | string[], e
     const libraryID = libraryIDs[0]; // normally only one libraryID
     const { duplicatesObj } = await fetchDuplicates({ libraryID, refresh: true });
     if (type == "item" && event == "add") {
-      await whenItemsAdded(duplicatesObj, ids as number[]);
+      await Duplicates.instance.whenItemsAdded(duplicatesObj, ids as number[]);
     }
   }
 }
