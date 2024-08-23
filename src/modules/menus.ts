@@ -1,12 +1,12 @@
 import { getString } from "../utils/locale";
 import { config } from "../../package.json";
 import { showingDuplicateStats } from "../utils/prefs";
-import { fetchAllDuplicates, fetchDuplicates } from "./duplicates";
 import { MenuManager } from "zotero-plugin-toolkit/dist/managers/menu";
 import { isInDuplicatesPane } from "../utils/zotero";
 import MenuPopup = XUL.MenuPopup;
 import { toggleNonDuplicates } from "./nonDuplicates";
 import { NonDuplicatesDB } from "../db/nonDuplicates";
+import { fetchAllDuplicates, fetchDuplicates } from "../utils/duplicates";
 
 function registerMenus(win: Window) {
   const menuManager = new ztoolkit.Menu();
