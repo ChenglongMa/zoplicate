@@ -3,10 +3,11 @@ import { getString } from "../utils/locale";
 import { config } from "../../package.json";
 import { getPref, MasterItem } from "../utils/prefs";
 import { truncateString } from "../utils/utils";
-import { fetchDuplicates, updateDuplicateButtonsVisibilities } from "./duplicates";
+import { updateDuplicateButtonsVisibilities } from "./duplicates";
 import { merge } from "./merger";
 import { isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
 import { DuplicateItems } from "./duplicateItems";
+import { fetchDuplicates } from "../utils/duplicates";
 
 export class BulkDuplicates {
   public static get instance(): BulkDuplicates {
@@ -148,7 +149,7 @@ export class BulkDuplicates {
         progress: Math.floor((i / duplicateItems.length) * 100),
       });
       const masterItem = duItems.masterItem;
-      const otherItems = duItems.getOtherItems();
+      const otherItems = duItems.otherItems;
       await merge(masterItem, otherItems);
       deletedItems.push(...otherItems);
       items.forEach((id) => processedItems.add(id));
