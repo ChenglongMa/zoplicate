@@ -3,7 +3,7 @@ import { showingDuplicateStats } from "../utils/prefs";
 import { getString } from "../utils/locale";
 import { removeSiblings } from "../utils/view";
 import CollectionTreeRow = Zotero.CollectionTreeRow;
-import { fetchAllDuplicates } from "./duplicates";
+import { fetchAllDuplicates } from "../utils/duplicates";
 
 export async function registerDuplicateStats() {
   let showStats = showingDuplicateStats();

@@ -2,8 +2,8 @@ import { config } from "../../package.json";
 import { debug, isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
 import { TagElementProps } from "zotero-plugin-toolkit/dist/tools/ui";
 import { getString } from "../utils/locale";
-import { areDuplicates, fetchDuplicates } from "./duplicates";
 import { NonDuplicatesDB } from "../db/nonDuplicates";
+import { areDuplicates, fetchDuplicates } from "../utils/duplicates";
 
 export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
   unregisterNonDuplicatesSection();
