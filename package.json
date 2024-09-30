@@ -46,7 +46,7 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.5.3",
     "zotero-plugin-scaffold": "^0.0.32",
-    "zotero-types": "2.0.3"
+    "zotero-types": "2.2.0"
   },
   "eslintConfig": {
     "env": {
