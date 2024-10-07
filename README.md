@@ -21,7 +21,7 @@
 </div>
 
 
-&emsp; _* Many thanks to **Patrick O'Brien** for contributing the German version of the tutorial._
+&emsp; _* Many thanks to **Patrick O'Brien** for the German tutorial._
 
 A plugin that does one thing only: **Detect** and **Manage** duplicate items in [![zotero](https://www.zotero.org/support/lib/exe/fetch.php?tok=2735f1&media=https%3A%2F%2Fwww.zotero.org%2Fstatic%2Fimages%2Fpromote%2Fzotero-logo-128x31.png)](https://www.zotero.org/).
 
