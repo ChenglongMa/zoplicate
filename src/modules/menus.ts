@@ -11,7 +11,7 @@ import { NonDuplicatesDB } from "../db/nonDuplicates";
 function registerMenus(win: Window) {
   const menuManager = new ztoolkit.Menu();
   registerDuplicateCollectionMenu(menuManager);
-  registerItemsViewMenu(menuManager, win);
+  // registerItemsViewMenu(menuManager, win);
 }
 
 function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
