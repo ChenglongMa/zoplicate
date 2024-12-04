@@ -147,7 +147,7 @@ export class Duplicates {
       await this.showDuplicates(duplicateMaps);
       return;
     }
-    /* await */ this.processDuplicates(duplicateMaps); // DONT WAIT
+    this.processDuplicates(duplicateMaps).then(r => {}); // DONT WAIT
   }
 
   async processDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
