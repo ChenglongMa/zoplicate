@@ -4,6 +4,7 @@ import { getString } from "../utils/locale";
 import { removeSiblings } from "../utils/view";
 import CollectionTreeRow = Zotero.CollectionTreeRow;
 import { fetchAllDuplicates } from "../utils/duplicates";
+import { activeCollectionsView } from "../utils/zotero";
 
 export async function registerDuplicateStats() {
   let showStats = showingDuplicateStats();
@@ -15,7 +16,7 @@ export async function registerDuplicateStats() {
 
   const patch = new ztoolkit.Patch();
   patch.setData({
-    target: ZoteroPane.collectionsView,
+    target: Zotero.getActiveZoteroPane().collectionsView,
     funcSign: "renderItem",
     // refer to https://github.com/zotero/zotero/blob/main/chrome/content/zotero/collectionTree.jsx#L274
     // i.e., the `renderItem` function of collectionTree
@@ -28,8 +29,7 @@ export async function registerDuplicateStats() {
             originalDIV.removeAttribute("title");
             return originalDIV;
           }
-          const collectionTreeRow =
-            ZoteroPane?.collectionsView && (ZoteroPane?.collectionsView.getRow(index) as CollectionTreeRow);
+          const collectionTreeRow = activeCollectionsView()?.getRow(index) as CollectionTreeRow;
           if (collectionTreeRow && collectionTreeRow.isDuplicates()) {
             const libraryID = collectionTreeRow.ref.libraryID.toString();
             const { total, unique } = addon.data.duplicateCounts[libraryID] ?? { total: 0, unique: 0 };
