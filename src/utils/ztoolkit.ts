@@ -25,12 +25,12 @@ function initZToolkit(_ztoolkit: ReturnType<typeof createZToolkit>) {
   _ztoolkit.ProgressWindow.setIconURI("default", `chrome://${config.addonRef}/content/icons/preficon.svg`);
 }
 
-import { BasicTool, makeHelperTool, unregister } from "zotero-plugin-toolkit/dist/basic";
-import { UITool } from "zotero-plugin-toolkit/dist/tools/ui";
-import { DialogHelper } from "zotero-plugin-toolkit/dist/helpers/dialog";
-import { ProgressWindowHelper } from "zotero-plugin-toolkit/dist/helpers/progressWindow";
-import { PatchHelper } from "zotero-plugin-toolkit/dist/helpers/patch";
-import { MenuManager } from "zotero-plugin-toolkit/dist/managers/menu";
+import { BasicTool, makeHelperTool, unregister } from "zotero-plugin-toolkit";
+import { UITool } from "zotero-plugin-toolkit";
+import { DialogHelper } from "zotero-plugin-toolkit";
+import { ProgressWindowHelper } from "zotero-plugin-toolkit";
+import { PatchHelper } from "zotero-plugin-toolkit";
+import { MenuManager } from "zotero-plugin-toolkit";
 import { debug } from "./zotero";
 import { unregisterNonDuplicatesSection } from "../modules/nonDuplicates";
 
