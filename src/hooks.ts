@@ -41,7 +41,9 @@ async function onStartup() {
 
   patchMergePDFAttachments();
 
-  await onMainWindowLoad(window);
+  await Promise.all(
+    Zotero.getMainWindows().map((win) => onMainWindowLoad(win)),
+  );
 }
 
 async function onMainWindowLoad(win: Window): Promise<void> {
@@ -142,7 +144,7 @@ async function onNotify(event: string, type: string, ids: number[] | string[], e
     return;
   }
 
-  let libraryIDs = [ZoteroPane.getSelectedLibraryID()];
+  let libraryIDs = [Zotero.getActiveZoteroPane().getSelectedLibraryID()];
 
   const toRefresh =
     // subset of "modify" event (modification on item data and authors) on regular items

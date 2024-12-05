@@ -4,7 +4,7 @@ import { DialogHelper } from "zotero-plugin-toolkit/dist/helpers/dialog";
 import { TagElementProps } from "zotero-plugin-toolkit/dist/tools/ui";
 import { Action, getPref, MasterItem, setPref } from "../utils/prefs";
 import { merge } from "./merger";
-import { goToDuplicatesPane, isInDuplicatesPane } from "../utils/zotero";
+import { activeItemsView, goToDuplicatesPane, isInDuplicatesPane } from "../utils/zotero";
 import { DuplicateItems } from "./duplicateItems";
 import { createNonDuplicateButton, NonDuplicates } from "./nonDuplicates";
 import { BulkDuplicates } from "./bulkDuplicates";
@@ -45,15 +45,15 @@ export async function registerButtonsInDuplicatePane(win: Window) {
     addButtonsInDuplicatePanes(false, customHead);
   }
 
-  await updateDuplicateButtonsVisibilities();
+  await updateDuplicateButtonsVisibilities(win);
 }
 
-export async function updateDuplicateButtonsVisibilities() {
+export async function updateDuplicateButtonsVisibilities(win: Window) {
   const inDuplicatePane = isInDuplicatesPane();
-  const showBulkMergeButton = inDuplicatePane && ZoteroPane.itemsView && ZoteroPane.itemsView.rowCount > 0;
+  const showBulkMergeButton = inDuplicatePane && (activeItemsView()?.rowCount ?? 0) > 0;
   const showNonDuplicateButton = inDuplicatePane && (await areDuplicates());
-  toggleButtonHidden(window, !showBulkMergeButton, BulkDuplicates.innerButtonID, BulkDuplicates.externalButtonID);
-  toggleButtonHidden(window, !showNonDuplicateButton, NonDuplicates.innerButtonID, NonDuplicates.externalButtonID);
+  toggleButtonHidden(win, !showBulkMergeButton, BulkDuplicates.innerButtonID, BulkDuplicates.externalButtonID);
+  toggleButtonHidden(win, !showNonDuplicateButton, NonDuplicates.innerButtonID, NonDuplicates.externalButtonID);
 }
 
 export class Duplicates {
@@ -223,7 +223,7 @@ export class Duplicates {
   async showDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
     this.updateDuplicateMaps(duplicateMaps);
 
-    if (!window.document.hasFocus()) {
+    if (!this.document?.hasFocus()) {
       await showHintWithLink(config.addonName, getString("du-dialog-title"), getString("du-dialog-hint"), async () => {
         bringToFront();
       });

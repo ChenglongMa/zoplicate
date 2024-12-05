@@ -145,19 +145,19 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
         if (!otherItem || otherItem.deleted) {
           continue;
         }
-
-        let row = document.createElement("div");
+        const doc = body.ownerDocument;
+        let row = doc.createElement("div");
         row.className = "row";
 
         const icon = ztoolkit
           .getGlobal("require")("components/icons")
           .getCSSItemTypeIcon(otherItem.getItemTypeIconName());
 
-        let label = document.createElement("span");
+        let label = doc.createElement("span");
         label.className = "label";
         label.append(otherItem.getDisplayTitle());
 
-        let box = document.createElement("div");
+        let box = doc.createElement("div");
         box.addEventListener("click", () => Zotero.getActiveZoteroPane().selectItem(otherItemID));
         box.setAttribute("tabindex", "0");
         box.setAttribute("role", "button");
@@ -169,7 +169,7 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
 
         if (editable) {
           // @ts-ignore
-          let remove = document.createXULElement("toolbarbutton");
+          let remove = doc.createXULElement("toolbarbutton");
           remove.addEventListener("command", () => {
             const itemIDs = [item.id, otherItemID];
             toggleNonDuplicates("unmark", itemIDs);
@@ -196,7 +196,7 @@ export async function toggleNonDuplicates(action: "mark" | "unmark", items?: num
   const selectedItems = items && items.length ? items : Zotero.getActiveZoteroPane().getSelectedItems();
   const itemIDs = selectedItems.map((item) => (typeof item === "number" ? item : item.id));
   if (action === "mark") {
-    await NonDuplicatesDB.instance.insertNonDuplicates(itemIDs, ZoteroPane.getSelectedLibraryID());
+    await NonDuplicatesDB.instance.insertNonDuplicates(itemIDs, Zotero.getActiveZoteroPane().getSelectedLibraryID());
   } else if (action === "unmark") {
     await NonDuplicatesDB.instance.deleteNonDuplicates(itemIDs);
   }

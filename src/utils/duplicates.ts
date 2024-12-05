@@ -4,7 +4,7 @@
  * @param refresh Whether to refresh the search, default is false
  */
 export async function fetchDuplicates({
-                                        libraryID = ZoteroPane.getSelectedLibraryID(),
+                                        libraryID = Zotero.getActiveZoteroPane().getSelectedLibraryID(),
                                         refresh = false,
                                       } = {}): Promise<{
   libraryID: number;
@@ -34,7 +34,7 @@ export async function findRetainedDuplicate(deletedItem: Zotero.Item | number) {
   return duplicates.map((id) => Zotero.Items.get(id)).find((item) => !item.deleted);
 }
 
-export async function areDuplicates(items: number[] | Zotero.Item[] = ZoteroPane.getSelectedItems()) {
+export async function areDuplicates(items: number[] | Zotero.Item[] = Zotero.getActiveZoteroPane().getSelectedItems()) {
   if (items.length < 2) return false;
   const libraryIDs = new Set(
     items.map((item) => (typeof item === "number" ? Zotero.Items.get(item).libraryID : item.libraryID)),
