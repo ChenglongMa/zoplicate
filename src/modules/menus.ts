@@ -1,12 +1,12 @@
 import { getString } from "../utils/locale";
 import { config } from "../../package.json";
 import { showingDuplicateStats } from "../utils/prefs";
-import { fetchAllDuplicates, fetchDuplicates } from "./duplicates";
 import { MenuManager } from "zotero-plugin-toolkit/dist/managers/menu";
 import { isInDuplicatesPane } from "../utils/zotero";
 import MenuPopup = XUL.MenuPopup;
 import { toggleNonDuplicates } from "./nonDuplicates";
 import { NonDuplicatesDB } from "../db/nonDuplicates";
+import { fetchAllDuplicates, fetchDuplicates } from "../utils/duplicates";
 
 function registerMenus(win: Window) {
   const menuManager = new ztoolkit.Menu();
@@ -57,7 +57,7 @@ function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
 
   function setVisibilityListeners(win: Window) {
     const menu = win.document.getElementById("zotero-itemmenu") as HTMLElement;
-    menu.addEventListener("popupshowing", async (ev) => {
+    menu.addEventListener("popupshowing", (ev) => {
       const target = ev.target as MenuPopup;
       if (target.id !== "zotero-itemmenu") {
         return;
@@ -77,24 +77,27 @@ function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
         `${config.addonRef}-menuitem-not-duplicate`,
       ) as HTMLElement;
       const itemIDs = selectedItems.map((item) => item.id);
-      showingIsDuplicate = await NonDuplicatesDB.instance.existsNonDuplicates(itemIDs);
-      if (showingIsDuplicate) {
-        isDuplicateMenuItem.removeAttribute("hidden");
-        notDuplicateMenuItem.setAttribute("hidden", "true");
-      } else {
-        isDuplicateMenuItem.setAttribute("hidden", "true");
 
-        const { duplicatesObj } = await fetchDuplicates();
-        const duplicateItems = new Set(duplicatesObj.getSetItemsByItemID(itemIDs[0]));
-
-        showingNotDuplicate = itemIDs.every((itemID) => duplicateItems.has(itemID));
-        if (showingNotDuplicate) {
-          notDuplicateMenuItem.removeAttribute("hidden");
-        } else {
+      setTimeout(async () => {
+        showingIsDuplicate = await NonDuplicatesDB.instance.existsNonDuplicates(itemIDs);
+        if (showingIsDuplicate) {
+          isDuplicateMenuItem.removeAttribute("hidden");
           notDuplicateMenuItem.setAttribute("hidden", "true");
-          mainMenu.setAttribute("hidden", "true");
+        } else {
+          isDuplicateMenuItem.setAttribute("hidden", "true");
+
+          const { duplicatesObj } = await fetchDuplicates();
+          const duplicateItems = new Set(duplicatesObj.getSetItemsByItemID(itemIDs[0]));
+
+          showingNotDuplicate = itemIDs.every((itemID) => duplicateItems.has(itemID));
+          if (showingNotDuplicate) {
+            notDuplicateMenuItem.removeAttribute("hidden");
+          } else {
+            notDuplicateMenuItem.setAttribute("hidden", "true");
+            mainMenu.setAttribute("hidden", "true");
+          }
         }
-      }
+      }, 0);
     });
   }
 

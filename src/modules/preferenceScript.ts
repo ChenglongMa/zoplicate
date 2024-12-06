@@ -1,6 +1,6 @@
 import { config, homepage } from "../../package.json";
 import { getString } from "../utils/locale";
-import { fetchAllDuplicates } from "./duplicates";
+import { fetchAllDuplicates } from "../utils/duplicates";
 
 export function registerPrefs() {
   Zotero.PreferencePanes.register({

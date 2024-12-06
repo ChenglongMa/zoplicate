@@ -20,8 +20,8 @@ du-dialog-header = The following items have existed in your library. How would y
 du-dialog-hint = Click here for details.
 
 du-dialog-table-title = Title
-du-dialog-table-keep = Keep This
-du-dialog-table-discard = Keep Others
+du-dialog-table-keep = Keep New
+du-dialog-table-discard = Keep Old
 du-dialog-table-cancel = Keep All
 du-dialog-as-default = Use this action by default
 
