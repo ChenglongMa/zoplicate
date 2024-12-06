@@ -407,5 +407,27 @@ There are some ways to mark and unmark items as **Non-duplicates**:
    by [sponsoring the repository on GitHub](https://github.com/sponsors/ChenglongMa). Your contributions help us
    maintain and improve the project.
 
+# Acknowledgements
+
+I would like to express my gratitude to the following individuals and organizations for their generous support and contributions to this project:
+
+## Sponsors
+
+<p> 
+    <a href="https://github.com/quinn-p-mchugh" aria-label="Sponsor Quinn McHugh" style="display: inline-block; margin: 10px;"> 
+        <img src="https://avatars.githubusercontent.com/u/40648753?v=4" height="100" alt="Sponsor Quinn McHugh" style="border-radius: 50%;"/> 
+        <br/>
+        <span style="display: block; text-align: center;">Quinn McHugh</span>
+    </a>
+    <a href="https://github.com/Mctalos" aria-label="Sponsor Mctalos" style="display: inline-block; margin: 10px;"> 
+        <img src="https://avatars.githubusercontent.com/u/9693755?v=4" height="100" alt="Sponsor Mctalos" style="border-radius: 50%;"/>
+        <br/>
+        <span style="display: block; text-align: center;">Mctalos</span>
+    </a> 
+</p>
+
+Usually, a ⭐️ is enough to make me happy. Your sponsorship will help me maintain and improve the project. 
+Also, part of the sponsorship will be donated to the open-source community.
+
 Thank you for considering contributing to **Zoplicate**. We value your input and look forward to collaborating
 with you!
