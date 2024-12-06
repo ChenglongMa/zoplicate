@@ -3,17 +3,18 @@ import { getString } from "../utils/locale";
 import { config } from "../../package.json";
 import { getPref, MasterItem } from "../utils/prefs";
 import { truncateString } from "../utils/utils";
-import { fetchDuplicates, updateDuplicateButtonsVisibilities } from "./duplicates";
+import { updateDuplicateButtonsVisibilities } from "./duplicates";
 import { merge } from "./merger";
-import { isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
+import { activeCollectionsView, activeItemsView, isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
 import { DuplicateItems } from "./duplicateItems";
+import { fetchDuplicates } from "../utils/duplicates";
 
 export class BulkDuplicates {
-  static getInstance(): BulkDuplicates {
-    if (!BulkDuplicates.instance) {
-      BulkDuplicates.instance = new BulkDuplicates();
+  public static get instance(): BulkDuplicates {
+    if (!BulkDuplicates._instance) {
+      BulkDuplicates._instance = new BulkDuplicates();
     }
-    return BulkDuplicates.instance;
+    return BulkDuplicates._instance;
   }
 
   private constructor() {}
@@ -22,7 +23,7 @@ export class BulkDuplicates {
   public static readonly innerButtonID = this.bulkMergeButtonID + "-inner";
   public static readonly externalButtonID = this.bulkMergeButtonID + "-external";
   private win: Window | undefined;
-  private static instance: BulkDuplicates;
+  private static _instance: BulkDuplicates;
   private _isRunning = false;
   public get isRunning(): boolean {
     return this._isRunning;
@@ -37,7 +38,7 @@ export class BulkDuplicates {
       button?.setAttribute("label", getString(label));
     });
     if (!value) {
-      addon.data.needResetDuplicateSearch[ZoteroPane.getSelectedLibraryID()] = true;
+      addon.data.needResetDuplicateSearch[Zotero.getActiveZoteroPane().getSelectedLibraryID()] = true;
       // Force refresh the duplicate item tree
       refreshItemTree();
     }
@@ -148,7 +149,7 @@ export class BulkDuplicates {
         progress: Math.floor((i / duplicateItems.length) * 100),
       });
       const masterItem = duItems.masterItem;
-      const otherItems = duItems.getOtherItems();
+      const otherItems = duItems.otherItems;
       await merge(masterItem, otherItems);
       deletedItems.push(...otherItems);
       items.forEach((id) => processedItems.add(id));
@@ -178,41 +179,38 @@ export class BulkDuplicates {
 
   registerUIElements(win: Window): void {
     this.win = win;
-    ZoteroPane.collectionsView &&
-      ZoteroPane.collectionsView.onSelect.addListener(async () => {
+    activeCollectionsView()?.onSelect.addListener(async () => {
         const inDuplicatePane = isInDuplicatesPane();
-        if (ZoteroPane.itemsView && inDuplicatePane && this._isRunning) {
-          await ZoteroPane.itemsView.waitForLoad();
-          ZoteroPane.itemsView.selection.clearSelection();
+        if (Zotero.getActiveZoteroPane().itemsView && inDuplicatePane && this._isRunning) {
+          await activeItemsView()?.waitForLoad();
+          activeItemsView()?.selection.clearSelection();
         }
       });
 
-    ZoteroPane.itemsView &&
-      ZoteroPane.itemsView.onRefresh.addListener(async () => {
+    activeItemsView()?.onRefresh.addListener(async () => {
         ztoolkit.log("refresh");
         const precondition = isInDuplicatesPane();
-        if (precondition && ZoteroPane.itemsView && this._isRunning) {
-          ZoteroPane.itemsView.selection.clearSelection();
+        if (precondition && Zotero.getActiveZoteroPane().itemsView && this._isRunning) {
+          activeItemsView()?.selection.clearSelection();
         }
-        await updateDuplicateButtonsVisibilities();
+        await updateDuplicateButtonsVisibilities(win);
       });
 
-    ZoteroPane.itemsView &&
-      ZoteroPane.itemsView.onSelect.addListener(async () => {
-        ztoolkit.log("itemsView.onSelect", ZoteroPane.getSelectedItems(true));
+    activeItemsView()?.onSelect.addListener(async () => {
+        ztoolkit.log("itemsView.onSelect", Zotero.getActiveZoteroPane().getSelectedItems(true));
         // TODO: Further investigate the requirement of this
-        // ZoteroPane.itemPane && ZoteroPane.itemPane.setAttribute("collapsed", "true");
+        // Zotero.getActiveZoteroPane().itemPane && Zotero.getActiveZoteroPane().itemPane.setAttribute("collapsed", "true");
         // TODO: Or this
-        // if (ZoteroPane.itemPane) {
+        // if (Zotero.getActiveZoteroPane().itemPane) {
           // @ts-ignore
-          // ZoteroPane.itemPane._itemDetails.skipRender = addon.data.processing;
-          // ZoteroPane.itemPane._itemDetails.getPane("zotero-attachment-box")
+          // Zotero.getActiveZoteroPane().itemPane._itemDetails.skipRender = addon.data.processing;
+          // Zotero.getActiveZoteroPane().itemPane._itemDetails.getPane("zotero-attachment-box")
           // const usePreview = Zotero.Prefs.get("showAttachmentPreview");
           // @ts-ignore
-          // ZoteroPane.itemPane._itemDetails.getPane("attachments").usePreview =
+          // Zotero.getActiveZoteroPane().itemPane._itemDetails.getPane("attachments").usePreview =
           //   !addon.data.processing && usePreview;
         // }
-        await updateDuplicateButtonsVisibilities();
+        await updateDuplicateButtonsVisibilities(win);
       });
   }
 }

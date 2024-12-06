@@ -1,9 +1,10 @@
+import { config } from "../../package.json";
 import { getString } from "../utils/locale";
 import { DialogHelper } from "zotero-plugin-toolkit/dist/helpers/dialog";
 import { TagElementProps } from "zotero-plugin-toolkit/dist/tools/ui";
 import { Action, getPref, MasterItem, setPref } from "../utils/prefs";
 import { merge } from "./merger";
-import { goToDuplicatesPane, isInDuplicatesPane } from "../utils/zotero";
+import { activeItemsView, goToDuplicatesPane, isInDuplicatesPane } from "../utils/zotero";
 import { DuplicateItems } from "./duplicateItems";
 import { createNonDuplicateButton, NonDuplicates } from "./nonDuplicates";
 import { BulkDuplicates } from "./bulkDuplicates";
@@ -11,6 +12,7 @@ import { toggleButtonHidden } from "../utils/view";
 import { bringToFront } from "../utils/window";
 import { showHintWithLink } from "../utils/utils";
 import { waitUntilAsync } from "../utils/wait";
+import { areDuplicates, fetchDuplicates } from "../utils/duplicates";
 
 function addButtonsInDuplicatePanes(innerButton: boolean, siblingElement: Element) {
   const mergeButtonID = innerButton ? BulkDuplicates.innerButtonID : BulkDuplicates.externalButtonID;
@@ -21,7 +23,7 @@ function addButtonsInDuplicatePanes(innerButton: boolean, siblingElement: Elemen
       namespace: "html",
       classList: ["duplicate-custom-head", "empty"],
       children: [
-        BulkDuplicates.getInstance().createBulkMergeButton(siblingElement.ownerDocument.defaultView!, mergeButtonID),
+        BulkDuplicates.instance.createBulkMergeButton(siblingElement.ownerDocument.defaultView!, mergeButtonID),
         createNonDuplicateButton(nonDuplicateButtonID),
       ],
     },
@@ -43,147 +45,28 @@ export async function registerButtonsInDuplicatePane(win: Window) {
     addButtonsInDuplicatePanes(false, customHead);
   }
 
-  await updateDuplicateButtonsVisibilities();
+  await updateDuplicateButtonsVisibilities(win);
 }
 
-export async function updateDuplicateButtonsVisibilities() {
+export async function updateDuplicateButtonsVisibilities(win: Window) {
   const inDuplicatePane = isInDuplicatesPane();
-  const showBulkMergeButton = inDuplicatePane && ZoteroPane.itemsView && ZoteroPane.itemsView.rowCount > 0;
+  const showBulkMergeButton = inDuplicatePane && (activeItemsView()?.rowCount ?? 0) > 0;
   const showNonDuplicateButton = inDuplicatePane && (await areDuplicates());
-  toggleButtonHidden(window, !showBulkMergeButton, BulkDuplicates.innerButtonID, BulkDuplicates.externalButtonID);
-  toggleButtonHidden(window, !showNonDuplicateButton, NonDuplicates.innerButtonID, NonDuplicates.externalButtonID);
-}
-
-/**
- * @deprecated
- * Find the retained duplicate of the deleted item
- * @param deletedItem
- */
-export async function findRetainedDuplicate(deletedItem: Zotero.Item | number) {
-  const item = typeof deletedItem === "number" ? Zotero.Items.get(deletedItem) : deletedItem;
-  const libraryID = item.libraryID;
-  const { duplicatesObj } = await fetchDuplicates({ libraryID, refresh: false });
-  const duplicates = duplicatesObj.getSetItemsByItemID(item.id);
-  return duplicates.map((id) => Zotero.Items.get(id)).find((item) => !item.deleted);
-}
-
-export async function areDuplicates(items: number[] | Zotero.Item[] = ZoteroPane.getSelectedItems()) {
-  if (items.length < 2) return false;
-  const libraryIDs = new Set(
-    items.map((item) => (typeof item === "number" ? Zotero.Items.get(item).libraryID : item.libraryID)),
-  );
-
-  if (libraryIDs.size > 1) return false;
-  const { duplicatesObj } = await fetchDuplicates({ refresh: false });
-  const itemIDs = items.map((item) => (typeof item === "number" ? item : item.id));
-  const oneItem = itemIDs[0];
-  const duplicateSets = new Set(duplicatesObj.getSetItemsByItemID(oneItem));
-  return itemIDs.every((itemID) => duplicateSets.has(itemID));
-}
-
-export async function fetchAllDuplicates(refresh = false) {
-  const libraries = Zotero.Libraries.getAll();
-  for (const library of libraries) {
-    const libraryType = library.libraryType;
-    if (libraryType == "feed") continue;
-    await fetchDuplicates({ libraryID: library.libraryID, refresh });
-  }
-}
-
-/**
- * Get or refresh duplicates DB for the selected library
- * @param libraryID Library ID
- * @param refresh Whether to refresh the search, default is false
- */
-export async function fetchDuplicates({
-  libraryID = ZoteroPane.getSelectedLibraryID(),
-  refresh = false,
-} = {}): Promise<{
-  libraryID: number;
-  duplicatesObj: { getSetItemsByItemID(itemID: number): number[] };
-  duplicateItems: number[];
-}> {
-  if (refresh) {
-    addon.data.needResetDuplicateSearch[libraryID] = true;
-  }
-  const duplicatesObj = new Zotero.Duplicates(libraryID);
-  const search = await duplicatesObj.getSearchObject();
-  const duplicateItems: number[] = await search.search();
-  return { libraryID, duplicatesObj, duplicateItems };
-}
-
-export async function processDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
-  const items: { masterItem: Zotero.Item; otherItems: Zotero.Item[] }[] = [];
-  if (duplicateMaps.size === 0) return;
-
-  const popWin = new ztoolkit.ProgressWindow(getString("du-dialog-title"), {
-    closeOnClick: true,
-  })
-    .createLine({
-      text: getString("du-progress-text"),
-      type: "default",
-      progress: 0,
-    })
-    .show();
-  addon.data.processing = true;
-  const masterItemPref = getPref("bulk.master.item") as MasterItem;
-  for (const [newItemID, { existingItemIDs, action }] of duplicateMaps) {
-    ztoolkit.log("Processing duplicate: ", newItemID);
-
-    // TODO: Further check if the block is necessary
-    try {
-      // Wait for potential attachments to be downloaded
-      await waitUntilAsync(() => Zotero.Items.get(newItemID).numAttachments() > 0, 1000, 5000);
-    } catch (e) {
-      ztoolkit.log(e);
-    }
-
-    const newItem = Zotero.Items.get(newItemID);
-    if (action === Action.KEEP) {
-      items.push({
-        masterItem: newItem,
-        otherItems: existingItemIDs.map((id) => Zotero.Items.get(id)),
-      });
-    } else if (action === Action.DISCARD) {
-      const duplicateItems = new DuplicateItems(existingItemIDs, masterItemPref);
-      const masterItem = duplicateItems.masterItem;
-      const otherItems = duplicateItems.getOtherItems();
-      items.push({
-        masterItem: masterItem,
-        otherItems: [...otherItems, newItem],
-      });
-    }
-  }
-  popWin.changeLine({
-    text: getString("du-progress-text"),
-    type: "default",
-    progress: 30,
-  });
-
-  const selectedItemIDs = [];
-  for (const { masterItem, otherItems } of items) {
-    selectedItemIDs.push(masterItem.id);
-    await merge(masterItem, otherItems);
-  }
-  addon.data.processing = false;
-
-  popWin.changeLine({
-    text: getString("du-progress-text"),
-    type: "default",
-    progress: 80,
-  });
-
-  Zotero.getActiveZoteroPane().selectItems(selectedItemIDs);
-
-  popWin.changeLine({
-    text: getString("du-progress-done"),
-    type: "success",
-    progress: 100,
-  });
+  toggleButtonHidden(win, !showBulkMergeButton, BulkDuplicates.innerButtonID, BulkDuplicates.externalButtonID);
+  toggleButtonHidden(win, !showNonDuplicateButton, NonDuplicates.innerButtonID, NonDuplicates.externalButtonID);
 }
 
 export class Duplicates {
-  constructor() {
+  private static _instance: Duplicates;
+
+  public static get instance() {
+    if (!this._instance) {
+      this._instance = new Duplicates();
+    }
+    return this._instance;
+  }
+
+  private constructor() {
     this.dialogData = addon.data.dialogs.dialog?.dialogData || {
       savePreference: false,
       defaultAction: Action.CANCEL,
@@ -229,11 +112,119 @@ export class Duplicates {
     };
   }
 
+  async whenItemsAdded(
+    duplicatesObj: {
+      getSetItemsByItemID(itemID: number): number[];
+    },
+    ids: Array<number>,
+  ) {
+    const defaultAction = getPref("duplicate.default.action") as Action;
+    if (defaultAction === Action.CANCEL || ids.length === 0) {
+      return;
+    }
+
+    let duplicateItemMap = new Map<number, DuplicateItems>();
+    for (const id of ids) {
+      const items = duplicatesObj.getSetItemsByItemID(id);
+      if (items.length < 2) {
+        continue;
+      }
+      const duplicateItems = new DuplicateItems(items, getPref("bulk.master.item") as MasterItem);
+      duplicateItemMap.set(duplicateItems.key, duplicateItems);
+    }
+
+    const duplicateMaps = ids.reduce((acc, id) => {
+      const existingItemIDs: number[] = duplicatesObj.getSetItemsByItemID(id).filter((i: number) => i !== id);
+      if (existingItemIDs.length > 0) {
+        acc.set(id, { existingItemIDs, action: defaultAction });
+      }
+      return acc;
+    }, new Map<number, { existingItemIDs: number[]; action: Action }>());
+
+    if (duplicateMaps.size === 0) return;
+
+    if (defaultAction === Action.ASK) {
+      await this.showDuplicates(duplicateMaps);
+      return;
+    }
+    this.processDuplicates(duplicateMaps).then(r => {}); // DONT WAIT
+  }
+
+  async processDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
+    const items: { masterItem: Zotero.Item; otherItems: Zotero.Item[] }[] = [];
+    if (duplicateMaps.size === 0) return;
+
+    const popWin = new ztoolkit.ProgressWindow(getString("du-dialog-title"), {
+      closeOnClick: true,
+    })
+      .createLine({
+        text: getString("du-progress-text"),
+        type: "default",
+        progress: 0,
+      })
+      .show();
+    addon.data.processing = true;
+    const masterItemPref = getPref("bulk.master.item") as MasterItem;
+    for (const [newItemID, { existingItemIDs, action }] of duplicateMaps) {
+      ztoolkit.log("Processing duplicate: ", newItemID);
+
+      // TODO: Further check if the block is necessary
+      try {
+        // Wait for potential attachments to be downloaded
+        await waitUntilAsync(() => Zotero.Items.get(newItemID).numAttachments() > 0, 1000, 5000);
+      } catch (e) {
+        ztoolkit.log(e);
+      }
+
+      const newItem = Zotero.Items.get(newItemID);
+      if (action === Action.KEEP) {
+        items.push({
+          masterItem: newItem,
+          otherItems: existingItemIDs.map((id) => Zotero.Items.get(id)),
+        });
+      } else if (action === Action.DISCARD) {
+        const duplicateItems = new DuplicateItems(existingItemIDs, masterItemPref);
+        const masterItem = duplicateItems.masterItem;
+        const otherItems = duplicateItems.otherItems;
+        items.push({
+          masterItem: masterItem,
+          otherItems: [...otherItems, newItem],
+        });
+      }
+    }
+    popWin.changeLine({
+      text: getString("du-progress-text"),
+      type: "default",
+      progress: 30,
+    });
+
+    const selectedItemIDs = [];
+    for (const { masterItem, otherItems } of items) {
+      selectedItemIDs.push(masterItem.id);
+      await merge(masterItem, otherItems);
+    }
+    addon.data.processing = false;
+
+    popWin.changeLine({
+      text: getString("du-progress-text"),
+      type: "default",
+      progress: 80,
+    });
+
+    Zotero.getActiveZoteroPane().selectItems(selectedItemIDs);
+
+    popWin.changeLine({
+      text: getString("du-progress-done"),
+      type: "success",
+      progress: 100,
+    });
+  }
+
   async showDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
     this.updateDuplicateMaps(duplicateMaps);
 
-    if (!window.document.hasFocus()) {
-      await showHintWithLink(getString("du-dialog-title"), "", getString("du-dialog-hint"), async () => {
+    if (!this.document?.hasFocus()) {
+      await showHintWithLink(config.addonName, getString("du-dialog-title"), getString("du-dialog-hint"), async () => {
         bringToFront();
       });
     }
@@ -306,10 +297,12 @@ export class Duplicates {
 
   private updateDuplicateMaps(newDuplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
     if (this.duplicateMaps) {
+      ztoolkit.log("Update duplicate maps - old", this.duplicateMaps);
+      ztoolkit.log("Update duplicate maps - new", newDuplicateMaps);
       newDuplicateMaps.forEach((value, key) => {
         value.action = this.duplicateMaps?.get(key)?.action || value.action;
         value.action = value.action === Action.ASK ? Action.CANCEL : value.action;
-        this.duplicateMaps?.set(key, value);
+        // this.duplicateMaps?.set(key, value);
       });
     } else {
       this.duplicateMaps = newDuplicateMaps;
@@ -441,7 +434,7 @@ export class Duplicates {
       })
       .addButton(getString("du-dialog-button-apply"), "btn_process", {
         callback: (e) => {
-          processDuplicates(this.duplicateMaps!);
+          this.processDuplicates(this.duplicateMaps!);
         },
       })
       .addButton(getString("du-dialog-button-go-duplicates"), "btn_go_duplicate", {

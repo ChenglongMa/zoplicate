@@ -58,6 +58,21 @@ A plugin that does one thing only: **Detect** and **Manage** duplicate items in 
 
 # Changelog
 
+## v3.0.4
+
+<details markdown="1" open>
+  <summary><i>Click here to show more.</i></summary>
+
+In this version, we have made the following changes:
+
+1. 🐛 **FIX!**: We have fixed the bug that caused the UI blocked when selecting too many items and opening the context menu.
+    * Thanks to [zzlb0224](https://github.com/zzlb0224), [pencilheart](https://github.com/pencilheart) and [dschaehi](https://github.com/dschaehi) for reporting this bug in [issue #119](https://github.com/ChenglongMa/zoplicate/issues/94) and [issue #119](https://github.com/ChenglongMa/zoplicate/issues/119) respectively.
+2. 🐛 **FIX!**: We have optimized the plugin lifecycle which may cause the plugin to load multiple preference settings on macOS.
+    * Thanks to [WangYe661](https://github.com/WangYe661) and [pencilheart](https://github.com/pencilheart) for reporting this bug in [issue #81](https://github.com/ChenglongMa/zoplicate/issues/81).
+3. 🐛 **FIX!**: We have optimized database operations to reduce the risk of data loss.
+
+</details>
+
 ## v3.0.3
 
 <details markdown="1" open>
@@ -82,7 +97,7 @@ In this version, we have made the following changes:
 
 ## v3.0.2
 
-<details markdown="1" open>
+<details markdown="1">
   <summary><i>Click here to show more.</i></summary>
 
 In this version, we have made the following changes:
@@ -391,6 +406,28 @@ There are some ways to mark and unmark items as **Non-duplicates**:
 5. 💖 **Funding**: If you'd like to financially support the project, you can do so
    by [sponsoring the repository on GitHub](https://github.com/sponsors/ChenglongMa). Your contributions help us
    maintain and improve the project.
+
+# Acknowledgements
+
+I would like to express my gratitude to the following individuals and organizations for their generous support and contributions to this project:
+
+## Sponsors
+
+<p> 
+    <a href="https://github.com/quinn-p-mchugh" aria-label="Sponsor Quinn McHugh" style="display: inline-block; margin: 10px;"> 
+        <img src="https://avatars.githubusercontent.com/u/40648753?v=4" height="100" alt="Sponsor Quinn McHugh" style="border-radius: 50%;"/> 
+        <br/>
+        <span style="display: block; text-align: center;">Quinn McHugh</span>
+    </a>
+    <a href="https://github.com/Mctalos" aria-label="Sponsor Mctalos" style="display: inline-block; margin: 10px;"> 
+        <img src="https://avatars.githubusercontent.com/u/9693755?v=4" height="100" alt="Sponsor Mctalos" style="border-radius: 50%;"/>
+        <br/>
+        <span style="display: block; text-align: center;">Mctalos</span>
+    </a> 
+</p>
+
+Usually, a ⭐️ is enough to make me happy. Your sponsorship will help me maintain and improve the project. 
+Also, part of the sponsorship will be donated to the open-source community.
 
 Thank you for considering contributing to **Zoplicate**. We value your input and look forward to collaborating
 with you!

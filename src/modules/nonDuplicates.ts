@@ -1,13 +1,14 @@
 import { config } from "../../package.json";
-import { isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
+import { debug, isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
 import { TagElementProps } from "zotero-plugin-toolkit/dist/tools/ui";
 import { getString } from "../utils/locale";
-import { areDuplicates, fetchDuplicates } from "./duplicates";
 import { NonDuplicatesDB } from "../db/nonDuplicates";
+import { areDuplicates, fetchDuplicates } from "../utils/duplicates";
 
 export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
+  unregisterNonDuplicatesSection();
   addon.data.nonDuplicateSectionID = Zotero.ItemPaneManager.registerSection({
-    paneID: `sec-non-duplicates`,
+    paneID: `non-duplicates-section`,
     pluginID: config.addonID,
     header: {
       icon: `chrome://${config.addonRef}/content/icons/non-duplicate.svg`, //16x16
@@ -117,7 +118,7 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
       body.dataset.notifierKey = notifierKey;
     },
     onDestroy({ body }) {
-      ztoolkit.log("onDestroy non duplicates");
+      debug("onDestroy non duplicates");
       const notifierKey = body.dataset.notifierKey;
       if (notifierKey) {
         Zotero.Notifier.unregisterObserver(notifierKey);
@@ -144,19 +145,19 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
         if (!otherItem || otherItem.deleted) {
           continue;
         }
-
-        let row = document.createElement("div");
+        const doc = body.ownerDocument;
+        let row = doc.createElement("div");
         row.className = "row";
 
         const icon = ztoolkit
           .getGlobal("require")("components/icons")
           .getCSSItemTypeIcon(otherItem.getItemTypeIconName());
 
-        let label = document.createElement("span");
+        let label = doc.createElement("span");
         label.className = "label";
         label.append(otherItem.getDisplayTitle());
 
-        let box = document.createElement("div");
+        let box = doc.createElement("div");
         box.addEventListener("click", () => Zotero.getActiveZoteroPane().selectItem(otherItemID));
         box.setAttribute("tabindex", "0");
         box.setAttribute("role", "button");
@@ -168,7 +169,7 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
 
         if (editable) {
           // @ts-ignore
-          let remove = document.createXULElement("toolbarbutton");
+          let remove = doc.createXULElement("toolbarbutton");
           remove.addEventListener("command", () => {
             const itemIDs = [item.id, otherItemID];
             toggleNonDuplicates("unmark", itemIDs);
@@ -184,11 +185,18 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
   });
 }
 
+export function unregisterNonDuplicatesSection() {
+  if (addon.data.nonDuplicateSectionID) {
+    Zotero.ItemPaneManager.unregisterSection(addon.data.nonDuplicateSectionID);
+    addon.data.nonDuplicateSectionID = false;
+  }
+}
+
 export async function toggleNonDuplicates(action: "mark" | "unmark", items?: number[] | Zotero.Item[]) {
   const selectedItems = items && items.length ? items : Zotero.getActiveZoteroPane().getSelectedItems();
   const itemIDs = selectedItems.map((item) => (typeof item === "number" ? item : item.id));
   if (action === "mark") {
-    await NonDuplicatesDB.instance.insertNonDuplicates(itemIDs, ZoteroPane.getSelectedLibraryID());
+    await NonDuplicatesDB.instance.insertNonDuplicates(itemIDs, Zotero.getActiveZoteroPane().getSelectedLibraryID());
   } else if (action === "unmark") {
     await NonDuplicatesDB.instance.deleteNonDuplicates(itemIDs);
   }

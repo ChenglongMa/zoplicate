@@ -112,7 +112,7 @@ export function patchMergePDFAttachments() {
   patch.setData({
     target: Zotero.Items,
     funcSign: "_mergePDFAttachments",
-    enabled: false,  // TODO: finish this
+    enabled: false, // TODO: finish this
     patcher: (original) =>
       async function (this: any, item: Zotero.Item, otherItems: Zotero.Item[]) {
         ztoolkit.log("Merging PDF attachments");

@@ -2,72 +2,90 @@ import { config } from "../package.json";
 import { initLocale } from "./utils/locale";
 import { registerPrefs, registerPrefsScripts } from "./modules/preferenceScript";
 import { createZToolkit } from "./utils/ztoolkit";
-import { whenItemsAdded, whenItemsDeleted, registerNotifier } from "./modules/notifier";
+import { whenItemsDeleted, registerNotifier } from "./modules/notifier";
 import { registerStyleSheets } from "./utils/window";
 import { BulkDuplicates } from "./modules/bulkDuplicates";
-import { fetchDuplicates, registerButtonsInDuplicatePane } from "./modules/duplicates";
+import { Duplicates, registerButtonsInDuplicatePane } from "./modules/duplicates";
 import menus from "./modules/menus";
 // import "./modules/zduplicates.js";
-import { registerNonDuplicatesSection } from "./modules/nonDuplicates";
+import { registerNonDuplicatesSection, unregisterNonDuplicatesSection } from "./modules/nonDuplicates";
 import {
   patchFindDuplicates,
   patchGetSearchObject,
   patchItemSaveData,
   patchMergePDFAttachments,
 } from "./modules/patcher";
-import { containsRegularItem, isInDuplicatesPane, refreshItemTree } from "./utils/zotero";
+import { containsRegularItem, debug, isInDuplicatesPane, refreshItemTree } from "./utils/zotero";
 import { registerDuplicateStats } from "./modules/duplicateStats";
 import { waitUntilAsync } from "./utils/wait";
 import { NonDuplicatesDB } from "./db/nonDuplicates";
+import { fetchDuplicates } from "./utils/duplicates";
+
+let mainWindowLoaded = false;
+const notifyQueue: { event: string; type: string; ids: number[] | string[]; extraData: { [key: string]: any } }[] = [];
 
 async function onStartup() {
   await Promise.all([Zotero.initializationPromise, Zotero.unlockPromise, Zotero.uiReadyPromise]);
   initLocale();
-  await onMainWindowLoad(window);
-}
-
-async function onMainWindowLoad(win: Window): Promise<void> {
-  // await waitUntilAsync(() => document.readyState === "complete");
-
   // create ztoolkit
-  addon.data.ztoolkit = createZToolkit();
-  window.MozXULElement.insertFTLIfNeeded(`${config.addonRef}-itemSection.ftl`);
-
+  // addon.data.ztoolkit = createZToolkit();
+  ztoolkit.log("addon onStartup");
+  registerPrefs();
+  registerNotifier();
   // init database
   const nonDuplicatesDB = NonDuplicatesDB.instance;
   await nonDuplicatesDB.init();
-
-  // register stylesheets and preferences
-  registerStyleSheets();
-  registerPrefs();
-
-  // patch Zotero duplicate search object and events
-  registerNotifier();
   patchFindDuplicates(nonDuplicatesDB);
   patchGetSearchObject();
   patchItemSaveData();
 
+  patchMergePDFAttachments();
+
+  await Promise.all(
+    Zotero.getMainWindows().map((win) => onMainWindowLoad(win)),
+  );
+}
+
+async function onMainWindowLoad(win: Window): Promise<void> {
+  // await waitUntilAsync(() => document.readyState === "complete");
+  ztoolkit.log("addon onMainWindowLoad");
+  win.MozXULElement.insertFTLIfNeeded(`${config.addonRef}-itemSection.ftl`);
+  registerStyleSheets(win);
+
   // register duplicate UI elements
   await registerDuplicateStats();
   await registerButtonsInDuplicatePane(win);
-  BulkDuplicates.getInstance().registerUIElements(win);
+  BulkDuplicates.instance.registerUIElements(win);
+  const nonDuplicatesDB = NonDuplicatesDB.instance;
+  await nonDuplicatesDB.init();
   registerNonDuplicatesSection(nonDuplicatesDB);
 
   menus.registerMenus(win);
 
-  patchMergePDFAttachments();
   if (addon.data.env === "development") {
     await registerDevColumn();
   }
+  mainWindowLoaded = true;
+  setTimeout(async () => {
+    while (notifyQueue.length > 0) {
+      const { event, type, ids, extraData } = notifyQueue.shift()!;
+      debug("notify shift", event, type, ids, extraData);
+      await onNotify(event, type, ids, extraData);
+    }
+  }, 500);
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {
-  ztoolkit.unregisterAll();
+  debug("addon onMainWindowUnload");
+  // ztoolkit.unregisterAll();
+  mainWindowLoaded = false;
   addon.data.dialogs.dialog?.window?.close();
+  unregisterNonDuplicatesSection();
   await NonDuplicatesDB.instance.close();
 }
 
 async function onShutdown() {
+  debug("addon onShutdown");
   ztoolkit.unregisterAll();
   addon.data.dialogs.dialog?.window?.close();
   await NonDuplicatesDB.instance.close();
@@ -98,6 +116,12 @@ async function registerDevColumn() {
  * Refer to: https://github.com/zotero/zotero/blob/main/chrome/content/zotero/xpcom/notifier.js
  */
 async function onNotify(event: string, type: string, ids: number[] | string[], extraData: { [key: string]: any }) {
+  if (!mainWindowLoaded) {
+    debug("notify queue", event, type, ids, extraData);
+    notifyQueue.push({ event, type, ids, extraData });
+    return;
+  }
+
   // You can add your code to the corresponding `notify type`
   ztoolkit.log("notify", event, type, ids, extraData);
 
@@ -108,7 +132,7 @@ async function onNotify(event: string, type: string, ids: number[] | string[], e
     return;
   }
 
-  const precondition = ids && ids.length > 0 && !BulkDuplicates.getInstance().isRunning;
+  const precondition = ids && ids.length > 0 && !BulkDuplicates.instance.isRunning;
 
   if (!precondition) {
     // ignore when bulk duplicates is running and no ids
@@ -120,7 +144,7 @@ async function onNotify(event: string, type: string, ids: number[] | string[], e
     return;
   }
 
-  let libraryIDs = [ZoteroPane.getSelectedLibraryID()];
+  let libraryIDs = [Zotero.getActiveZoteroPane().getSelectedLibraryID()];
 
   const toRefresh =
     // subset of "modify" event (modification on item data and authors) on regular items
@@ -142,7 +166,7 @@ async function onNotify(event: string, type: string, ids: number[] | string[], e
     const libraryID = libraryIDs[0]; // normally only one libraryID
     const { duplicatesObj } = await fetchDuplicates({ libraryID, refresh: true });
     if (type == "item" && event == "add") {
-      await whenItemsAdded(duplicatesObj, ids as number[]);
+      await Duplicates.instance.whenItemsAdded(duplicatesObj, ids as number[]);
     }
   }
 }

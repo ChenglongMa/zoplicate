@@ -101,8 +101,8 @@ export class DuplicateFinder {
                      AND (${partialWhereClause}) ${candidateAndClause};`;
     const doiParams = dois.map((doi) => `%${doi}%`);
     const params = [this.item.libraryID, this.itemTypeID, ...fieldIDs, ...doiParams, ...this.candidateItemIDs];
-    const rows: { itemID: number }[] = await Zotero.DB.queryAsync(query, params);
-    this.candidateItemIDs = rows.map((row) => row.itemID);
+    const rows = (await Zotero.DB.queryAsync(query, params)) as { itemID: number }[] | undefined;
+    this.candidateItemIDs = rows?.map((row) => row.itemID) ?? [];
     return this;
   }
 
@@ -135,8 +135,8 @@ export class DuplicateFinder {
                      AND (${partialWhereClause}) ${candidateAndClause};`;
     const isbnPragmas = isbns.map((isbn) => `%${isbn}%`);
     const params = [this.item.libraryID, this.itemTypeID, ...fieldIDs, ...isbnPragmas, ...this.candidateItemIDs];
-    const rows: { itemID: number }[] = await Zotero.DB.queryAsync(query, params);
-    this.candidateItemIDs = rows.map((row) => row.itemID);
+    const rows = (await Zotero.DB.queryAsync(query, params)) as { itemID: number }[] | undefined;
+    this.candidateItemIDs = rows?.map((row) => row.itemID) ?? [];
     return this;
   }
 
@@ -168,8 +168,8 @@ export class DuplicateFinder {
                      AND fieldID IN (${titleIDs.map(() => "?").join(", ")})
                      AND (${partialWhereClause}) ${candidateAndClause};`;
     const params = [this.item.libraryID, this.itemTypeID, ...titleIDs, ...titles, ...this.candidateItemIDs];
-    const rows: { itemID: number }[] = await Zotero.DB.queryAsync(query, params);
-    this.candidateItemIDs = rows.map((row) => row.itemID);
+    const rows = (await Zotero.DB.queryAsync(query, params)) as { itemID: number }[] | undefined;
+    this.candidateItemIDs = rows?.map((row) => row.itemID) ?? [];
     return this;
   }
 
@@ -209,8 +209,8 @@ export class DuplicateFinder {
       ...creators.flatMap((creator) => Object.values(creator)),
       ...this.candidateItemIDs,
     ];
-    const rows: { itemID: number }[] = await Zotero.DB.queryAsync(query, params);
-    this.candidateItemIDs = rows.map((row) => row.itemID);
+    const rows = (await Zotero.DB.queryAsync(query, params)) as { itemID: number }[] | undefined;
+    this.candidateItemIDs = rows?.map((row) => row.itemID) ?? [];
     return this;
   }
 
@@ -242,8 +242,8 @@ export class DuplicateFinder {
                      AND SUBSTR(value, 1, 4) <= '?'
                        ${candidateAndClause};`;
     const params = [this.item.libraryID, this.itemTypeID, ...dateFields, minYear, maxYear, ...this.candidateItemIDs];
-    const rows: { itemID: number }[] = await Zotero.DB.queryAsync(query, params);
-    this.candidateItemIDs = rows.map((row) => row.itemID);
+    const rows = (await Zotero.DB.queryAsync(query, params)) as { itemID: number }[] | undefined;
+    this.candidateItemIDs = rows?.map((row) => row.itemID) ?? [];
     return this;
   }
 }
