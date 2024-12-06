@@ -58,6 +58,21 @@ A plugin that does one thing only: **Detect** and **Manage** duplicate items in 
 
 # Changelog
 
+## v3.0.4
+
+<details markdown="1" open>
+  <summary><i>Click here to show more.</i></summary>
+
+In this version, we have made the following changes:
+
+1. 🐛 **FIX!**: We have fixed the bug that caused the UI blocked when selecting too many items and opening the context menu.
+    * Thanks to [zzlb0224](https://github.com/zzlb0224), [pencilheart](https://github.com/pencilheart) and [dschaehi](https://github.com/dschaehi) for reporting this bug in [issue #119](https://github.com/ChenglongMa/zoplicate/issues/94) and [issue #119](https://github.com/ChenglongMa/zoplicate/issues/119) respectively.
+2. 🐛 **FIX!**: We have optimized the plugin lifecycle which may cause the plugin to load multiple preference settings on macOS.
+    * Thanks to [WangYe661](https://github.com/WangYe661) and [pencilheart](https://github.com/pencilheart) for reporting this bug in [issue #81](https://github.com/ChenglongMa/zoplicate/issues/81).
+3. 🐛 **FIX!**: We have optimized database operations to reduce the risk of data loss.
+
+</details>
+
 ## v3.0.3
 
 <details markdown="1" open>
@@ -82,7 +97,7 @@ In this version, we have made the following changes:
 
 ## v3.0.2
 
-<details markdown="1" open>
+<details markdown="1">
   <summary><i>Click here to show more.</i></summary>
 
 In this version, we have made the following changes:
