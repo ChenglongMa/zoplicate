@@ -21,7 +21,7 @@ function addButtonsInDuplicatePanes(innerButton: boolean, siblingElement: Elemen
     {
       tag: "div",
       namespace: "html",
-      classList: ["duplicate-custom-head", "empty"],
+      classList: ["duplicate-custom-head"],
       children: [
         BulkDuplicates.instance.createBulkMergeButton(siblingElement.ownerDocument.defaultView!, mergeButtonID),
         createNonDuplicateButton(nonDuplicateButtonID),
