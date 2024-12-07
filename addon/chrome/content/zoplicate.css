@@ -1,16 +1,15 @@
 .duplicate-custom-head {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     align-self: stretch;
     gap: 6px;
     padding: 6px 8px;
     background: var(--material-toolbar);
     border-bottom: var(--material-panedivider);
-    height: 28px;
 }
 
 .duplicate-custom-head button {
-    height: 26px;
+    height: 28px;
     margin: 0;
     flex-grow: 1;
     cursor: pointer;
