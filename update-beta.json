@@ -3,7 +3,7 @@
     "zoplicate@chenglongma.com": {
       "updates": [
         {
-          "version": "3.0.4",
+          "version": "3.0.5",
           "update_link": "https://github.com/ChenglongMa/zoplicate/releases/latest/download/zoplicate.xpi",
           "applications": {
             "zotero": {
