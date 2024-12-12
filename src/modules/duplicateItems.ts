@@ -13,7 +13,7 @@ export class DuplicateItems {
 
   constructor(items: Zotero.Item[] | number[], masterItemPref: MasterItem) {
     if (items.length < 1) {
-      throw new Error("DuplicateItems must have at least one item");
+      ztoolkit.log("DuplicateItems must have at least one item");
     }
 
     this._masterItemPref = masterItemPref;
