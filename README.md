@@ -69,6 +69,8 @@ In this version, we have made the following changes:
     * Thanks to [dstillman](https://github.com/dstillman) for reporting this issue in [issue #124](https://github.com/ChenglongMa/zoplicate/issues/124).
 2. 🐛 **FIX!**: We have optimized the UI of context menu.
     * Thanks to [dschaehi](https://github.com/dschaehi) for reporting this issue in [issue #119](https://github.com/ChenglongMa/zoplicate/issues/119).
+3. 🐛 **FIX!**: We have optimized the UI styling of bulk merge buttons.
+    * Thanks to [vancleve](https://github.com/vancleve) for reporting this issue in [issue #120](https://github.com/ChenglongMa/zoplicate/issues/120).
 
 </details>
 
@@ -89,7 +91,7 @@ In this version, we have made the following changes:
 
 ## v3.0.3
 
-<details markdown="1" open>
+<details markdown="1">
   <summary><i>Click here to show more.</i></summary>
 
 In this version, we have made the following changes:
