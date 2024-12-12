@@ -58,6 +58,20 @@ A plugin that does one thing only: **Detect** and **Manage** duplicate items in 
 
 # Changelog
 
+## v3.0.5
+
+<details markdown="1" open>
+  <summary><i>Click here to show more.</i></summary>
+
+In this version, we have made the following changes:
+
+1. 🐛 **FIX!**: We have fixed the bug that caused the sync error.
+    * Thanks to [dstillman](https://github.com/dstillman) for reporting this issue in [issue #124](https://github.com/ChenglongMa/zoplicate/issues/124).
+2. 🐛 **FIX!**: We have optimized the UI of context menu.
+    * Thanks to [dschaehi](https://github.com/dschaehi) for reporting this issue in [issue #119](https://github.com/ChenglongMa/zoplicate/issues/119).
+
+</details>
+
 ## v3.0.4
 
 <details markdown="1" open>

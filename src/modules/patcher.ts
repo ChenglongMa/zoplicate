@@ -81,10 +81,10 @@ export function patchItemSaveData() {
           ztoolkit.log("Parent item", parentID, "deleted?", parentItem?.deleted);
           if (parentItem && parentItem.deleted) {
             const newParents = await new DuplicateFinder(parentItem).find();
-            const masterItemPref = getPref("bulk.master.item") as MasterItem;
-            const duItems = new DuplicateItems(newParents, masterItemPref);
 
             if (newParents.length > 0) {
+              const masterItemPref = getPref("bulk.master.item") as MasterItem;
+              const duItems = new DuplicateItems(newParents, masterItemPref);
               // TODO: check if this is correct, should use official API
               // Such as Zotero.Items.moveChildItems, etc.
               this.parentID = duItems.masterItem.id;
