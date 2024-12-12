@@ -183,6 +183,9 @@ export class Duplicates {
           otherItems: existingItemIDs.map((id) => Zotero.Items.get(id)),
         });
       } else if (action === Action.DISCARD) {
+        if (existingItemIDs.length < 1) {
+          continue;
+        }
         const duplicateItems = new DuplicateItems(existingItemIDs, masterItemPref);
         const masterItem = duplicateItems.masterItem;
         const otherItems = duplicateItems.otherItems;
