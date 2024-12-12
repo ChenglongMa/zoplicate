@@ -64,12 +64,11 @@ function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
       }
       const selectedItems = Zotero.getActiveZoteroPane().getSelectedItems();
       const mainMenu = win.document.getElementById(`${config.addonRef}-itemsview-menu`) as HTMLElement;
+      mainMenu.setAttribute("hidden", "true");
       const showing = selectedItems.length > 1;
       if (!showing) {
-        mainMenu.setAttribute("hidden", "true");
         return;
       }
-      mainMenu.removeAttribute("hidden");
       const isDuplicateMenuItem = win.document.getElementById(
         `${config.addonRef}-menuitem-is-duplicate`,
       ) as HTMLElement;
@@ -81,6 +80,7 @@ function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
       setTimeout(async () => {
         showingIsDuplicate = await NonDuplicatesDB.instance.existsNonDuplicates(itemIDs);
         if (showingIsDuplicate) {
+          mainMenu.removeAttribute("hidden");
           isDuplicateMenuItem.removeAttribute("hidden");
           notDuplicateMenuItem.setAttribute("hidden", "true");
         } else {
@@ -91,6 +91,7 @@ function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
 
           showingNotDuplicate = itemIDs.every((itemID) => duplicateItems.has(itemID));
           if (showingNotDuplicate) {
+            mainMenu.removeAttribute("hidden");
             notDuplicateMenuItem.removeAttribute("hidden");
           } else {
             notDuplicateMenuItem.setAttribute("hidden", "true");

@@ -141,6 +141,10 @@ export class BulkDuplicates {
       if (processedItems.has(duplicateItem)) continue;
 
       const items: number[] = duplicatesObj.getSetItemsByItemID(duplicateItem);
+      if (items.length < 2) {
+        processedItems.add(duplicateItem);
+        continue;
+      }
       const duItems = new DuplicateItems(items, masterItemPref);
       popWin.changeLine({
         text: getString("bulk-merge-popup-process", {
