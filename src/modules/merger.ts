@@ -12,7 +12,7 @@ export async function merge(
 
   const masterJSON = masterItem.toJSON();
   const candidateJSON: {
-    [field in Zotero.Item.DataType]?: string | unknown;
+    [field in _ZoteroTypes.Item.DataType]?: string | unknown;
   } = otherItems.reduce((acc, obj) => ({ ...acc, ...obj.toJSON() }), {});
 
   // Refer to https://github.com/zotero/zotero/blob/main/chrome/content/zotero/duplicatesMerge.js#L151
