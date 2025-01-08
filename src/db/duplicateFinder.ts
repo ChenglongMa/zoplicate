@@ -120,7 +120,7 @@ export class DuplicateFinder {
     }
     const candidateAndClause = buildCandidateAndClause(this.candidateItemIDs);
     const partialWhereClause = isbns.map(() => "REPLACE(value, '-', '') LIKE ?").join(" OR ");
-    const fieldIDs: number[] = ["DOI", "ISBN", "url", "extra"].map(Zotero.ItemFields.getID);
+    const fieldIDs: (number | false)[] = ["DOI", "ISBN", "url", "extra"].map(Zotero.ItemFields.getID);
     const fieldIDInClause = fieldIDs.map(() => "?").join(", ");
     // Match by ISBN
     const query = `SELECT DISTINCT itemID
@@ -152,8 +152,10 @@ export class DuplicateFinder {
       // Should not happen
       return this;
     }
-    const titleIDs = Zotero.ItemFields.getTypeFieldsFromBase("title");
-    titleIDs.push(Zotero.ItemFields.getID("title"));
+    const titleIDs = Zotero.ItemFields.getTypeFieldsFromBase("title") as number[];
+    const titleFieldID = Zotero.ItemFields.getID("title") as number;
+
+    titleIDs.push(titleFieldID);
 
     const candidateAndClause = buildCandidateAndClause(this.candidateItemIDs);
     const partialWhereClause = titles.map(() => "TRIM(UPPER(value)) LIKE ?").join(" OR ");
@@ -226,8 +228,8 @@ export class DuplicateFinder {
     const minYear = year - threshold;
     const maxYear = year + threshold;
     const candidateAndClause = buildCandidateAndClause(this.candidateItemIDs);
-    const dateFields = Zotero.ItemFields.getTypeFieldsFromBase("date");
-    dateFields.push(Zotero.ItemFields.getID("date"));
+    const dateFields = Zotero.ItemFields.getTypeFieldsFromBase("date") as number[];
+    dateFields.push(Zotero.ItemFields.getID("date") as number);
 
     const query = `SELECT DISTINCT itemID
                    FROM itemDataValues

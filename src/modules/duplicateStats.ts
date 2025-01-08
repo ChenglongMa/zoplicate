@@ -17,9 +17,11 @@ export async function registerDuplicateStats() {
   const patch = new ztoolkit.Patch();
   patch.setData({
     target: Zotero.getActiveZoteroPane().collectionsView,
+    // @ts-ignore
     funcSign: "renderItem",
-    // refer to https://github.com/zotero/zotero/blob/main/chrome/content/zotero/collectionTree.jsx#L274
+    // refer to https://github.com/zotero/zotero/blob/ef8de73d5ae4bc904c223845cba8467e5a405464/chrome/content/zotero/collectionTree.jsx#L286
     // i.e., the `renderItem` function of collectionTree
+    // @ts-ignore
     patcher:
       (originalFunc: any) =>
         (index: number, selection: object, oldDiv: HTMLDivElement, columns: any[]): HTMLDivElement => {

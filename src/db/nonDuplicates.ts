@@ -28,6 +28,7 @@ export class NonDuplicatesDB extends SQLiteDB {
            libraryID INTEGER,
            PRIMARY KEY (itemID, itemID2)
        );`,
+      {},
     );
   }
 
@@ -118,14 +119,15 @@ export class NonDuplicatesDB extends SQLiteDB {
   }
 
   async existsNonDuplicatePair(itemID: number, itemID2: number) {
-    const result = await this._db.queryAsync(
+    const result = (await this._db.queryAsync(
       `SELECT EXISTS(SELECT 1
                      FROM ${this.tables.nonDuplicates}
                      WHERE (itemID = ? AND itemID2 = ?)
                         OR (itemID = ? AND itemID2 = ?)) AS existsResult;`,
       [itemID, itemID2, itemID2, itemID],
-    );
-    return !!result[0].existsResult;
+    )) as { existsResult: number }[];
+
+    return result?.[0]?.existsResult ?? false;
   }
 
   async existsNonDuplicates(itemIDs: number[]) {
@@ -136,7 +138,7 @@ export class NonDuplicatesDB extends SQLiteDB {
       const query = `SELECT COUNT(*) AS count
                      FROM ${this.tables.nonDuplicates}
                      WHERE (itemID, itemID2) IN (${placeholders});`;
-      const result = await this._db.queryAsync(query, batch.flat());
+      const result = (await this._db.queryAsync(query, batch.flat())) as { count: number }[];
       if (result[0].count !== batch.length) {
         return false;
       }
@@ -159,7 +161,6 @@ export class NonDuplicatesDB extends SQLiteDB {
       params.push(libraryID);
     }
 
-    const rows: { itemID: number; itemID2: number }[] = await this._db.queryAsync(query, params);
-    return rows;
+    return (await this._db.queryAsync(query, params)) as { itemID: number; itemID2: number }[];
   }
 }
