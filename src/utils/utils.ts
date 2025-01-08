@@ -93,7 +93,7 @@ export function normalizeString(input: string, wildcard = "%") {
  * @param wildcard
  */
 export function cleanCreator(
-  creator: Zotero.Item.Creator,
+  creator: _ZoteroTypes.Item.Creator,
   checkLength = 2,
   wildcard = "%",
 ): {
@@ -108,7 +108,7 @@ export function cleanCreator(
 }
 
 export function cleanDOI(item: Zotero.Item): string[] {
-  const possibleDOIFields: Zotero.Item.ItemField[] = ["DOI", "url"];
+  const possibleDOIFields: _ZoteroTypes.Item.ItemField[] = ["DOI", "url"];
   const doiStrs = new Set<string>();
   for (const field of possibleDOIFields) {
     let cleanedDOI = Zotero.Utilities.cleanDOI("" + item.getField(field));
@@ -120,7 +120,7 @@ export function cleanDOI(item: Zotero.Item): string[] {
 }
 
 export function cleanISBN(item: Zotero.Item): string[] {
-  const possibleISBNFields: Zotero.Item.ItemField[] = ["DOI", "ISBN", "url"];
+  const possibleISBNFields: _ZoteroTypes.Item.ItemField[] = ["DOI", "ISBN", "url"];
   let isbnString = "";
   for (const field of possibleISBNFields) {
     isbnString += item.getField(field) + " ";

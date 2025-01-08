@@ -58,6 +58,17 @@ A plugin that does one thing only: **Detect** and **Manage** duplicate items in 
 
 # Changelog
 
+## v3.0.6
+
+<details markdown="1">
+  <summary><i>Click here to show more.</i></summary>
+
+In this version, we have updated the dependencies and adapted to the latest version of Zotero.
+
+Thanks to [pascaloettli](https://github.com/pascaloettli) for the feedback in [issue #131](https://github.com/ChenglongMa/zoplicate/issues/131).
+
+</details>
+
 ## v3.0.5
 
 <details markdown="1" open>
