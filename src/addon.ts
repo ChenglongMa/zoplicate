@@ -3,10 +3,12 @@ import { DialogHelper } from "zotero-plugin-toolkit/dist/helpers/dialog";
 import hooks from "./hooks";
 import { createZToolkit } from "./utils/ztoolkit";
 import { Action } from "./utils/prefs";
+import { config } from "../package.json";
 
 class Addon {
   public data: {
     alive: boolean;
+    config: typeof config;
     // Env type, see build.mjs
     env: "development" | "production";
     database: "SQLite" | "IndexedDB";
@@ -38,6 +40,7 @@ class Addon {
   constructor() {
     this.data = {
       alive: true,
+      config,
       env: __env__,
       database: "SQLite",
       ztoolkit: createZToolkit(),
@@ -57,6 +60,7 @@ class Addon {
     // TODO: To be implemented
     this.data = {
       alive: true,
+      config,
       env: __env__,
       database: "SQLite",
       ztoolkit: createZToolkit(),

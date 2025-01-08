@@ -45,6 +45,13 @@ export function registerNotifier() {
     "tab",
   ]);
 
+  Zotero.Plugins.addObserver({
+    shutdown: ({ id }) => {
+      if (id === addon.data.config.addonID)
+        unregisterNotifier();
+    },
+  });
+
   // // Unregister callback when the window closes (important to avoid a memory leak)
   // window.addEventListener(
   //   "unload",
