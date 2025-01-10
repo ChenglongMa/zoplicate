@@ -1,6 +1,15 @@
 import { getPref, TypeMismatch, setPref } from "../utils/prefs";
 import { getString } from "../utils/locale";
 
+async function convertItemType(item: Zotero.Item, targetTypeID: number) {
+  await Zotero.DB.executeTransaction(async () => {
+    item.setType(targetTypeID);
+    await item.save();
+    // Small delay to ensure DB operations complete
+    await Zotero.Promise.delay(50);
+  });
+}
+
 export async function merge(
   masterItem: Zotero.Item,
   otherItems: Zotero.Item[], // Already sorted
@@ -18,10 +27,12 @@ export async function merge(
       const dialog = new ztoolkit.Dialog(3, 1)
         .setDialogData({
           action: TypeMismatch.SKIP,
-          savePreference: false  // This controls if we save preference permanently
+          savePreference: false,
+          // Add promise to track dialog completion
+          dialogPromise: Zotero.Promise.defer()
         })
         .addCell(0, 0, {
-          tag: "h2",
+          tag: "p",
           properties: { innerHTML: getString("type-mismatch-message") }
         })
         .addCell(1, 0, {
@@ -46,49 +57,49 @@ export async function merge(
         .addButton(getString("type-mismatch-convert"), "btn_convert", {
           callback: () => {
             dialog.dialogData.action = TypeMismatch.CONVERT;
-            // Only save preference if user checked the box
             if (dialog.dialogData.savePreference) {
               setPref("duplicate.type.mismatch", TypeMismatch.CONVERT);
             }
+            dialog.dialogData.dialogPromise.resolve();
           }
         })
         .addButton(getString("type-mismatch-skip"), "btn_skip", {
           callback: () => {
             dialog.dialogData.action = TypeMismatch.SKIP;
-            // Only save preference if user checked the box
             if (dialog.dialogData.savePreference) {
               setPref("duplicate.type.mismatch", TypeMismatch.SKIP);
             }
+            dialog.dialogData.dialogPromise.resolve();
           }
         });
-
-      // Remove loadCallback and unloadCallback since we handle preference in button callbacks
 
       dialog.open(getString("type-mismatch-title"), {
         centerscreen: true,
         resizable: true
       });
 
+      // Wait for both dialog load and user action
       await dialog.dialogData.loadLock?.promise;
+      await dialog.dialogData.dialogPromise.promise;
 
       if (dialog.dialogData.action === TypeMismatch.CONVERT) {
-        // Convert all mismatched items in place
-        await Promise.all(otherItems.map(async item => {
+        // Convert items one by one
+        for (const item of otherItems) {
           if (item.itemTypeID !== masterItemType) {
-            item.setType(masterItemType);  // Remove await since setType handles its own state
+            await convertItemType(item, masterItemType);
           }
-        }));
+        }
       } else {
         otherItems = otherItems.filter(item => item.itemTypeID === masterItemType);
       }
     }
     else if (typeMismatchPref === TypeMismatch.CONVERT) {
-      // Convert all mismatched items in place
-      await Promise.all(otherItems.map(async item => {
+      // Convert items one by one
+      for (const item of otherItems) {
         if (item.itemTypeID !== masterItemType) {
-          item.setType(masterItemType);  // Remove await since setType handles its own state
+          await convertItemType(item, masterItemType);
         }
-      }));
+      }
       otherItems = otherItems.filter(item => item.itemTypeID === masterItemType);
     }
     else { // TypeMismatch.SKIP
