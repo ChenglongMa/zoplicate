@@ -62,6 +62,10 @@ bulk-merge-popup-restore = 正在恢复: { $item }
 duplicate-tooltip = 检测到 { $total } 个重复项，源自 { $unique } 个唯一条目。
 duplicate-not-found-tooltip = 未找到重复条目
 
+type-mismatch-title = 条目类型不匹配
+type-mismatch-message = 部分条目类型不一致。您想转换它们的类型还是跳过合并？
+type-mismatch-convert = 转换类型
+type-mismatch-skip = 跳过合并
 
 ## Menus
 menuitem-refresh-duplicates = 刷新
