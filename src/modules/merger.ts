@@ -8,9 +8,10 @@ export async function merge(
   Zotero.CollectionTreeCache.clear();
 
   const masterItemType = masterItem.itemTypeID;
-  const mismatchedItems = otherItems.filter(item => item.itemTypeID !== masterItemType);
+  // Check if any items need type conversion
+  const hasMismatch = otherItems.some(item => item.itemTypeID !== masterItemType);
 
-  if (mismatchedItems.length > 0) {
+  if (hasMismatch) {
     const typeMismatchPref = getPref("duplicate.type.mismatch") as TypeMismatch;
 
     if (typeMismatchPref === TypeMismatch.ASK) {
@@ -71,13 +72,24 @@ export async function merge(
       await dialog.dialogData.loadLock?.promise;
 
       if (dialog.dialogData.action === TypeMismatch.CONVERT) {
-        await Promise.all(mismatchedItems.map(item => item.setType(masterItemType)));
+        // Convert all mismatched items in place
+        await Promise.all(otherItems.map(async item => {
+          if (item.itemTypeID !== masterItemType) {
+            item.setType(masterItemType);  // Remove await since setType handles its own state
+          }
+        }));
       } else {
         otherItems = otherItems.filter(item => item.itemTypeID === masterItemType);
       }
     }
     else if (typeMismatchPref === TypeMismatch.CONVERT) {
-      await Promise.all(mismatchedItems.map(item => item.setType(masterItemType)));
+      // Convert all mismatched items in place
+      await Promise.all(otherItems.map(async item => {
+        if (item.itemTypeID !== masterItemType) {
+          item.setType(masterItemType);  // Remove await since setType handles its own state
+        }
+      }));
+      otherItems = otherItems.filter(item => item.itemTypeID === masterItemType);
     }
     else { // TypeMismatch.SKIP
       otherItems = otherItems.filter(item => item.itemTypeID === masterItemType);
