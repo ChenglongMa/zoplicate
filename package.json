@@ -1,6 +1,6 @@
 {
   "name": "zoplicate",
-  "version": "3.0.6",
+  "version": "3.0.7",
   "description": "Detect and manage duplicate items in Zotero.",
   "config": {
     "addonName": "Zoplicate",
@@ -45,7 +45,7 @@
     "prettier": "^3.4.2",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.2",
+    "typescript": "^5.7.3",
     "zotero-plugin-scaffold": "^0.1.7",
     "zotero-types": "3.1.2"
   },
