@@ -27,6 +27,16 @@ pref-default-master-item-detailed =
 pref-default-master-item-always-ask =
     .label = [始终询问]: 每次都询问我该如何选择主条目
 
+pref-type-mismatch-title = 条目类型不匹配设置 
+pref-type-mismatch-description = 如何处理不同类型条目的合并
+
+pref-type-mismatch-skip =
+    .label = [跳过]: 跳过不同类型条目的合并
+pref-type-mismatch-convert =
+    .label = [转换]: 将条目转换为主条目类型
+pref-type-mismatch-ask =
+    .label = [询问]: 类型不匹配时询问如何处理
+
 pref-view-title = 视图设置
 pref-view-description = 选择重复条目的显示方式
 pref-view-duplicate-stats =
