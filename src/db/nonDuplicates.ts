@@ -20,7 +20,6 @@ export class NonDuplicatesDB extends SQLiteDB {
   }
 
   private async createNonDuplicateTable() {
-    // @ts-ignore
     await this._db.queryAsync(
       `CREATE TABLE IF NOT EXISTS ${this.tables.nonDuplicates}
        (
