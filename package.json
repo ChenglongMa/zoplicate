@@ -35,11 +35,11 @@
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
-    "@types/node": "^22.10.5",
-    "@typescript-eslint/eslint-plugin": "^8.19.1",
-    "@typescript-eslint/parser": "^8.19.1",
-    "eslint": "^9.17.0",
-    "eslint-config-prettier": "^9.1.0",
+    "@types/node": "^22.10.7",
+    "@typescript-eslint/eslint-plugin": "^8.21.0",
+    "@typescript-eslint/parser": "^8.21.0",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.0.1",
     "fake-indexeddb": "^6.0.0",
     "jest": "^29.7.0",
     "prettier": "^3.4.2",
@@ -47,7 +47,7 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3",
     "zotero-plugin-scaffold": "^0.1.7",
-    "zotero-types": "3.1.2"
+    "zotero-types": "3.1.6"
   },
   "eslintConfig": {
     "env": {
