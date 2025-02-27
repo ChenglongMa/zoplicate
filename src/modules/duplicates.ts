@@ -12,7 +12,7 @@ import { toggleButtonHidden } from "../utils/view";
 import { bringToFront } from "../utils/window";
 import { showHintWithLink } from "../utils/utils";
 import { waitUntilAsync } from "../utils/wait";
-import { areDuplicates, fetchDuplicates } from "../utils/duplicates";
+import { areDuplicates } from "../utils/duplicates";
 
 function addButtonsInDuplicatePanes(innerButton: boolean, siblingElement: Element) {
   const mergeButtonID = innerButton ? BulkDuplicates.innerButtonID : BulkDuplicates.externalButtonID;
@@ -67,49 +67,6 @@ export class Duplicates {
   }
 
   private constructor() {
-    this.dialogData = addon.data.dialogs.dialog?.dialogData || {
-      savePreference: false,
-      defaultAction: Action.CANCEL,
-      loadCallback: () => {
-        const cssFiles = [
-          "chrome://global/skin/",
-          "chrome://zotero/skin/zotero.css",
-          "chrome://zotero/skin/overlay.css",
-          "chrome://zotero-platform/content/overlay.css",
-          "chrome://zotero-platform/content/zotero.css",
-        ];
-        cssFiles.forEach((css) => {
-          this.document?.head.appendChild(
-            ztoolkit.UI.createElement(this.document, "link", {
-              properties: {
-                rel: "stylesheet",
-                href: css,
-              },
-            }),
-          );
-        });
-
-        const defaultActionOptions = this.document?.getElementById(
-          `act_${this.dialogData.defaultAction}`,
-        ) as HTMLInputElement;
-        defaultActionOptions?.click();
-        setTimeout(() => {
-          const currentHeight = this.document?.getElementById("table_container")?.clientHeight || 0;
-          if (currentHeight > 500) {
-            (this.document?.getElementById("table_container") as HTMLElement).style.height = "500px";
-            (this.window as any).sizeToContent();
-            this.window?.resizeBy(20, 0); // Add 20px to width for scrollbar
-          }
-        }, 500);
-      },
-      unloadCallback: () => {
-        if (this.dialogData.savePreference) {
-          setPref("duplicate.default.action", this.dialogData.defaultAction);
-        }
-        this.dialog = undefined;
-        this.duplicateMaps = undefined;
-      },
-    };
   }
 
   async whenItemsAdded(
@@ -228,7 +185,7 @@ export class Duplicates {
 
     if (!this.document?.hasFocus()) {
       await showHintWithLink(config.addonName, getString("du-dialog-title"), getString("du-dialog-hint"), async () => {
-        bringToFront();
+        bringToFront(this.window);
       });
     }
 
@@ -263,12 +220,10 @@ export class Duplicates {
           }),
         );
       }).then(async () => {
-        await this.dialogData.unloadLock.promise;
+        await this.dialog?.dialogData?.unloadLock?.promise;
       });
     }
   }
-
-  private readonly dialogData: { [key: string | number | symbol]: any };
 
   private get dialog(): DialogHelper | undefined {
     return addon.data.dialogs.dialog;
@@ -354,8 +309,34 @@ export class Duplicates {
 
   private async createDialog() {
     const tableBody = await this.updateTable();
+    const dialogData = {
+      savePreference: false,
+      defaultAction: Action.CANCEL,
+      loadCallback: () => {
+        const defaultActionOptions = this.document?.getElementById(
+          `act_${this.dialog?.dialogData.defaultAction}`,
+        ) as HTMLInputElement;
+        defaultActionOptions?.click();
+        setTimeout(() => {
+          const currentHeight = this.document?.getElementById("table_container")?.clientHeight || 0;
+          if (currentHeight > 500) {
+            (this.document?.getElementById("table_container") as HTMLElement).style.height = "500px";
+            (this.window as any).sizeToContent();
+            this.window?.resizeBy(20, 0); // Add 20px to width for scrollbar
+          }
+        }, 500);
+      },
+      unloadCallback: () => {
+        if (this.dialog?.dialogData.savePreference) {
+          setPref("duplicate.default.action", this.dialog?.dialogData.defaultAction);
+        }
+        this.dialog = undefined;
+        ztoolkit.log("Dialog: unloaded");
+        this.duplicateMaps = undefined;
+      },
+    };
     return new ztoolkit.Dialog(3, 1)
-      .setDialogData(this.dialogData)
+      .setDialogData(dialogData)
       .addCell(0, 0, {
         tag: "h2",
         properties: { innerHTML: getString("du-dialog-header") },
