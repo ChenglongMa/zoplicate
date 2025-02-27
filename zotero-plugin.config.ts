@@ -10,9 +10,9 @@ export default defineConfig({
   namespace: pkg.config.addonRef,
   updateURL: "https://raw.githubusercontent.com/ChenglongMa/zoplicate/main/update.json",
   xpiDownloadLink: "https://github.com/ChenglongMa/zoplicate/releases/latest/download/zoplicate.xpi",
-  server: {
-    asProxy: true,
-  },
+  // server: {
+  //   asProxy: true,
+  // },
 
   build: {
     assets: ["addon/**/*.*"],

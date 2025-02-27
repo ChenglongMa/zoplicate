@@ -58,6 +58,20 @@ A plugin that does one thing only: **Detect** and **Manage** duplicate items in 
 
 # Changelog
 
+## v3.0.8
+
+<details markdown="1" open>
+  <summary><i>Click here to show more.</i></summary>
+
+In this version, we have made the following changes:
+
+1. 🐛 **FIX!**: We have fixed the bug that caused the dialog cannot open when importing duplicate items.
+    * Thanks to [pascaloettli](https://github.com/pascaloettli) for reporting this bug in [issue #147](https://github.com/ChenglongMa/zoplicate/issues/147).
+2. 🐛 **FIX!**: We have fixed the dialog styling issue in dark mode.
+    * Thanks to [pascaloettli](https://github.com/pascaloettli) for reporting this bug in [issue #146](https://github.com/ChenglongMa/zoplicate/issues/146).
+
+</details>
+
 ## v3.0.6
 
 <details markdown="1">
@@ -71,7 +85,7 @@ Thanks to [pascaloettli](https://github.com/pascaloettli) for the feedback in [i
 
 ## v3.0.5
 
-<details markdown="1" open>
+<details markdown="1">
   <summary><i>Click here to show more.</i></summary>
 
 In this version, we have made the following changes:
@@ -87,7 +101,7 @@ In this version, we have made the following changes:
 
 ## v3.0.4
 
-<details markdown="1" open>
+<details markdown="1">
   <summary><i>Click here to show more.</i></summary>
 
 In this version, we have made the following changes:
