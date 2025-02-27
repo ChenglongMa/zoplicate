@@ -13,7 +13,7 @@ function registerStyleSheets(win?: Window) {
   const hrefs = ["zoplicate", "itemSection"];
 
   if (!win) {
-    win = window;
+    win = Zotero.getMainWindow();
   }
   for (const href of hrefs) {
     const styles = ztoolkit.UI.createElement(win.document, "link", {
@@ -29,7 +29,7 @@ function registerStyleSheets(win?: Window) {
 
 function bringToFront(win?: Window) {
   if (!win) {
-    win = window;
+    win = Zotero.getMainWindow();
   }
   win.focus();
   win.document.documentElement.scrollIntoView();
