@@ -285,7 +285,7 @@ Thanks [ChinJCheung](https://github.com/ChinJCheung)'s idea mentioned in [issue 
    - **For Zotero 7**: Visit the [release page](https://github.com/ChenglongMa/zoplicate/releases/latest) and download [the latest `.xpi` file](https://github.com/ChenglongMa/zoplicate/releases/latest/download/zoplicate.xpi).
    - **For Zotero 6**: Visit the [release page](https://github.com/ChenglongMa/zoplicate/releases/tag/zotero6) and download [the `.xpi` file for Zotero 6](https://github.com/ChenglongMa/zoplicate/releases/download/zotero6/zoplicate.xpi).
    - If you are using FireFox, right-click on the link of the XPI file and select "Save As...".
-2. Then, in Zotero, click `Tools` -> `Add-ons` and drag the `.xpi` onto the Add-ons window.
+2. Then, in Zotero, click `Tools` -> `Plugins` and drag the `.xpi` onto the Plugins window.
    - See [how to install a Zotero addon](https://www.zotero.org/support/plugins).
 
 ## From Add-on Market Plugin for Zotero
