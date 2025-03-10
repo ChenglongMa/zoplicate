@@ -61,6 +61,10 @@ bulk-merge-popup-restore = Restoring: { $item }
 duplicate-tooltip = Found { $total } duplicates from { $unique } unique { $items }.
 duplicate-not-found-tooltip = No duplicate items found.
 
+type-mismatch-title = Item Types Are Different
+type-mismatch-message = Some items have different types. Would you like to convert them to match or skip merging?
+type-mismatch-convert = Convert Types
+type-mismatch-skip = Skip Merging
 
 ## Menus
 menuitem-refresh-duplicates = Refresh
