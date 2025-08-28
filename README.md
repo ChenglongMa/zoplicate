@@ -426,6 +426,26 @@ There are some ways to mark and unmark items as **Non-duplicates**:
 2. Selecting two "non duplicates", you can find the `They are duplicates` **menu items** in the context menu.
    * ![menu_not_duplicates](./docs/non_duplicates/menu_duplicates.png)
 
+# How to cite
+
+## Plain citation
+
+```text
+Ma, C. (2025). Zoplicate (v3.0.8) [Software]. Zenodo. https://doi.org/10.5281/zenodo.16986945
+```
+## BibTeX
+
+```bibtex
+@software{zoplicate_16986945,
+  author = {Ma, Chenglong},
+  title = {Zoplicate: Detect and manage duplicate items in Zotero},
+  version = {v3.0.8},
+  date = {2025-02-27},
+  doi = {10.5281/zenodo.16986945},
+  url = {https://github.com/ChenglongMa/zoplicate}
+}
+```
+
 # Contributing
 
 👋 Welcome to **Zoplicate**! We're excited to have your contributions. Here's how you can get involved:
