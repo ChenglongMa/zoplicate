@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use Zoplicate in your work, please cite it."
+title: "Zoplicate"
+version: "v3.0.8"
+authors:
+  - family-names: "Ma"
+    given-names: "Chenglong"
+    orcid: "0000-0002-6745-4029"
+    affiliation: "Independent researcher"
+date-released: "2025-08-29"
+doi: "10.5281/zenodo.16986945"
+url: "https://github.com/ChenglongMa/zoplicate"
+abstract: "Detect and manage duplicate items in Zotero."
+license: "AGPL-3.0"
+keywords: ["zotero","deduplication","zoplicate","software"]
