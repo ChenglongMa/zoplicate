@@ -13,6 +13,7 @@
 ![GitHub License](https://img.shields.io/github/license/ChenglongMa/zoplicate)
 [![Using Zotero Plugin Template](https://img.shields.io/badge/Using-Zotero%20Plugin%20Template-blue?style=flat-square&logo=github)](https://github.com/windingwind/zotero-plugin-template)
 [![GitHub Repo stars](https://img.shields.io/github/stars/ChenglongMa/zoplicate)](https://github.com/ChenglongMa/zoplicate)
+[![DOI](https://zenodo.org/badge/711394431.svg)](https://doi.org/10.5281/zenodo.16986945)
 
 ----
 
