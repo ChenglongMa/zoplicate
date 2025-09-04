@@ -31,7 +31,7 @@
   },
   "homepage": "https://chenglongma.com/zoplicate/",
   "dependencies": {
-    "zotero-plugin-toolkit": "^4.1.2"
+    "zotero-plugin-toolkit": "^5.0.1"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
@@ -46,8 +46,8 @@
     "ts-jest": "^29.2.6",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3",
-    "zotero-plugin-scaffold": "^0.2.4",
-    "zotero-types": "3.1.7"
+    "zotero-plugin-scaffold": "^0.4.1",
+    "zotero-types": "^4.0.5"
   },
   "eslintConfig": {
     "env": {
