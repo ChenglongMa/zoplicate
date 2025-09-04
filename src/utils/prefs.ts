@@ -51,3 +51,12 @@ export enum MasterItem {
   MODIFIED = "modified",
   DETAILED = "detailed",
 }
+
+/**
+ * NOTE: Corresponding to radio values in addon/chrome/content/preferences.xhtml.
+ */
+export enum TypeMismatch {
+  SKIP = "skip",
+  CONVERT = "convert",
+  ASK = "ask"
+}

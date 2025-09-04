@@ -27,6 +27,16 @@ pref-default-master-item-detailed =
 pref-default-master-item-always-ask =
     .label = [Always Ask]: Ask for master item every time
 
+pref-type-mismatch-title = Type Mismatch Preferences
+pref-type-mismatch-description = How to handle when merging items of different types
+
+pref-type-mismatch-skip =
+    .label = [Skip]: Skip merging items of different types
+pref-type-mismatch-convert =
+    .label = [Convert]: Convert items to match the master item type
+pref-type-mismatch-ask =
+    .label = [Ask]: Ask what to do when types don't match
+
 pref-view-title = View Preferences
 pref-view-description = Choose the widget to display in the main window
 pref-view-duplicate-stats =
