@@ -4,8 +4,8 @@
 
 👉
 [![zotero target version](https://img.shields.io/badge/Zotero-7-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
-[![Version for Zotero 7](https://img.shields.io/github/package-json/v/ChenglongMa/zoplicate)](https://github.com/ChenglongMa/zoplicate/releases/latest)
-[![Downloads for Zotero 7](https://img.shields.io/github/downloads/ChenglongMa/zoplicate/total)](https://github.com/ChenglongMa/zoplicate/releases/latest)👈
+[![Version for Zotero 8](https://img.shields.io/github/package-json/v/ChenglongMa/zoplicate)](https://github.com/ChenglongMa/zoplicate/releases/latest)
+[![Downloads for Zotero 8](https://img.shields.io/github/downloads/ChenglongMa/zoplicate/total)](https://github.com/ChenglongMa/zoplicate/releases/latest)👈
 👉[![zotero target version](https://img.shields.io/badge/Zotero-6-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
 [![Version for Zotero 6](https://img.shields.io/github/package-json/v/ChenglongMa/zoplicate/zotero-6)](https://github.com/ChenglongMa/zoplicate/releases/tag/zotero6)
 [![Downloads for Zotero 6](https://img.shields.io/github/downloads/ChenglongMa/zoplicate/zotero6/total)](https://github.com/ChenglongMa/zoplicate/releases/tag/zotero6)👈
@@ -59,9 +59,20 @@ A plugin that does one thing only: **Detect** and **Manage** duplicate items in 
 
 # Changelog
 
-## v3.0.8
+## v4.0.0
 
 <details markdown="1" open>
+  <summary><i>Click here to show more.</i></summary>
+
+Many thanks to all the contributors and users who liked, reported issues, and provided valuable feedback! ❤️
+
+We are now supporting **Zotero 8**!
+
+</details>
+
+## v3.0.8
+
+<details markdown="1">
   <summary><i>Click here to show more.</i></summary>
 
 In this version, we have made the following changes:
