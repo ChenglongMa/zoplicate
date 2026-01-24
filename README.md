@@ -13,6 +13,7 @@
 ![GitHub License](https://img.shields.io/github/license/ChenglongMa/zoplicate)
 [![Using Zotero Plugin Template](https://img.shields.io/badge/Using-Zotero%20Plugin%20Template-blue?style=flat-square&logo=github)](https://github.com/windingwind/zotero-plugin-template)
 [![GitHub Repo stars](https://img.shields.io/github/stars/ChenglongMa/zoplicate)](https://github.com/ChenglongMa/zoplicate)
+[![DOI](https://zenodo.org/badge/711394431.svg)](https://doi.org/10.5281/zenodo.16986945)
 
 ----
 
@@ -65,8 +66,9 @@ A plugin that does one thing only: **Detect** and **Manage** duplicate items in 
 
 In this version, we have made the following changes:
 
-1. 🐛 **FIX!**: We have fixed the bug that caused the dialog cannot open when importing duplicate items.
+1. 🐛 **FIX!**: We have fixed the bug that caused the dialog not to open again when importing duplicate items.
     * Thanks to [pascaloettli](https://github.com/pascaloettli) for reporting this bug in [issue #147](https://github.com/ChenglongMa/zoplicate/issues/147).
+    * Thanks to "如梦江南" for reporting this bug on RedNote.
 2. 🐛 **FIX!**: We have fixed the dialog styling issue in dark mode.
     * Thanks to [pascaloettli](https://github.com/pascaloettli) for reporting this bug in [issue #146](https://github.com/ChenglongMa/zoplicate/issues/146).
 
@@ -284,7 +286,7 @@ Thanks [ChinJCheung](https://github.com/ChinJCheung)'s idea mentioned in [issue 
    - **For Zotero 7**: Visit the [release page](https://github.com/ChenglongMa/zoplicate/releases/latest) and download [the latest `.xpi` file](https://github.com/ChenglongMa/zoplicate/releases/latest/download/zoplicate.xpi).
    - **For Zotero 6**: Visit the [release page](https://github.com/ChenglongMa/zoplicate/releases/tag/zotero6) and download [the `.xpi` file for Zotero 6](https://github.com/ChenglongMa/zoplicate/releases/download/zotero6/zoplicate.xpi).
    - If you are using FireFox, right-click on the link of the XPI file and select "Save As...".
-2. Then, in Zotero, click `Tools` -> `Add-ons` and drag the `.xpi` onto the Add-ons window.
+2. Then, in Zotero, click `Tools` -> `Plugins` and drag the `.xpi` onto the Plugins window.
    - See [how to install a Zotero addon](https://www.zotero.org/support/plugins).
 
 ## From Add-on Market Plugin for Zotero
@@ -423,6 +425,26 @@ There are some ways to mark and unmark items as **Non-duplicates**:
 1. Click the <kbd>-</kbd> button to remove the selected entry from the **Non-duplicates** list.
 2. Selecting two "non duplicates", you can find the `They are duplicates` **menu items** in the context menu.
    * ![menu_not_duplicates](./docs/non_duplicates/menu_duplicates.png)
+
+# How to cite
+
+## Plain citation
+
+```text
+Ma, C. (2025). Zoplicate (v3.0.8) [Software]. Zenodo. https://doi.org/10.5281/zenodo.16986945
+```
+## BibTeX
+
+```bibtex
+@software{zoplicate_16986945,
+  author = {Ma, Chenglong},
+  title = {Zoplicate: Detect and manage duplicate items in Zotero},
+  version = {v3.0.8},
+  date = {2025-02-27},
+  doi = {10.5281/zenodo.16986945},
+  url = {https://github.com/ChenglongMa/zoplicate}
+}
+```
 
 # Contributing
 
