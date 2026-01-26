@@ -14,9 +14,13 @@ import { showHintWithLink } from "../utils/utils";
 import { waitUntilAsync } from "../utils/wait";
 import { areDuplicates } from "../utils/duplicates";
 
+import { TypeAwareMerge } from "./typeAwareMerge";
+
 function addButtonsInDuplicatePanes(innerButton: boolean, siblingElement: Element) {
   const mergeButtonID = innerButton ? BulkDuplicates.innerButtonID : BulkDuplicates.externalButtonID;
   const nonDuplicateButtonID = innerButton ? NonDuplicates.innerButtonID : NonDuplicates.externalButtonID;
+  const dryRunButtonID = innerButton ? TypeAwareMerge.innerButtonID : TypeAwareMerge.externalButtonID;
+
   ztoolkit.UI.insertElementBefore(
     {
       tag: "div",
@@ -24,6 +28,7 @@ function addButtonsInDuplicatePanes(innerButton: boolean, siblingElement: Elemen
       classList: ["duplicate-custom-head"],
       children: [
         BulkDuplicates.instance.createBulkMergeButton(siblingElement.ownerDocument.defaultView!, mergeButtonID),
+        TypeAwareMerge.instance.createDryRunButton(siblingElement.ownerDocument.defaultView!, dryRunButtonID), // NEW
         createNonDuplicateButton(nonDuplicateButtonID),
       ],
     },
@@ -53,6 +58,7 @@ export async function updateDuplicateButtonsVisibilities(win: Window) {
   const showBulkMergeButton = inDuplicatePane && (activeItemsView()?.rowCount ?? 0) > 0;
   const showNonDuplicateButton = inDuplicatePane && (await areDuplicates());
   toggleButtonHidden(win, !showBulkMergeButton, BulkDuplicates.innerButtonID, BulkDuplicates.externalButtonID);
+  toggleButtonHidden(win, !showBulkMergeButton, TypeAwareMerge.innerButtonID, TypeAwareMerge.externalButtonID); // Sync with bulk merge
   toggleButtonHidden(win, !showNonDuplicateButton, NonDuplicates.innerButtonID, NonDuplicates.externalButtonID);
 }
 
@@ -104,7 +110,7 @@ export class Duplicates {
       await this.showDuplicates(duplicateMaps);
       return;
     }
-    this.processDuplicates(duplicateMaps).then(r => {}); // DONT WAIT
+    this.processDuplicates(duplicateMaps).then(r => { }); // DONT WAIT
   }
 
   async processDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
