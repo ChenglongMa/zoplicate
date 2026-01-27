@@ -14,9 +14,16 @@ import { showHintWithLink } from "../utils/utils";
 import { waitUntilAsync } from "../utils/wait";
 import { areDuplicates } from "../utils/duplicates";
 
+import { TypeAwareMerge } from "./typeAwareMerge";
+
 function addButtonsInDuplicatePanes(innerButton: boolean, siblingElement: Element) {
   const mergeButtonID = innerButton ? BulkDuplicates.innerButtonID : BulkDuplicates.externalButtonID;
   const nonDuplicateButtonID = innerButton ? NonDuplicates.innerButtonID : NonDuplicates.externalButtonID;
+  const dryRunButtonID = innerButton ? TypeAwareMerge.innerButtonID : TypeAwareMerge.externalButtonID;
+  const dryRunAllButtonID = innerButton ? TypeAwareMerge.innerDryRunAllButtonID : TypeAwareMerge.externalDryRunAllButtonID;
+  const safeMergeButtonID = innerButton ? TypeAwareMerge.safeMergeInnerButtonID : TypeAwareMerge.safeMergeExternalButtonID;
+  const safeMergeAllButtonID = innerButton ? TypeAwareMerge.innerSafeMergeAllButtonID : TypeAwareMerge.externalSafeMergeAllButtonID;
+
   ztoolkit.UI.insertElementBefore(
     {
       tag: "div",
@@ -24,6 +31,10 @@ function addButtonsInDuplicatePanes(innerButton: boolean, siblingElement: Elemen
       classList: ["duplicate-custom-head"],
       children: [
         BulkDuplicates.instance.createBulkMergeButton(siblingElement.ownerDocument.defaultView!, mergeButtonID),
+        TypeAwareMerge.instance.createDryRunButton(siblingElement.ownerDocument.defaultView!, dryRunButtonID), // Dry Run (Sel)
+        TypeAwareMerge.instance.createDryRunAllButton(siblingElement.ownerDocument.defaultView!, dryRunAllButtonID), // Dry Run (All)
+        TypeAwareMerge.instance.createSafeMergeButton(siblingElement.ownerDocument.defaultView!, safeMergeButtonID), // Safe Merge (Sel)
+        TypeAwareMerge.instance.createSafeMergeAllButton(siblingElement.ownerDocument.defaultView!, safeMergeAllButtonID), // Safe Merge (All)
         createNonDuplicateButton(nonDuplicateButtonID),
       ],
     },
@@ -53,6 +64,10 @@ export async function updateDuplicateButtonsVisibilities(win: Window) {
   const showBulkMergeButton = inDuplicatePane && (activeItemsView()?.rowCount ?? 0) > 0;
   const showNonDuplicateButton = inDuplicatePane && (await areDuplicates());
   toggleButtonHidden(win, !showBulkMergeButton, BulkDuplicates.innerButtonID, BulkDuplicates.externalButtonID);
+  toggleButtonHidden(win, !showBulkMergeButton, TypeAwareMerge.innerButtonID, TypeAwareMerge.externalButtonID); // Sync with bulk merge
+  toggleButtonHidden(win, !showBulkMergeButton, TypeAwareMerge.innerDryRunAllButtonID, TypeAwareMerge.externalDryRunAllButtonID);
+  toggleButtonHidden(win, !showBulkMergeButton, TypeAwareMerge.safeMergeInnerButtonID, TypeAwareMerge.safeMergeExternalButtonID); // Sync Safe Merge
+  toggleButtonHidden(win, !showBulkMergeButton, TypeAwareMerge.innerSafeMergeAllButtonID, TypeAwareMerge.externalSafeMergeAllButtonID);
   toggleButtonHidden(win, !showNonDuplicateButton, NonDuplicates.innerButtonID, NonDuplicates.externalButtonID);
 }
 
@@ -104,7 +119,7 @@ export class Duplicates {
       await this.showDuplicates(duplicateMaps);
       return;
     }
-    this.processDuplicates(duplicateMaps).then(r => {}); // DONT WAIT
+    this.processDuplicates(duplicateMaps).then(r => { }); // DONT WAIT
   }
 
   async processDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {

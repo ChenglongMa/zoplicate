@@ -58,6 +58,29 @@ A plugin that does one thing only: **Detect** and **Manage** duplicate items in 
 > 
 > It makes some improvements based on [the official detection and merging methods of Zotero](https://www.zotero.org/support/duplicate_detection).
 >
+# Type-Aware Merge (Experimental)
+
+*Introduced in Version 4.x (Preview)*
+
+Zotero's default duplicate detection sometimes groups items of different types (e.g., a **Preprint** and a **Journal Article**) into the same duplicate cluster. Merging these carelessly can result in data loss or corrupted item types.
+
+**Type-Aware Merge** provides a safer, more granular workflow for handling these complex scenarios.
+
+### Why use this?
+*   **Safety First:** It prioritizes **Strong Identifiers** (DOI, ISBN, URL) over fuzzy text matching to ensure items are truly the same work.
+*   **Non-Destructive by Design:** It includes a **Dry Run** mode that simulates the merge process and produces a report without touching your library.
+*   **Conservative Defaults:** If an item's type is ambiguous or conflicts are detected, it defaults to **SKIP**, requiring your explicit confirmation to proceed.
+
+### Workflow
+1.  **Dry Run**: Select duplicate items or run on the whole library. This generates a **Summary Report** showing exactly which items would be merged and which would be skipped, along with confidence scores.
+    *   *No library items are modified in this step.*
+2.  **Safe Merge**: Once you are confident in the results, run **Safe Merge**.
+    *   This will only merge items that meet strict safety criteria (High Confidence Score or Matching Strong IDs).
+    *   Items are properly normalized to the target type before merging to prevent data corruption.
+
+> [!NOTE]
+> This feature is currently **Experimental**. We recommend always running a **Dry Run** before performing a **Safe Merge** on large collections.
+
 
 # Changelog
 

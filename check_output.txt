@@ -1,0 +1,26 @@
+--- Type-Aware Merge Logic Self-Check ---
+Checking: Navarrete: Journal vs Conference (Conflict)
+  PASS
+    SkipCode: TYPE_MISMATCH
+    Evidence: ["Cluster contains both 'journalArticle' and 'conferencePaper' without a unifying DOI."]
+Checking: Chandra: Springer Book Section
+  PASS
+    Confidence: score=9, margin=8
+    Evidence: ["Item 3: 'advances in' start of pubTitle (+3 bookSection)","Item 3: DOI starts with 10.1007 (+1 bookSection)","Item 4: 'advances in' start of pubTitle (+3 bookSection)"]
+Checking: SSRN Preprint
+  PASS
+    Confidence: score=12, margin=12
+    Evidence: ["Item 5: SSRN signal (+5 preprint)","Item 6: SSRN signal (+5 preprint)"]
+Checking: Conflicting DOIs
+  PASS
+    SkipCode: CONFLICTING_DOI
+    Evidence: ["Found conflicting DOIs: 10.1000/1, 10.1000/2"]
+Checking: Ambiguous Low Info
+  PASS
+    SkipCode: AMBIGUOUS_TYPE
+    Evidence: []
+Checking: Journal with Proceedings Title (Soft Constraint)
+  PASS
+    Confidence: score=10, margin=10
+    Evidence: ["Item 11: 'proceedings' signal in pubTitle (+4 conferencePaper)","Item 11: 'journalArticle' type but 'proceedings' title (-2 journalArticle)","Item 12: 'proceedings' signal in pubTitle (+4 conferencePaper)"]
+--- Result: 6/6 Passed ---
