@@ -101,6 +101,100 @@ export function checkGuardrails(items: ItemData[], typeNames: string[]): { actio
     return { actions: "PROCEED", evidence };
 }
 
+// --- Fast Path ---
+
+export interface FastPathResult {
+    match: boolean;
+    type?: string;
+    reason?: string;
+    evidence?: string[];
+    confidence?: { score: number, margin: number };
+}
+
+export function checkFastPath(items: ItemData[]): FastPathResult {
+    const evidence: string[] = [];
+
+    // 1. DOI Fast Path
+    // Strict: All items must share the same non-empty DOI
+    const firstDOI = normalizeDOI(items[0].DOI);
+    if (firstDOI) {
+        const allMatch = items.every(i => normalizeDOI(i.DOI) === firstDOI);
+        if (allMatch) {
+            evidence.push(`Shared DOI across all items: ${firstDOI}`);
+
+            // Infer Type from DOI/Metadata
+            let type = "journalArticle"; // Default for DOI
+            let reason = "Shared DOI (Default: journalArticle)";
+
+            // Check Metadata signals
+            const hasProceedingsInfo = items.some(i =>
+                (i.proceedingsTitle || "").match(/proc\.|proceedings/i) ||
+                (i.publicationTitle || "").match(/proc\.|proceedings/i)
+            );
+
+            if (firstDOI.startsWith("10.1117/") || hasProceedingsInfo) {
+                type = "conferencePaper";
+                reason = "Shared DOI + Proceedings signal";
+            } else if (items.some(i => (i.publicationTitle || "").toLowerCase().startsWith("advances in"))) {
+                type = "bookSection";
+                reason = "Shared DOI + 'Advances in' signal";
+            }
+
+            return {
+                match: true,
+                type,
+                reason,
+                evidence,
+                confidence: { score: 20, margin: 20 }
+            };
+        }
+    }
+
+    // 2. SSRN Fast Path
+    const firstSSRN = extractSSRNId(items[0].url);
+    if (firstSSRN) {
+        const allMatch = items.every(i => extractSSRNId(i.url) === firstSSRN);
+        if (allMatch) {
+            evidence.push(`Shared SSRN ID across all items: ${firstSSRN}`);
+            return {
+                match: true,
+                type: "preprint",
+                reason: "Shared SSRN ID",
+                evidence,
+                confidence: { score: 20, margin: 20 }
+            };
+        }
+    }
+
+    // 3. URL Fast Path (Only if no DOIs/ISBNs to avoid weak matches overshadowing specific ones?)
+    // Actually, if they strictly share the same URL, it's pretty strong.
+    // But we check ensure no conflicting DOIs (handled by guardrails).
+    // And ensure no partial DOIs (if one has DOI, we prefer DOI path or heuristic).
+    // User: "If identical normalized URL across cluster and no strong scholarly IDs"
+    const hasAnyStrongID = items.some(i => !!i.DOI || !!i.ISBN || !!extractSSRNId(i.url));
+    if (!hasAnyStrongID) {
+        const firstUrl = items[0].url;
+        // Normalize URL: naive check or reuse getUrlHost? 
+        // User said "identical normalized URL". Let's do simple normalization (trim, lower check?)
+        // Or strictly identical. 
+        if (firstUrl) {
+            const allMatch = items.every(i => i.url === firstUrl); // Strict equality for now
+            if (allMatch) {
+                evidence.push("Identical URL across all items (No DOIs)");
+                return {
+                    match: true,
+                    type: "webpage",
+                    reason: "Identical URL (No Strong IDs)",
+                    evidence,
+                    confidence: { score: 10, margin: 10 }
+                };
+            }
+        }
+    }
+
+    return { match: false };
+}
+
 
 // --- Scoring ---
 

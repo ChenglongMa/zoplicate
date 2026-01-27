@@ -70,10 +70,10 @@ export const fixtures: { name: string, items: ItemData[], typeNames: string[], e
 ];
 
 export function runSelfCheck() {
-    console.log("--- Type-Aware Merge Logic Self-Check ---");
+    Zotero.debug("--- Type-Aware Merge Logic Self-Check ---");
     let passed = 0;
     for (const f of fixtures) {
-        console.log(`Checking: ${f.name}`);
+        Zotero.debug(`Checking: ${f.name}`);
         const guard = checkGuardrails(f.items, f.typeNames);
 
         let resultAction = "PROCEED";
@@ -104,19 +104,20 @@ export function runSelfCheck() {
         const typeMatch = !f.expectedType || resultType === f.expectedType;
 
         if (actionMatch && typeMatch) {
-            console.log("  PASS");
+            Zotero.debug("  PASS");
             if (resultAction === "SKIP") {
-                console.log(`    SkipCode: ${skipCode}`);
-                console.log(`    Evidence: ${JSON.stringify(evidence)}`);
+                Zotero.debug(`    SkipCode: ${skipCode}`);
+                Zotero.debug(`    Evidence: ${JSON.stringify(evidence)}`);
             } else {
-                console.log(`    Confidence: score=${confidence.score}, margin=${confidence.margin}`);
-                console.log(`    Evidence: ${JSON.stringify(evidence)}`);
+                Zotero.debug(`    Confidence: score=${confidence.score}, margin=${confidence.margin}`);
+                Zotero.debug(`    Evidence: ${JSON.stringify(evidence)}`);
             }
             passed++;
         } else {
-            console.error(`  FAIL! Expected ${f.expectedAction} (${f.expectedType}), got ${resultAction} (${resultType})`);
-            console.error(`    Evidence: ${JSON.stringify(evidence)}`);
+            Zotero.debug(`  FAIL! Expected ${f.expectedAction} (${f.expectedType}), got ${resultAction} (${resultType})`);
+            Zotero.logError(new Error(`Self-check failed: Expected ${f.expectedAction}, got ${resultAction}`));
+            Zotero.debug(`    Evidence: ${JSON.stringify(evidence)}`);
         }
     }
-    console.log(`--- Result: ${passed}/${fixtures.length} Passed ---`);
+    Zotero.debug(`--- Result: ${passed}/${fixtures.length} Passed ---`);
 }

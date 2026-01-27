@@ -1,0 +1,9 @@
+
+> zoplicate@4.0.0 build
+> tsc --noEmit && zotero-plugin build
+
+src/modules/typeAwareMerge.ts(57,16): error TS7053: Element implicitly has an 'any' type because expression of type '"@mozilla.org/embedcomp/prompt-service;1"' can't be used to index type 'nsIXPCComponents_Classes'.
+  Property '@mozilla.org/embedcomp/prompt-service;1' does not exist on type 'nsIXPCComponents_Classes'.
+src/modules/typeAwareMerge.ts(128,23): error TS2339: Property 'alert' does not exist on type 'typeof Prompt'.
+src/modules/typeAwareMerge.ts(276,31): error TS2345: Argument of type 'Window | undefined' is not assignable to parameter of type 'mozIDOMWindowProxy'.
+  Type 'undefined' is not assignable to type 'mozIDOMWindowProxy'.
