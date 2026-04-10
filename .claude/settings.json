@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "plansDirectory": ".claude-workflow/docs/ai/plans",
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(pwd)",
+      "Bash(ls *)",
+      "Bash(find *)",
+      "Bash(tmux *)",
+      "Bash(timeout *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git branch *)",
+      "Bash(git show *)",
+      "Bash(git rev-parse *)",
+      "Bash(uv run python .claude-workflow/scripts/agent/state_manager.py *)",
+      "Bash(uv run python .claude-workflow/scripts/agent/update_zotero_reference.py)",
+      "Bash(uv run python .claude-workflow/scripts/agent/update_zotero_reference.py *)",
+      "Bash(uv run python .claude-workflow/scripts/agent/parse_test_log.py *)",
+      "Bash(uv run python .claude-workflow/scripts/ci/check_stop.py)",
+      "Bash(bash .claude-workflow/scripts/agent/run_tests_bg.sh)",
+      "Bash(bash .claude-workflow/scripts/agent/run_tests_bg.sh *)",
+      "Bash(bash .claude-workflow/scripts/agent/watchdog.sh)",
+      "Bash(bash .claude-workflow/scripts/agent/watchdog.sh *)",
+      "Bash(bash .claude-workflow/scripts/agent/validate_state.sh)",
+      "Bash(bash .claude-workflow/scripts/agent/run_overnight.sh *)",
+      "Bash(npm test *)",
+      "Bash(npm run test *)",
+      "Bash(npx jest *)",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)",
+      "Bash(npm run build *)",
+      "Bash(npm run start *)",
+      "WebSearch"
+    ],
+    "ask": [
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(docker *)"
+    ],
+    "deny": [
+      "Bash(git reset *)",
+      "Bash(git checkout -- *)",
+      "Bash(git clean *)",
+      "Bash(git push --force *)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Read(./**/*.pem)",
+      "Read(./**/*.key)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -lc 'cd \"$CLAUDE_PROJECT_DIR\" && uv run python .claude-workflow/scripts/agent/update_zotero_reference.py --max-age-minutes 60'"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -lc 'cd \"$CLAUDE_PROJECT_DIR\" && uv run python .claude-workflow/scripts/agent/update_zotero_reference.py --from-user-prompt --max-age-minutes 60'"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -lc 'cd \"$CLAUDE_PROJECT_DIR\" && bash .claude-workflow/scripts/agent/hook_secret_guard.sh'"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -lc 'cd \"$CLAUDE_PROJECT_DIR\" && bash .claude-workflow/scripts/agent/hook_secret_guard.sh'"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -lc 'cd \"$CLAUDE_PROJECT_DIR\" && bash .claude-workflow/scripts/agent/state_gate.sh'",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -lc 'cd \"$CLAUDE_PROJECT_DIR\" && bash .claude-workflow/scripts/agent/hook_checkpoint.sh'",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -lc 'cd \"$CLAUDE_PROJECT_DIR\" && bash .claude-workflow/scripts/agent/hook_stop.sh'",
+            "timeout": 300
+          }
+        ]
+      }
+    ]
+  }
+}

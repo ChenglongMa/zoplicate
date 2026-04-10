@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "milestones": [
+    {
+      "id": "M001",
+      "title": "Define the first bounded maintenance milestone",
+      "phase": "Workflow Bootstrap",
+      "status": "next",
+      "depends_on": [],
+      "goal": "Create the first real Claude-managed maintenance slice for Zoplicate without broadening into unrelated refactors.",
+      "in_scope": [
+        "Define the first bounded product task after workflow adoption.",
+        "Identify the exact source, test, and Zotero manual-verification surfaces implicated by that task.",
+        "Document non-goals and acceptance in a milestone spec that Claude can execute without guessing."
+      ],
+      "out_of_scope": [
+        "Shipping product behavior changes",
+        "Multi-milestone planning",
+        "Broad workflow rewrites unrelated to adoption"
+      ],
+      "acceptance": [
+        "The milestone has explicit in-scope and out-of-scope boundaries.",
+        "The milestone names the implicated files or directories and the expected test coverage.",
+        "Any required manual Zotero verification is called out explicitly."
+      ]
+    }
+  ],
+  "deviation_policy": {
+    "allowed_reasons": [
+      "Blocker repair: bug or design flaw in an accepted milestone blocking the current one",
+      "Missing infrastructure: gap in tooling, CI, or test fixtures",
+      "External dependency changes: upstream breaking change forcing adapter updates",
+      "Critical safety issues: security vulnerability or data integrity problem"
+    ],
+    "requirements": [
+      "Scoped as tightly as possible",
+      "Verified with tests before resuming the planned milestone"
+    ]
+  },
+  "backlog": [
+    "Replace the bootstrap milestone with the next real maintenance slice before the first unattended run."
+  ]
+}
