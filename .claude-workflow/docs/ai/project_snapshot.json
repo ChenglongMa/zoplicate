@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "latest_accepted_milestone": "",
+  "current_target_milestone": "M001",
+  "current_status": "idle",
+  "last_updated_utc": "2026-04-10T06:51:28Z",
+  "open_risks_summary": [
+    "Zotero UI and import flows cannot be fully verified with Jest alone.",
+    "Some addon behavior still requires manual validation inside Zotero 8.",
+    "Workflow permissions should be reviewed before unattended execution."
+  ]
+}

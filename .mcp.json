@@ -1,0 +1,61 @@
+{
+  "mcpServers": {
+    "episodic-memory": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "mcp",
+        "python",
+        ".claude-workflow/scripts/agent/episodic_mcp_server.py"
+      ],
+      "env": {
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "TOKENIZERS_PARALLELISM": "false"
+      }
+    },
+    "zoplicate-codebase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "src",
+        "tests",
+        "addon",
+        "typings",
+        "scripts",
+        "docs"
+      ]
+    },
+    "zoplicate-workflow": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        ".claude",
+        ".claude-workflow"
+      ]
+    },
+    "zotero-reference": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        ".references/zotero/app",
+        ".references/zotero/chrome",
+        ".references/zotero/defaults",
+        ".references/zotero/resource",
+        ".references/zotero/scripts",
+        ".references/zotero/scss",
+        ".references/zotero/styles",
+        ".references/zotero/test",
+        ".references/zotero/translators",
+        ".references/zotero/types",
+        ".references/zotero/reader",
+        ".references/zotero/note-editor",
+        ".references/zotero/pdf-worker"
+      ]
+    }
+  }
+}

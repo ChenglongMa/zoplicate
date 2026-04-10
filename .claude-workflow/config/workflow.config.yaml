@@ -1,0 +1,151 @@
+meta:
+  rendered_at_utc: "2026-04-10T06:51:28Z"
+
+project:
+  name: "Zoplicate"
+  slug: "zoplicate"
+  package_name: "zoplicate"
+  env_prefix: "ZOPLICATE"
+  description: "A Zotero plugin that detects and manages duplicate items, supports bulk merge flows, and tracks non-duplicate decisions."
+  goal: "Deliver milestone-bounded maintenance and feature work for the repository without blurring workflow files and product code."
+  primary_language: "typescript"
+
+tooling:
+  package_manager: "npm"
+  commands:
+    test: "npm test -- --runInBand"
+    lint: "npx eslint . --ext .ts"
+    typecheck: "npx tsc --noEmit"
+    cli: "npm run build"
+  claude_permissions:
+    allow:
+      - "Bash(pwd)"
+      - "Bash(ls *)"
+      - "Bash(find *)"
+      - "Bash(tmux *)"
+      - "Bash(timeout *)"
+      - "Bash(git status)"
+      - "Bash(git diff *)"
+      - "Bash(git log *)"
+      - "Bash(git branch *)"
+      - "Bash(git show *)"
+      - "Bash(git rev-parse *)"
+      - "Bash(uv run python .claude-workflow/scripts/agent/state_manager.py *)"
+      - "Bash(uv run python .claude-workflow/scripts/agent/parse_test_log.py *)"
+      - "Bash(uv run python .claude-workflow/scripts/ci/check_stop.py)"
+      - "Bash(bash .claude-workflow/scripts/agent/run_tests_bg.sh)"
+      - "Bash(bash .claude-workflow/scripts/agent/run_tests_bg.sh *)"
+      - "Bash(bash .claude-workflow/scripts/agent/watchdog.sh)"
+      - "Bash(bash .claude-workflow/scripts/agent/watchdog.sh *)"
+      - "Bash(bash .claude-workflow/scripts/agent/validate_state.sh)"
+      - "Bash(bash .claude-workflow/scripts/agent/run_overnight.sh *)"
+      - "Bash(npm test *)"
+      - "Bash(npm run test *)"
+      - "Bash(npx jest *)"
+      - "Bash(npx tsc *)"
+      - "Bash(npx eslint *)"
+      - "Bash(npm run build *)"
+      - "Bash(npm run start *)"
+      - "WebSearch"
+    ask:
+      - "Bash(git commit *)"
+      - "Bash(git push *)"
+      - "Bash(docker *)"
+    deny:
+      - "Bash(git reset *)"
+      - "Bash(git checkout -- *)"
+      - "Bash(git clean *)"
+      - "Bash(git push --force *)"
+      - "Read(./.env)"
+      - "Read(./.env.*)"
+      - "Read(./secrets/**)"
+      - "Read(./**/*.pem)"
+      - "Read(./**/*.key)"
+
+repo:
+  source_roots:
+    - "src/"
+    - "addon/"
+    - "typings/"
+  test_roots:
+    - "tests/"
+
+architecture:
+  rules:
+    - "Keep shipped Zotero runtime assets in addon/ and TypeScript source in src/."
+    - "Prefer targeted Jest regression coverage for non-UI logic before touching Zotero-facing glue."
+    - "Preserve duplicate detection, merge, and non-duplicate behavior unless milestone scope explicitly changes it."
+    - "Avoid ad hoc workflow rewrites during normal product milestones."
+  layers:
+    - "`src/index.ts`, `src/addon.ts`, `src/hooks.ts`: addon bootstrap and lifecycle hooks only"
+    - "`src/modules/`: feature workflows, Zotero UI integration, and orchestration glue"
+    - "`src/db/`: duplicate and non-duplicate persistence and query logic"
+    - "`src/utils/`: shared helpers, Zotero wrappers, and view utilities"
+    - "`addon/`: shipped plugin manifest, prefs, locale, and chrome assets"
+
+workflow:
+  approval_mode_default: "manual"
+  max_plan_rounds: 3
+  max_fix_rounds: 3
+  heartbeat_interval: 10
+  watchdog_stale_minutes: 30
+  milestone_id_pattern: "^M\\d+$"
+  enable_tmux_watchdog: true
+  enable_episodic_memory: true
+
+mcp:
+  codebase_server_name: "zoplicate-codebase"
+  workflow_server_name: "zoplicate-workflow"
+  codebase_paths:
+    - "src"
+    - "tests"
+    - "addon"
+    - "typings"
+    - "package.json"
+    - "tsconfig.json"
+    - "jest.config.ts"
+    - "zotero-plugin.config.ts"
+  workflow_paths:
+    - ".claude"
+    - ".claude-workflow"
+    - "CLAUDE.md"
+    - ".mcp.json"
+
+validation:
+  required_modules: []
+  claude_required_strings:
+    - "/milestone-loop"
+    - ".claude-workflow/docs/ai/project_snapshot.json"
+    - ".claude-workflow/state/runtime/working.json"
+    - "implementer"
+
+roadmap:
+  latest_accepted_milestone: ""
+  current_target_milestone: "M001"
+  backlog:
+    - "Replace the bootstrap milestone with the next real maintenance slice before the first unattended run."
+  milestones:
+    - id: "M001"
+      title: "Define the first bounded maintenance milestone"
+      phase: "Workflow Bootstrap"
+      status: "next"
+      depends_on: []
+      goal: "Create the first real Claude-managed maintenance slice for Zoplicate without broadening into unrelated refactors."
+      in_scope:
+        - "Define the first bounded product task after workflow adoption."
+        - "Identify the exact source, test, and Zotero manual-verification surfaces implicated by that task."
+        - "Document non-goals and acceptance in a milestone spec that Claude can execute without guessing."
+      out_of_scope:
+        - "Shipping product behavior changes"
+        - "Multi-milestone planning"
+        - "Broad workflow rewrites unrelated to adoption"
+      acceptance:
+        - "The milestone has explicit in-scope and out-of-scope boundaries."
+        - "The milestone names the implicated files or directories and the expected test coverage."
+        - "Any required manual Zotero verification is called out explicitly."
+
+risks:
+  open_risks_summary:
+    - "Zotero UI and import flows cannot be fully verified with Jest alone."
+    - "Some addon behavior still requires manual validation inside Zotero 8."
+    - "Workflow permissions should be reviewed before unattended execution."
