@@ -1,4 +1,4 @@
-import { TagElementProps } from "zotero-plugin-toolkit/dist/tools/ui";
+import type { TagElementProps } from "zotero-plugin-toolkit";
 import { getString } from "../utils/locale";
 import { config } from "../../package.json";
 import { getPref, MasterItem } from "../utils/prefs";
@@ -184,37 +184,37 @@ export class BulkDuplicates {
   registerUIElements(win: Window): void {
     this.win = win;
     activeCollectionsView()?.onSelect.addListener(async () => {
-        const inDuplicatePane = isInDuplicatesPane();
-        if (Zotero.getActiveZoteroPane().itemsView && inDuplicatePane && this._isRunning) {
-          await activeItemsView()?.waitForLoad();
-          activeItemsView()?.selection.clearSelection();
-        }
-      });
+      const inDuplicatePane = isInDuplicatesPane();
+      if (Zotero.getActiveZoteroPane().itemsView && inDuplicatePane && this._isRunning) {
+        await activeItemsView()?.waitForLoad();
+        activeItemsView()?.selection.clearSelection();
+      }
+    });
 
     activeItemsView()?.onRefresh.addListener(async () => {
-        ztoolkit.log("refresh");
-        const precondition = isInDuplicatesPane();
-        if (precondition && Zotero.getActiveZoteroPane().itemsView && this._isRunning) {
-          activeItemsView()?.selection.clearSelection();
-        }
-        await updateDuplicateButtonsVisibilities(win);
-      });
+      ztoolkit.log("refresh");
+      const precondition = isInDuplicatesPane();
+      if (precondition && Zotero.getActiveZoteroPane().itemsView && this._isRunning) {
+        activeItemsView()?.selection.clearSelection();
+      }
+      await updateDuplicateButtonsVisibilities(win);
+    });
 
     activeItemsView()?.onSelect.addListener(async () => {
-        ztoolkit.log("itemsView.onSelect", Zotero.getActiveZoteroPane().getSelectedItems(true));
-        // TODO: Further investigate the requirement of this
-        // Zotero.getActiveZoteroPane().itemPane && Zotero.getActiveZoteroPane().itemPane.setAttribute("collapsed", "true");
-        // TODO: Or this
-        // if (Zotero.getActiveZoteroPane().itemPane) {
-          // @ts-ignore
-          // Zotero.getActiveZoteroPane().itemPane._itemDetails.skipRender = addon.data.processing;
-          // Zotero.getActiveZoteroPane().itemPane._itemDetails.getPane("zotero-attachment-box")
-          // const usePreview = Zotero.Prefs.get("showAttachmentPreview");
-          // @ts-ignore
-          // Zotero.getActiveZoteroPane().itemPane._itemDetails.getPane("attachments").usePreview =
-          //   !addon.data.processing && usePreview;
-        // }
-        await updateDuplicateButtonsVisibilities(win);
-      });
+      ztoolkit.log("itemsView.onSelect", Zotero.getActiveZoteroPane().getSelectedItems(true));
+      // TODO: Further investigate the requirement of this
+      // Zotero.getActiveZoteroPane().itemPane && Zotero.getActiveZoteroPane().itemPane.setAttribute("collapsed", "true");
+      // TODO: Or this
+      // if (Zotero.getActiveZoteroPane().itemPane) {
+      // @ts-ignore
+      // Zotero.getActiveZoteroPane().itemPane._itemDetails.skipRender = addon.data.processing;
+      // Zotero.getActiveZoteroPane().itemPane._itemDetails.getPane("zotero-attachment-box")
+      // const usePreview = Zotero.Prefs.get("showAttachmentPreview");
+      // @ts-ignore
+      // Zotero.getActiveZoteroPane().itemPane._itemDetails.getPane("attachments").usePreview =
+      //   !addon.data.processing && usePreview;
+      // }
+      await updateDuplicateButtonsVisibilities(win);
+    });
   }
 }

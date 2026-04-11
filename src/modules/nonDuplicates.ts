@@ -1,6 +1,6 @@
 import { config } from "../../package.json";
 import { debug, isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
-import { TagElementProps } from "zotero-plugin-toolkit/dist/tools/ui";
+import type { TagElementProps } from "zotero-plugin-toolkit";
 import { getString } from "../utils/locale";
 import { NonDuplicatesDB } from "../db/nonDuplicates";
 import { areDuplicates, fetchDuplicates } from "../utils/duplicates";

@@ -1,6 +1,6 @@
 import { defineConfig } from "zotero-plugin-scaffold";
 import pkg from "./package.json";
-import { copyFileSync } from "fs";
+import { copyFileSync, existsSync } from "fs";
 
 export default defineConfig({
   source: ["src", "addon"],
@@ -8,8 +8,8 @@ export default defineConfig({
   name: pkg.config.addonName,
   id: pkg.config.addonID,
   namespace: pkg.config.addonRef,
-  updateURL: "https://raw.githubusercontent.com/ChenglongMa/zoplicate/main/update.json",
-  xpiDownloadLink: "https://github.com/ChenglongMa/zoplicate/releases/latest/download/zoplicate.xpi",
+  updateURL: "https://github.com/{{owner}}/{{repo}}/releases/download/release/{{updateJson}}",
+  xpiDownloadLink: "https://github.com/{{owner}}/{{repo}}/releases/download/v{{version}}/{{xpiName}}.xpi",
   server: {
     // asProxy: true,
     devtools: true,
@@ -26,6 +26,9 @@ export default defineConfig({
       buildVersion: pkg.version,
       buildTime: "{{buildTime}}",
     },
+    prefs: {
+      prefix: pkg.config.prefsPrefix,
+    },
     esbuildOptions: [
       {
         entryPoints: ["src/index.ts"],
@@ -37,22 +40,23 @@ export default defineConfig({
         outfile: `build/addon/chrome/content/scripts/${pkg.config.addonRef}.js`,
       },
     ],
-    // If you want to checkout update.json into the repository, uncomment the following lines:
-    makeUpdateJson: {
-      hash: false,
-    },
     hooks: {
       "build:makeUpdateJSON": (ctx) => {
-        copyFileSync("build/update.json", "update.json");
-        copyFileSync("build/update-beta.json", "update-beta.json");
+        ["update.json", "update-beta.json"].forEach((fileName) => {
+          const source = `build/${fileName}`;
+          if (existsSync(source)) {
+            copyFileSync(source, fileName);
+          }
+        });
       },
     },
   },
-  // release: {
-  //   bumpp: {
-  //     execute: "npm run build",
-  //   },
-  // },
+  release: {
+    bumpp: {
+      execute: "npm run build",
+      all: true,
+    },
+  },
 
   // If you need to see a more detailed build log, uncomment the following line:
   // logLevel: "trace",

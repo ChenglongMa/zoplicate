@@ -1,25 +1,30 @@
 import { getString } from "../utils/locale";
 import { config } from "../../package.json";
 import { showingDuplicateStats } from "../utils/prefs";
-import { MenuManager } from "zotero-plugin-toolkit/dist/managers/menu";
 import { isInDuplicatesPane } from "../utils/zotero";
 import MenuPopup = XUL.MenuPopup;
 import { toggleNonDuplicates } from "./nonDuplicates";
 import { NonDuplicatesDB } from "../db/nonDuplicates";
 import { fetchAllDuplicates, fetchDuplicates } from "../utils/duplicates";
+import type { LocalMenuRegistrar } from "../utils/menu";
 
 function registerMenus(win: Window) {
   const menuManager = new ztoolkit.Menu();
-  registerDuplicateCollectionMenu(menuManager);
+  registerDuplicateCollectionMenu(menuManager, win);
   registerItemsViewMenu(menuManager, win);
 }
 
-function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
+function registerItemsViewMenu(menuManager: LocalMenuRegistrar, win: Window) {
+  const itemMenu = win.document.querySelector("#zotero-itemmenu") as MenuPopup | null;
+  if (!itemMenu) {
+    return;
+  }
+
   const nonDuplicateMenuTitle = getString("menuitem-not-duplicate");
   const isDuplicateMenuTitle = getString("menuitem-is-duplicate");
   let showingIsDuplicate = false;
   let showingNotDuplicate = false;
-  menuManager.register("item", {
+  menuManager.register(itemMenu, {
     tag: "menu",
     label: config.addonName,
     id: `${config.addonRef}-itemsview-menu`,
@@ -35,8 +40,8 @@ function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
         commandListener: async (ev) => {
           await toggleNonDuplicates("unmark");
         },
-        getVisibility: (elem, ev) => {
-          return showingIsDuplicate;
+        isHidden: (elem, ev) => {
+          return !showingIsDuplicate;
         },
       },
       {
@@ -48,8 +53,8 @@ function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
         commandListener: async (ev) => {
           await toggleNonDuplicates("mark");
         },
-        getVisibility: (elem, ev) => {
-          return showingNotDuplicate;
+        isHidden: (elem, ev) => {
+          return !showingNotDuplicate;
         },
       },
     ],
@@ -105,10 +110,15 @@ function registerItemsViewMenu(menuManager: MenuManager, win: Window) {
   setVisibilityListeners(win);
 }
 
-function registerDuplicateCollectionMenu(menuManager: MenuManager) {
+function registerDuplicateCollectionMenu(menuManager: LocalMenuRegistrar, win: Window) {
+  const collectionMenu = win.document.querySelector("#zotero-collectionmenu") as MenuPopup | null;
+  if (!collectionMenu) {
+    return;
+  }
+
   const menuTitle = getString("menuitem-refresh-duplicates");
   const menuIcon = `chrome://zotero/skin/16/universal/sync.svg`;
-  menuManager.register("collection", {
+  menuManager.register(collectionMenu, {
     tag: "menuitem",
     classList: ["zotero-menuitem-sync"],
     id: `${config.addonRef}-menuitem-refresh-duplicate-stats`,
@@ -128,9 +138,9 @@ function registerDuplicateCollectionMenu(menuManager: MenuManager) {
       });
     },
     icon: menuIcon,
-    getVisibility: (elem, ev) => {
-      let showStats = showingDuplicateStats();
-      return showStats && isInDuplicatesPane();
+    isHidden: (elem, ev) => {
+      const showStats = showingDuplicateStats();
+      return !(showStats && isInDuplicatesPane());
     },
   });
 }
