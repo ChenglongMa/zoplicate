@@ -1,7 +1,6 @@
 import { config } from "../../package.json";
 import { getString } from "../utils/locale";
-import { DialogHelper } from "zotero-plugin-toolkit/dist/helpers/dialog";
-import { TagElementProps } from "zotero-plugin-toolkit/dist/tools/ui";
+import type { DialogHelper, TagElementProps } from "zotero-plugin-toolkit";
 import { Action, getPref, MasterItem, setPref } from "../utils/prefs";
 import { merge } from "./merger";
 import { activeItemsView, goToDuplicatesPane, isInDuplicatesPane } from "../utils/zotero";
@@ -66,8 +65,7 @@ export class Duplicates {
     return this._instance;
   }
 
-  private constructor() {
-  }
+  private constructor() {}
 
   async whenItemsAdded(
     duplicatesObj: {
@@ -104,7 +102,7 @@ export class Duplicates {
       await this.showDuplicates(duplicateMaps);
       return;
     }
-    this.processDuplicates(duplicateMaps).then(r => {}); // DONT WAIT
+    this.processDuplicates(duplicateMaps).then((r) => {}); // DONT WAIT
   }
 
   async processDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
