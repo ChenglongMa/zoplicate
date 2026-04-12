@@ -1,4 +1,5 @@
 import { NonDuplicatesDB } from "../db/nonDuplicates";
+import { isAlive, getConfig } from "../utils/state";
 
 let notifierID: string | undefined;
 
@@ -14,7 +15,7 @@ export function registerNotifier() {
 
   const callback = {
     notify: async (event: string, type: string, ids: number[] | string[], extraData: { [key: string]: any }) => {
-      if (!addon?.data.alive) {
+      if (!isAlive()) {
         unregisterNotifier();
         return;
       }
@@ -47,7 +48,7 @@ export function registerNotifier() {
 
   Zotero.Plugins.addObserver({
     shutdown: ({ id }) => {
-      if (id === addon.data.config.addonID)
+      if (id === getConfig().addonID)
         unregisterNotifier();
     },
   });

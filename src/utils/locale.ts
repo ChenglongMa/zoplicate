@@ -1,4 +1,5 @@
 import { config } from "../../package.json";
+import { getLocale, setLocale } from "./state";
 
 export { initLocale, getString };
 
@@ -11,9 +12,9 @@ function initLocale() {
       ? ztoolkit.getGlobal("Localization")
       : Localization
   )([`${config.addonRef}-addon.ftl`], true);
-  addon.data.locale = {
+  setLocale({
     current: l10n,
-  };
+  });
 }
 
 /**
@@ -65,7 +66,7 @@ function _getString(
 ): string {
   const localStringWithPrefix = `${config.addonRef}-${localeString}`;
   const { branch, args } = options;
-  const pattern = addon.data.locale?.current.formatMessagesSync([
+  const pattern = getLocale()?.current.formatMessagesSync([
     { id: localStringWithPrefix, args },
   ])[0];
   if (!pattern) {

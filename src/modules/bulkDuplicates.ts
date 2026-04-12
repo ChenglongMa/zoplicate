@@ -8,6 +8,7 @@ import { merge } from "./merger";
 import { activeCollectionsView, activeItemsView, isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
 import { DuplicateItems } from "./duplicateItems";
 import { fetchDuplicates } from "../utils/duplicates";
+import { markDuplicateSearchDirty } from "../utils/state";
 
 export class BulkDuplicates {
   public static get instance(): BulkDuplicates {
@@ -38,7 +39,7 @@ export class BulkDuplicates {
       button?.setAttribute("label", getString(label));
     });
     if (!value) {
-      addon.data.needResetDuplicateSearch[Zotero.getActiveZoteroPane().getSelectedLibraryID()] = true;
+      markDuplicateSearchDirty(Zotero.getActiveZoteroPane().getSelectedLibraryID());
       // Force refresh the duplicate item tree
       refreshItemTree();
     }
@@ -207,12 +208,12 @@ export class BulkDuplicates {
       // TODO: Or this
       // if (Zotero.getActiveZoteroPane().itemPane) {
       // @ts-ignore
-      // Zotero.getActiveZoteroPane().itemPane._itemDetails.skipRender = addon.data.processing;
+      // Zotero.getActiveZoteroPane().itemPane._itemDetails.skipRender = isProcessing();
       // Zotero.getActiveZoteroPane().itemPane._itemDetails.getPane("zotero-attachment-box")
       // const usePreview = Zotero.Prefs.get("showAttachmentPreview");
       // @ts-ignore
       // Zotero.getActiveZoteroPane().itemPane._itemDetails.getPane("attachments").usePreview =
-      //   !addon.data.processing && usePreview;
+      //   !isProcessing() && usePreview;
       // }
       await updateDuplicateButtonsVisibilities(win);
     });

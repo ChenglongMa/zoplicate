@@ -20,6 +20,13 @@ import { waitUntilAsync } from "./utils/wait";
 import { NonDuplicatesDB } from "./db/nonDuplicates";
 import { fetchDuplicates } from "./utils/duplicates";
 import { menuCache } from "./modules/menuCache";
+import {
+  getEnv,
+  setAlive,
+  getMenuRegisteredIDs,
+  setMenuRegisteredIDs,
+  closeDialogWindow,
+} from "./utils/state";
 
 let mainWindowLoaded = false;
 const notifyQueue: { event: string; type: string; ids: number[] | string[]; extraData: { [key: string]: any } }[] = [];
@@ -45,7 +52,7 @@ async function onStartup() {
 
   // Register menus at startup level (MenuManager handles multi-window internally).
   // FTL is loaded in onMainWindowLoad before this point.
-  addon.data.menuRegisteredIDs = registerMenus();
+  setMenuRegisteredIDs(registerMenus());
 }
 
 async function onMainWindowLoad(win: Window): Promise<void> {
@@ -63,7 +70,7 @@ async function onMainWindowLoad(win: Window): Promise<void> {
   await nonDuplicatesDB.init();
   registerNonDuplicatesSection(nonDuplicatesDB);
 
-  if (addon.data.env === "development") {
+  if (getEnv() === "development") {
     await registerDevColumn();
   }
   mainWindowLoaded = true;
@@ -80,19 +87,19 @@ async function onMainWindowUnload(win: Window): Promise<void> {
   debug("addon onMainWindowUnload");
   // ztoolkit.unregisterAll();
   mainWindowLoaded = false;
-  addon.data.dialogs.dialog?.window?.close();
+  closeDialogWindow();
   unregisterNonDuplicatesSection();
   await NonDuplicatesDB.instance.close();
 }
 
 async function onShutdown() {
   debug("addon onShutdown");
-  unregisterMenus(addon.data.menuRegisteredIDs);
+  unregisterMenus(getMenuRegisteredIDs());
   ztoolkit.unregisterAll();
-  addon.data.dialogs.dialog?.window?.close();
+  closeDialogWindow();
   await NonDuplicatesDB.instance.close();
   // Remove addon object
-  addon.data.alive = false;
+  setAlive(false);
   // @ts-ignore - Plugin instance is not typed
   delete Zotero[config.addonInstance];
 }

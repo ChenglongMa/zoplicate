@@ -1,37 +1,10 @@
-import type { ColumnOptions, DialogHelper } from "zotero-plugin-toolkit";
 import hooks from "./hooks";
 import { createZToolkit } from "./utils/ztoolkit";
-import { Action } from "./utils/prefs";
 import { config } from "../package.json";
+import type { AppState } from "./utils/state";
 
 class Addon {
-  public data: {
-    alive: boolean;
-    config: typeof config;
-    // Env type, see build.mjs
-    env: "development" | "production";
-    database: "SQLite" | "IndexedDB";
-    ztoolkit: ZToolkit;
-    locale?: {
-      current: any;
-    };
-    prefs?: {
-      window: Window;
-      columns?: Array<ColumnOptions>;
-      rows?: Array<{ [dataKey: string]: string }>;
-    };
-    dialogs: {
-      dialog?: DialogHelper;
-      duplicateMaps?: Map<number, { existingItemIDs: number[]; action: Action }>;
-    };
-    needResetDuplicateSearch: { [libraryID: number]: boolean };
-    duplicateSearchObj: { [libraryID: number]: Zotero.Search };
-    duplicateCounts: { [libraryID: number]: { total: number; unique: number } };
-    duplicateSets: { [libraryID: number]: typeof Zotero.DisjointSetForest };
-    nonDuplicateSectionID: string | false;
-    menuRegisteredIDs: string[];
-    processing: boolean;
-  };
+  public data: AppState;
   // Lifecycle hooks
   public hooks: typeof hooks;
   // APIs

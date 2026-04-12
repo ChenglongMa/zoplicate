@@ -116,9 +116,24 @@ export function createMockItem(overrides: MockItemOverrides = {}): any {
 
 (globalThis as any).addon = {
   data: {
+    alive: true,
     config: {
+      addonName: "Zoplicate",
+      addonID: "zoplicate@chenglongma.com",
       addonRef: "zoplicate",
+      addonInstance: "Zoplicate",
+      prefsPrefix: "extensions.zotero.zoplicate",
     },
-    duplicateCounts: {} as Record<string, { total: number; unique: number }>,
+    env: "development" as const,
+    database: "SQLite" as const,
+    ztoolkit: (globalThis as any).ztoolkit,
+    dialogs: {},
+    needResetDuplicateSearch: {} as Record<number, boolean>,
+    duplicateSearchObj: {} as Record<number, any>,
+    duplicateCounts: {} as Record<number, { total: number; unique: number }>,
+    duplicateSets: {} as Record<number, any>,
+    nonDuplicateSectionID: false as string | false,
+    menuRegisteredIDs: [] as string[],
+    processing: false,
   },
 };

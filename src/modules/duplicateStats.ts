@@ -5,6 +5,7 @@ import { removeSiblings } from "../utils/view";
 import CollectionTreeRow = Zotero.CollectionTreeRow;
 import { fetchAllDuplicates } from "../utils/duplicates";
 import { activeCollectionsView } from "../utils/zotero";
+import { getDuplicateCounts, setDuplicateCounts } from "../utils/state";
 
 export async function registerDuplicateStats() {
   let showStats = showingDuplicateStats();
@@ -34,7 +35,7 @@ export async function registerDuplicateStats() {
           const collectionTreeRow = activeCollectionsView()?.getRow(index) as CollectionTreeRow;
           if (collectionTreeRow && collectionTreeRow.isDuplicates()) {
             const libraryID = collectionTreeRow.ref.libraryID.toString();
-            const { total, unique } = addon.data.duplicateCounts[libraryID] ?? { total: 0, unique: 0 };
+            const { total, unique } = getDuplicateCounts()[libraryID] ?? { total: 0, unique: 0 };
             const text = `${unique}/${total}`;
             const tooltip = total
               ? getString("duplicate-tooltip", {
@@ -115,5 +116,5 @@ export async function refreshDuplicateStats(
   if (!showingDuplicateStats()) return;
 
   const { total, unique } = getDuplicateStats(duplicatesObj, duplicateItems);
-  addon.data.duplicateCounts[libraryID] = { total, unique };
+  setDuplicateCounts(libraryID, { total, unique });
 }

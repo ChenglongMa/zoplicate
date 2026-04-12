@@ -12,6 +12,7 @@ import { bringToFront } from "../utils/window";
 import { showHintWithLink } from "../utils/utils";
 import { waitUntilAsync } from "../utils/wait";
 import { areDuplicates } from "../utils/duplicates";
+import { getDialogs, setProcessing } from "../utils/state";
 
 function addButtonsInDuplicatePanes(innerButton: boolean, siblingElement: Element) {
   const mergeButtonID = innerButton ? BulkDuplicates.innerButtonID : BulkDuplicates.externalButtonID;
@@ -118,7 +119,7 @@ export class Duplicates {
         progress: 0,
       })
       .show();
-    addon.data.processing = true;
+    setProcessing(true);
     const masterItemPref = getPref("bulk.master.item") as MasterItem;
     for (const [newItemID, { existingItemIDs, action }] of duplicateMaps) {
       ztoolkit.log("Processing duplicate: ", newItemID);
@@ -161,7 +162,7 @@ export class Duplicates {
       selectedItemIDs.push(masterItem.id);
       await merge(masterItem, otherItems);
     }
-    addon.data.processing = false;
+    setProcessing(false);
 
     popWin.changeLine({
       text: getString("du-progress-text"),
@@ -224,19 +225,19 @@ export class Duplicates {
   }
 
   private get dialog(): DialogHelper | undefined {
-    return addon.data.dialogs.dialog;
+    return getDialogs().dialog;
   }
 
   private set dialog(value: DialogHelper | undefined) {
-    addon.data.dialogs.dialog = value;
+    getDialogs().dialog = value;
   }
 
   private get duplicateMaps(): Map<number, { existingItemIDs: number[]; action: Action }> | undefined {
-    return addon.data.dialogs.duplicateMaps;
+    return getDialogs().duplicateMaps;
   }
 
   private set duplicateMaps(value: Map<number, { existingItemIDs: number[]; action: Action }> | undefined) {
-    addon.data.dialogs.duplicateMaps = value;
+    getDialogs().duplicateMaps = value;
   }
 
   private get window(): Window | undefined {

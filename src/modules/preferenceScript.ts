@@ -1,6 +1,7 @@
 import { config, homepage } from "../../package.json";
 import { getString } from "../utils/locale";
 import { fetchAllDuplicates } from "../utils/duplicates";
+import { setPrefs, getPrefs } from "../utils/state";
 
 export function registerPrefs() {
   Zotero.PreferencePanes.register({
@@ -16,9 +17,9 @@ export function registerPrefs() {
 export async function registerPrefsScripts(_window: Window) {
   // This function is called when the prefs window is opened
   // See addon/chrome/content/preferences.xul onpaneload
-  addon.data.prefs = {
+  setPrefs({
     window: _window,
-  };
+  });
 
   await updatePrefsUI();
   bindPrefEvents();
@@ -35,8 +36,8 @@ async function updatePrefsUI() {
 function bindPrefEvents() {
   // Refer to:
   // https://github.com/windingwind/zotero-plugin-template/blob/main/src/modules/preferenceScript.ts#L109-L130
-  addon.data
-    .prefs!.window.document.querySelector(`#zotero-prefpane-${config.addonRef}-view-duplicate-stats-enable`)
+  getPrefs()
+    ?.window.document.querySelector(`#zotero-prefpane-${config.addonRef}-view-duplicate-stats-enable`)
     ?.addEventListener("command", async (e) => {
       if ((e.target as XUL.Checkbox).checked) {
         await fetchAllDuplicates();

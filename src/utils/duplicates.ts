@@ -1,3 +1,5 @@
+import { markDuplicateSearchDirty } from "./state";
+
 /**
  * Get or refresh duplicates DB for the selected library
  * @param libraryID Library ID
@@ -12,7 +14,7 @@ export async function fetchDuplicates({
   duplicateItems: number[];
 }> {
   if (refresh) {
-    addon.data.needResetDuplicateSearch[libraryID] = true;
+    markDuplicateSearchDirty(libraryID);
   }
   const duplicatesObj = new Zotero.Duplicates(libraryID);
   const search = await duplicatesObj.getSearchObject();
