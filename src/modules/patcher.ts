@@ -4,6 +4,14 @@ import { NonDuplicatesDB } from "../db/nonDuplicates";
 import { DuplicateItems } from "./duplicateItems";
 import { getPref, MasterItem } from "../utils/prefs";
 import { DuplicateFinder } from "../db/duplicateFinder";
+import {
+  getNeedResetDuplicateSearch,
+  setNeedResetDuplicateSearch,
+  getDuplicateSearchObj,
+  setDuplicateSearchObj,
+  getDuplicateSets,
+  setDuplicateSets,
+} from "../utils/state";
 
 /**
  * Execution order:
@@ -53,16 +61,16 @@ export function patchGetSearchObject() {
       async function (this: any): Promise<Zotero.Search> {
         ztoolkit.log("Get Search Object is called.");
         const libraryID = this._libraryID;
-        if (addon.data.needResetDuplicateSearch[libraryID] || !addon.data.duplicateSearchObj[libraryID]) {
+        if (getNeedResetDuplicateSearch()[libraryID] || !getDuplicateSearchObj()[libraryID]) {
           ztoolkit.log("debug flag: Reset duplicate search", libraryID);
           const search = await original.call(this);
-          addon.data.duplicateSearchObj[libraryID] = search;
-          addon.data.duplicateSets[libraryID] = this._sets;
-          addon.data.needResetDuplicateSearch[libraryID] = false;
+          setDuplicateSearchObj(libraryID, search);
+          setDuplicateSets(libraryID, this._sets);
+          setNeedResetDuplicateSearch(libraryID, false);
           await refreshDuplicateStats(libraryID, this, await search.search());
         }
-        this._sets = addon.data.duplicateSets[libraryID];
-        return addon.data.duplicateSearchObj[libraryID];
+        this._sets = getDuplicateSets()[libraryID];
+        return getDuplicateSearchObj()[libraryID];
       },
   });
 }

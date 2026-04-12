@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
-  "latest_accepted_milestone": "M004",
-  "current_target_milestone": "M005",
+  "latest_accepted_milestone": "M005",
+  "current_target_milestone": "M006",
   "current_status": "idle",
-  "last_updated_utc": "2026-04-12T09:45:00Z",
+  "last_updated_utc": "2026-04-12T12:00:00Z",
   "open_risks_summary": [
     "Zotero UI/import flows cannot be fully verified with Jest alone.",
     "FTL .label attribute rendering requires manual Zotero 9 runtime verification.",
@@ -14,6 +14,8 @@
     "ChromeUtils.importESModule type declaration returns any — future milestone may add narrower type.",
     "jest.Mock<any> cast in merger.test.ts is a workaround for Jest 30 / ts-jest 29 type inference gaps.",
     "Dead default export in menus.ts — hooks.ts uses named imports; cleanup deferred.",
-    "warmCache() relies on active pane for libraryID — safe for current call sites but fragile for background contexts."
+    "warmCache() relies on active pane for libraryID — safe for current call sites but fragile for background contexts.",
+    "isAlive() accessor uses optional chaining — silently returns false if addon global not assigned.",
+    "AppState.config uses inline type rather than typeof config from package.json — must stay in sync manually."
   ]
 }

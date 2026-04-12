@@ -5,10 +5,11 @@ import { getString } from "../utils/locale";
 import { NonDuplicatesDB } from "../db/nonDuplicates";
 import { areDuplicates, fetchDuplicates } from "../utils/duplicates";
 import { menuCache } from "./menuCache";
+import { getNonDuplicateSectionID, setNonDuplicateSectionID } from "../utils/state";
 
 export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
   unregisterNonDuplicatesSection();
-  addon.data.nonDuplicateSectionID = Zotero.ItemPaneManager.registerSection({
+  setNonDuplicateSectionID(Zotero.ItemPaneManager.registerSection({
     paneID: `non-duplicates-section`,
     pluginID: config.addonID,
     header: {
@@ -183,13 +184,14 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
         body.append(row);
       }
     },
-  });
+  }));
 }
 
 export function unregisterNonDuplicatesSection() {
-  if (addon.data.nonDuplicateSectionID) {
-    Zotero.ItemPaneManager.unregisterSection(addon.data.nonDuplicateSectionID);
-    addon.data.nonDuplicateSectionID = false;
+  const sectionID = getNonDuplicateSectionID();
+  if (sectionID) {
+    Zotero.ItemPaneManager.unregisterSection(sectionID);
+    setNonDuplicateSectionID(false);
   }
 }
 
