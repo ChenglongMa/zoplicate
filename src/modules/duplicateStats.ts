@@ -84,7 +84,7 @@ export async function registerDuplicateStats() {
   });
 }
 
-function getDuplicateStats(
+export function getDuplicateStats(
   duplicatesObj: {
     getSetItemsByItemID(itemID: number): number[];
   },
