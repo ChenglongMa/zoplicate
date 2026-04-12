@@ -7,7 +7,7 @@
           "update_link": "__updateLink__",
           "applications": {
             "zotero": {
-              "strict_min_version": "6.999"
+              "strict_min_version": "9.0"
             }
           }
         }

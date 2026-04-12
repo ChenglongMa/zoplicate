@@ -21,5 +21,7 @@ export async function merge(
   const { relations, collections, tags, ...keep } = candidateJSON;
   masterItem.fromJSON({ ...keep, ...masterJSON });
 
-  return await Zotero.Items.merge(masterItem, otherItems);
+  // ChromeUtils.importESModule is synchronous in Gecko -- do not await the import call
+  const { mergeItems } = ChromeUtils.importESModule("chrome://zotero/content/mergeItems.mjs");
+  return await mergeItems(masterItem, otherItems);
 }

@@ -2,7 +2,7 @@
   "id": "M003",
   "title": "Zotero 9-only core: manifest + direct mergeItems",
   "phase": "Zotero 9 Migration",
-  "status": "planned",
+  "status": "accepted",
   "depends_on": ["M002"],
   "goal": "Make plugin Zotero 9 only: update version source files (manifest.json, update-template.json) to strict_min/max 9.0/9.*, switch merger.ts to direct ChromeUtils.importESModule mergeItems, delete dead patchMergePDFAttachments. No version branching.",
   "in_scope": [
