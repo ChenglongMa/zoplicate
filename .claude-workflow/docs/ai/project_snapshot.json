@@ -1,19 +1,18 @@
 {
   "schema_version": "1.0",
-  "latest_accepted_milestone": "M002",
-  "current_target_milestone": "M003",
+  "latest_accepted_milestone": "M003",
+  "current_target_milestone": "M004",
   "current_status": "idle",
-  "last_updated_utc": "2026-04-12T07:30:00Z",
+  "last_updated_utc": "2026-04-12T08:30:00Z",
   "open_risks_summary": [
     "Zotero UI/import flows cannot be fully verified with Jest alone.",
-    "mergeItems ESM import requires ChromeUtils.importESModule() at runtime.",
     "MenuManager API: onShowing is synchronous; async visibility requires cache pattern with explicit invalidation.",
     "FTL .label attribute requirement verified from menuManager.js source but needs manual Zotero 9 testing.",
     "patchMethod() restores originals but skips if target was externally modified; logs warning instead.",
     "ctx.collectionTreeRow typed as _ZoteroTypes.CollectionTree but runtime is Zotero.CollectionTreeRow — needs explicit cast.",
     "fetchDuplicates({ refresh: true }) does NOT trigger notifier events — cache invalidation must be explicit.",
     "M009 feature reorganization is a large-scale move — requires careful import path updates and test verification.",
-    "globalThis stubs in tests/__setup__/globals.ts cover only methods exercised by M002 tests — future milestones may need stub expansion.",
+    "ChromeUtils.importESModule type declaration returns any — future milestone may add narrower type.",
     "jest.Mock<any> cast in merger.test.ts is a workaround for Jest 30 / ts-jest 29 type inference gaps."
   ]
 }

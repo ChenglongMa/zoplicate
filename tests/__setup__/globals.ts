@@ -88,6 +88,21 @@ export function createMockItem(overrides: MockItemOverrides = {}): any {
 };
 
 // ---------------------------------------------------------------------------
+// globalThis.ChromeUtils
+// ---------------------------------------------------------------------------
+
+(globalThis as any)._mergeItemsMock = jest.fn(async () => undefined);
+
+(globalThis as any).ChromeUtils = {
+  importESModule: jest.fn((path: string) => {
+    if (path.includes("mergeItems")) {
+      return { mergeItems: (globalThis as any)._mergeItemsMock };
+    }
+    return {};
+  }),
+};
+
+// ---------------------------------------------------------------------------
 // globalThis.ztoolkit
 // ---------------------------------------------------------------------------
 

@@ -106,19 +106,3 @@ export function patchItemSaveData() {
       },
   });
 }
-
-export function patchMergePDFAttachments() {
-  const patch = new ztoolkit.Patch();
-  patch.setData({
-    target: Zotero.Items,
-    funcSign: "_mergePDFAttachments",
-    enabled: false, // TODO: finish this
-    patcher: (original) =>
-      async function (this: any, item: Zotero.Item, otherItems: Zotero.Item[]) {
-        ztoolkit.log("Merging PDF attachments");
-        const otherAttachments = otherItems.flatMap((i) => i.getAttachments());
-        ztoolkit.log("Other attachments", otherAttachments);
-        return await original.call(this, item, otherItems);
-      },
-  });
-}

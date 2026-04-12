@@ -13,7 +13,6 @@ import {
   patchFindDuplicates,
   patchGetSearchObject,
   patchItemSaveData,
-  patchMergePDFAttachments,
 } from "./modules/patcher";
 import { containsRegularItem, debug, isInDuplicatesPane, refreshItemTree } from "./utils/zotero";
 import { registerDuplicateStats } from "./modules/duplicateStats";
@@ -38,8 +37,6 @@ async function onStartup() {
   patchFindDuplicates(nonDuplicatesDB);
   patchGetSearchObject();
   patchItemSaveData();
-
-  patchMergePDFAttachments();
 
   await Promise.all(
     Zotero.getMainWindows().map((win) => onMainWindowLoad(win)),
