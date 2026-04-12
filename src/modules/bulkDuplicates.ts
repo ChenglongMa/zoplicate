@@ -5,10 +5,11 @@ import { getPref, MasterItem } from "../utils/prefs";
 import { truncateString } from "../utils/utils";
 import { updateDuplicateButtonsVisibilities } from "./duplicates";
 import { merge } from "./merger";
-import { activeCollectionsView, activeItemsView, isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
+import { isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
 import { DuplicateItems } from "./duplicateItems";
 import { fetchDuplicates } from "../utils/duplicates";
 import { markDuplicateSearchDirty } from "../utils/state";
+import { type Disposer } from "../lifecycle";
 
 export class BulkDuplicates {
   public static get instance(): BulkDuplicates {
@@ -182,40 +183,44 @@ export class BulkDuplicates {
     popWin.startCloseTimer(5000);
   }
 
-  registerUIElements(win: Window): void {
+  registerUIElements(win: Window): Disposer {
     this.win = win;
-    activeCollectionsView()?.onSelect.addListener(async () => {
-      const inDuplicatePane = isInDuplicatesPane();
-      if (Zotero.getActiveZoteroPane().itemsView && inDuplicatePane && this._isRunning) {
-        await activeItemsView()?.waitForLoad();
-        activeItemsView()?.selection.clearSelection();
-      }
-    });
 
-    activeItemsView()?.onRefresh.addListener(async () => {
+    const zoteroPane = (win as any).ZoteroPane;
+
+    const onCollectionSelect = async () => {
+      const inDuplicatePane = isInDuplicatesPane();
+      if (zoteroPane.itemsView && inDuplicatePane && this._isRunning) {
+        await zoteroPane.itemsView?.waitForLoad();
+        zoteroPane.itemsView?.selection.clearSelection();
+      }
+    };
+
+    const onItemsRefresh = async () => {
       ztoolkit.log("refresh");
       const precondition = isInDuplicatesPane();
-      if (precondition && Zotero.getActiveZoteroPane().itemsView && this._isRunning) {
-        activeItemsView()?.selection.clearSelection();
+      if (precondition && zoteroPane.itemsView && this._isRunning) {
+        zoteroPane.itemsView?.selection.clearSelection();
       }
       await updateDuplicateButtonsVisibilities(win);
-    });
+    };
 
-    activeItemsView()?.onSelect.addListener(async () => {
-      ztoolkit.log("itemsView.onSelect", Zotero.getActiveZoteroPane().getSelectedItems(true));
-      // TODO: Further investigate the requirement of this
-      // Zotero.getActiveZoteroPane().itemPane && Zotero.getActiveZoteroPane().itemPane.setAttribute("collapsed", "true");
-      // TODO: Or this
-      // if (Zotero.getActiveZoteroPane().itemPane) {
-      // @ts-ignore
-      // Zotero.getActiveZoteroPane().itemPane._itemDetails.skipRender = isProcessing();
-      // Zotero.getActiveZoteroPane().itemPane._itemDetails.getPane("zotero-attachment-box")
-      // const usePreview = Zotero.Prefs.get("showAttachmentPreview");
-      // @ts-ignore
-      // Zotero.getActiveZoteroPane().itemPane._itemDetails.getPane("attachments").usePreview =
-      //   !isProcessing() && usePreview;
-      // }
+    const onItemsSelect = async () => {
+      ztoolkit.log("itemsView.onSelect", zoteroPane.getSelectedItems(true));
       await updateDuplicateButtonsVisibilities(win);
-    });
+    };
+
+    const collectionsView = zoteroPane.collectionsView;
+    const itemsView = zoteroPane.itemsView;
+
+    collectionsView?.onSelect.addListener(onCollectionSelect);
+    itemsView?.onRefresh.addListener(onItemsRefresh);
+    itemsView?.onSelect.addListener(onItemsSelect);
+
+    return () => {
+      collectionsView?.onSelect.removeListener(onCollectionSelect);
+      itemsView?.onRefresh.removeListener(onItemsRefresh);
+      itemsView?.onSelect.removeListener(onItemsSelect);
+    };
   }
 }

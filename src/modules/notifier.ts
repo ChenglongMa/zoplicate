@@ -1,7 +1,6 @@
 import { NonDuplicatesDB } from "../db/nonDuplicates";
-import { isAlive, getConfig } from "../utils/state";
-
-let notifierID: string | undefined;
+import { isAlive } from "../utils/state";
+import { type Disposer } from "../lifecycle";
 
 export async function whenItemsDeleted(ids: number[]) {
   if (ids.length === 0) {
@@ -10,13 +9,17 @@ export async function whenItemsDeleted(ids: number[]) {
   await NonDuplicatesDB.instance.deleteRecords(...ids);
 }
 
-export function registerNotifier() {
-  if (notifierID) unregisterNotifier();
-
+/**
+ * Register Zotero notifier observer.
+ * Returns a Disposer that unregisters the observer.
+ *
+ * Note: The Plugins.addObserver({ shutdown }) pattern has been removed.
+ * The DisposerRegistry in hooks.ts now owns lifecycle cleanup.
+ */
+export function registerNotifier(): Disposer {
   const callback = {
     notify: async (event: string, type: string, ids: number[] | string[], extraData: { [key: string]: any }) => {
       if (!isAlive()) {
-        unregisterNotifier();
         return;
       }
       await addon.hooks.onNotify(event, type, ids, extraData);
@@ -24,7 +27,7 @@ export function registerNotifier() {
   };
 
   // Register the callback in Zotero as an item observer
-  notifierID = Zotero.Notifier.registerObserver(callback, [
+  const notifierID = Zotero.Notifier.registerObserver(callback, [
     "collection",
     "search",
     "share",
@@ -39,32 +42,12 @@ export function registerNotifier() {
     "trash",
     "bucket",
     "relation",
-    // "feed",
-    // "feedItem",
     "sync",
     "api-key",
     "tab",
   ]);
 
-  Zotero.Plugins.addObserver({
-    shutdown: ({ id }) => {
-      if (id === getConfig().addonID)
-        unregisterNotifier();
-    },
-  });
-
-  // // Unregister callback when the window closes (important to avoid a memory leak)
-  // window.addEventListener(
-  //   "unload",
-  //   (e: Event) => {
-  //     unregisterNotifier(notifierID);
-  //   },
-  //   false,
-  // );
-}
-
-export function unregisterNotifier() {
-  if (!notifierID) return;
-  Zotero.Notifier.unregisterObserver(notifierID);
-  notifierID = undefined;
+  return () => {
+    Zotero.Notifier.unregisterObserver(notifierID);
+  };
 }

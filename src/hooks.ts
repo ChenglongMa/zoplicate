@@ -1,32 +1,35 @@
 import { config } from "../package.json";
 import { initLocale } from "./utils/locale";
 import { registerPrefs, registerPrefsScripts } from "./modules/preferenceScript";
-import { createZToolkit } from "./utils/ztoolkit";
 import { whenItemsDeleted, registerNotifier } from "./modules/notifier";
 import { registerStyleSheets } from "./utils/window";
 import { BulkDuplicates } from "./modules/bulkDuplicates";
 import { Duplicates, registerButtonsInDuplicatePane } from "./modules/duplicates";
 import { registerMenus, unregisterMenus } from "./modules/menus";
-// import "./modules/zduplicates.js";
 import { registerNonDuplicatesSection, unregisterNonDuplicatesSection } from "./modules/nonDuplicates";
 import {
   patchFindDuplicates,
   patchGetSearchObject,
   patchItemSaveData,
-} from "./modules/patcher";
+} from "./modules/patches";
 import { containsRegularItem, debug, isInDuplicatesPane, refreshItemTree } from "./utils/zotero";
 import { registerDuplicateStats } from "./modules/duplicateStats";
-import { waitUntilAsync } from "./utils/wait";
 import { NonDuplicatesDB } from "./db/nonDuplicates";
 import { fetchDuplicates } from "./utils/duplicates";
 import { menuCache } from "./modules/menuCache";
 import {
   getEnv,
   setAlive,
-  getMenuRegisteredIDs,
-  setMenuRegisteredIDs,
   closeDialogWindow,
 } from "./utils/state";
+import { DisposerRegistry } from "./lifecycle";
+
+// ---------------------------------------------------------------------------
+// Disposer registries
+// ---------------------------------------------------------------------------
+
+const globalDisposers = new DisposerRegistry();
+const windowDisposers = new WeakMap<Window, DisposerRegistry>();
 
 let mainWindowLoaded = false;
 const notifyQueue: { event: string; type: string; ids: number[] | string[]; extraData: { [key: string]: any } }[] = [];
@@ -34,17 +37,20 @@ const notifyQueue: { event: string; type: string; ids: number[] | string[]; extr
 async function onStartup() {
   await Promise.all([Zotero.initializationPromise, Zotero.unlockPromise, Zotero.uiReadyPromise]);
   initLocale();
-  // create ztoolkit
-  // addon.data.ztoolkit = createZToolkit();
   ztoolkit.log("addon onStartup");
   registerPrefs();
-  registerNotifier();
+
+  // Notifier -- returns disposer
+  globalDisposers.add(registerNotifier());
+
   // init database
   const nonDuplicatesDB = NonDuplicatesDB.instance;
   await nonDuplicatesDB.init();
-  patchFindDuplicates(nonDuplicatesDB);
-  patchGetSearchObject();
-  patchItemSaveData();
+
+  // Patches -- each returns a disposer
+  globalDisposers.add(patchFindDuplicates(nonDuplicatesDB));
+  globalDisposers.add(patchGetSearchObject());
+  globalDisposers.add(patchItemSaveData());
 
   await Promise.all(
     Zotero.getMainWindows().map((win) => onMainWindowLoad(win)),
@@ -52,23 +58,37 @@ async function onStartup() {
 
   // Register menus at startup level (MenuManager handles multi-window internally).
   // FTL is loaded in onMainWindowLoad before this point.
-  setMenuRegisteredIDs(registerMenus());
+  const menuIDs = registerMenus();
+  globalDisposers.add(() => {
+    unregisterMenus(menuIDs);
+  });
 }
 
 async function onMainWindowLoad(win: Window): Promise<void> {
-  // await waitUntilAsync(() => document.readyState === "complete");
   ztoolkit.log("addon onMainWindowLoad");
   win.MozXULElement.insertFTLIfNeeded(`${config.addonRef}-itemSection.ftl`);
   win.MozXULElement.insertFTLIfNeeded(`${config.addonRef}-addon.ftl`);
   registerStyleSheets(win);
 
+  const winRegistry = new DisposerRegistry();
+  windowDisposers.set(win, winRegistry);
+
   // register duplicate UI elements
-  await registerDuplicateStats();
+  const statsDisposer = await registerDuplicateStats(win);
+  winRegistry.add(statsDisposer);
+
+  // DOM buttons cleaned by window destruction -- no disposer needed
   await registerButtonsInDuplicatePane(win);
-  BulkDuplicates.instance.registerUIElements(win);
+
+  const bulkDisposer = BulkDuplicates.instance.registerUIElements(win);
+  winRegistry.add(bulkDisposer);
+
   const nonDuplicatesDB = NonDuplicatesDB.instance;
   await nonDuplicatesDB.init();
   registerNonDuplicatesSection(nonDuplicatesDB);
+  winRegistry.add(() => {
+    unregisterNonDuplicatesSection();
+  });
 
   if (getEnv() === "development") {
     await registerDevColumn();
@@ -85,16 +105,21 @@ async function onMainWindowLoad(win: Window): Promise<void> {
 
 async function onMainWindowUnload(win: Window): Promise<void> {
   debug("addon onMainWindowUnload");
-  // ztoolkit.unregisterAll();
   mainWindowLoaded = false;
   closeDialogWindow();
-  unregisterNonDuplicatesSection();
+
+  const winRegistry = windowDisposers.get(win);
+  if (winRegistry) {
+    await winRegistry.disposeAll();
+    windowDisposers.delete(win);
+  }
+
   await NonDuplicatesDB.instance.close();
 }
 
 async function onShutdown() {
   debug("addon onShutdown");
-  unregisterMenus(getMenuRegisteredIDs());
+  await globalDisposers.disposeAll();
   ztoolkit.unregisterAll();
   closeDialogWindow();
   await NonDuplicatesDB.instance.close();

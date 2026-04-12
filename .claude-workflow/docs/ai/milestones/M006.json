@@ -2,7 +2,7 @@
   "id": "M006",
   "title": "Lifecycle disposers + patch split + own patchMethod",
   "phase": "Architecture - Lifecycle",
-  "status": "planned",
+  "status": "accepted",
   "depends_on": ["M004", "M005", "M007"],
   "goal": "Split patcher.ts, create DisposerRegistry and patchMethod() that restores originals, wire ALL resources to dispose on shutdown/unload: patches, notifier, Plugins observer, listeners, stats patch, MenuManager menus.",
   "in_scope": [

@@ -4,10 +4,10 @@ import { getString } from "../utils/locale";
 import { removeSiblings } from "../utils/view";
 import CollectionTreeRow = Zotero.CollectionTreeRow;
 import { fetchAllDuplicates } from "../utils/duplicates";
-import { activeCollectionsView } from "../utils/zotero";
 import { getDuplicateCounts, setDuplicateCounts } from "../utils/state";
+import { patchMethod, type Disposer } from "../lifecycle";
 
-export async function registerDuplicateStats() {
+export async function registerDuplicateStats(win: Window): Promise<Disposer> {
   let showStats = showingDuplicateStats();
 
   if (showStats) {
@@ -15,74 +15,71 @@ export async function registerDuplicateStats() {
     await fetchAllDuplicates();
   }
 
-  const patch = new ztoolkit.Patch();
-  patch.setData({
-    target: Zotero.getActiveZoteroPane().collectionsView,
-    // @ts-ignore
-    funcSign: "renderItem",
-    // refer to https://github.com/zotero/zotero/blob/ef8de73d5ae4bc904c223845cba8467e5a405464/chrome/content/zotero/collectionTree.jsx#L286
-    // i.e., the `renderItem` function of collectionTree
-    // @ts-ignore
-    patcher:
-      (originalFunc: any) =>
-        (index: number, selection: object, oldDiv: HTMLDivElement, columns: any[]): HTMLDivElement => {
-          const originalDIV = originalFunc(index, selection, oldDiv, columns);
-          showStats = showingDuplicateStats();
-          if (!showStats) {
-            originalDIV.removeAttribute("title");
-            return originalDIV;
-          }
-          const collectionTreeRow = activeCollectionsView()?.getRow(index) as CollectionTreeRow;
-          if (collectionTreeRow && collectionTreeRow.isDuplicates()) {
-            const libraryID = collectionTreeRow.ref.libraryID.toString();
-            const { total, unique } = getDuplicateCounts()[libraryID] ?? { total: 0, unique: 0 };
-            const text = `${unique}/${total}`;
-            const tooltip = total
-              ? getString("duplicate-tooltip", {
-                args: { unique, total, items: unique == 1 ? "item" : "items" },
-              })
-              : getString("duplicate-not-found-tooltip");
-            originalDIV.setAttribute("title", tooltip);
+  const collectionsView = (win as any).ZoteroPane.collectionsView;
 
-            // https://github.com/zotero/zotero/blob/main/chrome/content/zotero/collectionTree.jsx#L321
-            // https://github.com/MuiseDestiny/zotero-style/blob/master/src/modules/views.ts#L3279
-            const cell = originalDIV.querySelector("span.cell.label.primary") as Element;
-            const collectionNameSpan = cell.querySelector("span.cell-text") as Element;
-            removeSiblings(collectionNameSpan);
-            const numberNode = cell.querySelector(".number");
-            if (numberNode) {
-              numberNode.innerHTML = text;
-            } else {
-              ztoolkit.UI.appendElement(
-                {
-                  tag: "span",
-                  classList: [config.addonRef],
-                  styles: {
-                    display: "inline-block",
-                    flex: "1",
-                  },
-                },
-                cell,
-              );
-              ztoolkit.UI.appendElement(
-                {
-                  tag: "span",
-                  classList: [config.addonRef, "number"],
-                  styles: {
-                    marginRight: "6px",
-                  },
-                  properties: {
-                    innerHTML: text,
-                  },
-                },
-                cell,
-              );
-            }
-          }
+  const disposer = patchMethod(
+    collectionsView,
+    "renderItem",
+    (originalFunc: any) =>
+      (index: number, selection: object, oldDiv: HTMLDivElement, columns: any[]): HTMLDivElement => {
+        const originalDIV = originalFunc(index, selection, oldDiv, columns);
+        showStats = showingDuplicateStats();
+        if (!showStats) {
+          originalDIV.removeAttribute("title");
           return originalDIV;
-        },
-    enabled: true,
-  });
+        }
+        const collectionTreeRow = collectionsView?.getRow(index) as CollectionTreeRow;
+        if (collectionTreeRow && collectionTreeRow.isDuplicates()) {
+          const libraryID = collectionTreeRow.ref.libraryID.toString();
+          const { total, unique } = getDuplicateCounts()[libraryID] ?? { total: 0, unique: 0 };
+          const text = `${unique}/${total}`;
+          const tooltip = total
+            ? getString("duplicate-tooltip", {
+              args: { unique, total, items: unique == 1 ? "item" : "items" },
+            })
+            : getString("duplicate-not-found-tooltip");
+          originalDIV.setAttribute("title", tooltip);
+
+          // https://github.com/zotero/zotero/blob/main/chrome/content/zotero/collectionTree.jsx#L321
+          // https://github.com/MuiseDestiny/zotero-style/blob/master/src/modules/views.ts#L3279
+          const cell = originalDIV.querySelector("span.cell.label.primary") as Element;
+          const collectionNameSpan = cell.querySelector("span.cell-text") as Element;
+          removeSiblings(collectionNameSpan);
+          const numberNode = cell.querySelector(".number");
+          if (numberNode) {
+            numberNode.innerHTML = text;
+          } else {
+            ztoolkit.UI.appendElement(
+              {
+                tag: "span",
+                classList: [config.addonRef],
+                styles: {
+                  display: "inline-block",
+                  flex: "1",
+                },
+              },
+              cell,
+            );
+            ztoolkit.UI.appendElement(
+              {
+                tag: "span",
+                classList: [config.addonRef, "number"],
+                styles: {
+                  marginRight: "6px",
+                },
+                properties: {
+                  innerHTML: text,
+                },
+              },
+              cell,
+            );
+          }
+        }
+        return originalDIV;
+      },
+  );
+
+  return disposer;
 }
 
 export function getDuplicateStats(

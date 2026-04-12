@@ -31,27 +31,22 @@ import { BasicTool, makeHelperTool, unregister } from "zotero-plugin-toolkit";
 import { UITool } from "zotero-plugin-toolkit";
 import { DialogHelper } from "zotero-plugin-toolkit";
 import { ProgressWindowHelper } from "zotero-plugin-toolkit";
-import { PatchHelper } from "zotero-plugin-toolkit";
 import { debug } from "./zotero";
-import { unregisterNonDuplicatesSection } from "../modules/nonDuplicates";
 
 class MyToolkit extends BasicTool {
   UI: UITool;
   Dialog: typeof DialogHelper;
   ProgressWindow: typeof ProgressWindowHelper;
-  Patch: typeof PatchHelper;
 
   constructor() {
     super();
     this.UI = new UITool(this);
     this.ProgressWindow = makeHelperTool(ProgressWindowHelper, this);
     this.Dialog = makeHelperTool(DialogHelper, this);
-    this.Patch = makeHelperTool(PatchHelper, this);
   }
 
   unregisterAll() {
     unregister(this);
-    unregisterNonDuplicatesSection();
     debug("zoplicate addon unregisterAll");
   }
 }
