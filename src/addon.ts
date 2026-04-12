@@ -29,6 +29,7 @@ class Addon {
     duplicateCounts: { [libraryID: number]: { total: number; unique: number } };
     duplicateSets: { [libraryID: number]: typeof Zotero.DisjointSetForest };
     nonDuplicateSectionID: string | false;
+    menuRegisteredIDs: string[];
     processing: boolean;
   };
   // Lifecycle hooks
@@ -49,6 +50,7 @@ class Addon {
       duplicateCounts: {},
       duplicateSets: {},
       nonDuplicateSectionID: false,
+      menuRegisteredIDs: [],
       processing: false,
     };
     this.hooks = hooks;
@@ -69,6 +71,7 @@ class Addon {
       duplicateCounts: {},
       duplicateSets: {},
       nonDuplicateSectionID: false,
+      menuRegisteredIDs: [],
       processing: false,
     };
     this.hooks = hooks;

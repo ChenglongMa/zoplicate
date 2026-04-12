@@ -32,7 +32,6 @@ import { UITool } from "zotero-plugin-toolkit";
 import { DialogHelper } from "zotero-plugin-toolkit";
 import { ProgressWindowHelper } from "zotero-plugin-toolkit";
 import { PatchHelper } from "zotero-plugin-toolkit";
-import { LocalMenuRegistrar } from "./menu";
 import { debug } from "./zotero";
 import { unregisterNonDuplicatesSection } from "../modules/nonDuplicates";
 
@@ -41,7 +40,6 @@ class MyToolkit extends BasicTool {
   Dialog: typeof DialogHelper;
   ProgressWindow: typeof ProgressWindowHelper;
   Patch: typeof PatchHelper;
-  Menu: typeof LocalMenuRegistrar;
 
   constructor() {
     super();
@@ -49,7 +47,6 @@ class MyToolkit extends BasicTool {
     this.ProgressWindow = makeHelperTool(ProgressWindowHelper, this);
     this.Dialog = makeHelperTool(DialogHelper, this);
     this.Patch = makeHelperTool(PatchHelper, this);
-    this.Menu = makeHelperTool(LocalMenuRegistrar, this);
   }
 
   unregisterAll() {

@@ -69,6 +69,16 @@ refresh-duplicates-done = Duplicate items has been refreshed.
 menuitem-not-duplicate = They are NOT duplicates
 menuitem-is-duplicate = They are duplicates
 
+## MenuManager FTL keys (require .label attribute)
+menu-submenu-title =
+    .label = Zoplicate
+menu-mark-non-duplicate =
+    .label = They are NOT duplicates
+menu-unmark-non-duplicate =
+    .label = They are duplicates
+menu-refresh-duplicates =
+    .label = Refresh
+
 # Add non-duplicate
 add-not-duplicates-alert-error-duplicates = The selected items are not identified as Duplicates.
 add-not-duplicates-alert-error-exist = The selected items already exist.

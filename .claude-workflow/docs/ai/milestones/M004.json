@@ -2,7 +2,7 @@
   "id": "M004",
   "title": "Zotero 9 MenuManager-only migration",
   "phase": "Zotero 9 Migration",
-  "status": "planned",
+  "status": "accepted",
   "depends_on": ["M003"],
   "goal": "Replace ztoolkit.Menu/LocalMenuRegistrar with Zotero.MenuManager.registerMenu(). Use context objects (ctx.items, ctx.collectionTreeRow), FTL .label attributes, prefixed l10nIDs, three-level visibility (sync/cache/async), unregisterMenu() in onShutdown.",
   "in_scope": [
