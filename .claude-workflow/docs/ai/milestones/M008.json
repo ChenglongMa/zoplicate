@@ -1,0 +1,27 @@
+{
+  "id": "M008",
+  "title": "Resolve duplicates circular dependency",
+  "phase": "Architecture - Modules",
+  "status": "planned",
+  "depends_on": ["M006", "M007"],
+  "goal": "Break circular import between duplicates.ts and bulkDuplicates.ts using button ID constants extraction and factory injection.",
+  "in_scope": [
+    "Create src/modules/duplicateButtonIDs.ts with pure constants (zero class imports)",
+    "Create src/modules/duplicatePaneUI.ts with registerButtonsInDuplicatePane(win, bulkFactory, nonDupFactory) and updateDuplicateButtonsVisibilities(win)",
+    "duplicatePaneUI accepts button factories as parameters (not importing BulkDuplicates class)",
+    "Remove extracted functions from duplicates.ts",
+    "Update bulkDuplicates.ts to import from duplicatePaneUI.ts and duplicateButtonIDs.ts",
+    "Wire factories in hooks.ts at call site"
+  ],
+  "out_of_scope": [
+    "Changing Duplicates or BulkDuplicates class logic",
+    "Adding features/ directory"
+  ],
+  "acceptance": [
+    "duplicates.ts does NOT import from bulkDuplicates.ts",
+    "bulkDuplicates.ts does NOT import from duplicates.ts",
+    "duplicatePaneUI.ts does NOT import BulkDuplicates class",
+    "duplicateButtonIDs.ts has zero class imports",
+    "npm test passes, tsc --noEmit passes"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "id": "M009",
+  "title": "Feature boundary reorganization",
+  "phase": "Architecture - Modules",
+  "status": "planned",
+  "depends_on": ["M008"],
+  "goal": "Reorganize src/ into feature-oriented boundaries. Two-level registration: registerXxxGlobal() + registerXxxWindow(win). hooks.ts becomes composition root. onNotify logic extracted. menus split into thin wrapper + feature menus.",
+  "in_scope": [
+    "Move src/modules/ and src/utils/ into src/features/, src/integrations/zotero/, src/app/, src/shared/",
+    "Two-level feature registration: registerXxxGlobal() and/or registerXxxWindow(win): Promise<Disposer>",
+    "Extract onNotify business logic into feature-level notifier handlers",
+    "Split menus.ts: thin menuManager.ts wrapper + feature-level menu definitions",
+    "Move DuplicateItems/mergeItems to src/shared/duplicates/ (shared by duplicates + bulkMerge)",
+    "hooks.ts reduced to composition root",
+    "Update all import paths, src/index.ts, typings/global.d.ts (both Addon and ZToolkit paths); consider tsconfig path aliases",
+    "Preserve public addon.hooks contract (onStartup, onMainWindowLoad, onMainWindowUnload, onShutdown, onPrefsEvent) for bootstrap.js and preferences.xhtml"
+  ],
+  "out_of_scope": [
+    "Changing feature behavior",
+    "DI container or service locator",
+    "Moving db/ into features"
+  ],
+  "acceptance": [
+    "src/modules/ and src/utils/ directories do not exist",
+    "Features use two-level registration (global + window), not single registerXxxFeature(win)",
+    "hooks.ts contains no business logic or onNotify handling",
+    "integrations/zotero/notifier.ts does not import feature modules directly",
+    "menus.ts split: integration wrapper has no business menus",
+    "No circular imports between feature directories",
+    "Public addon.hooks contract compatible with bootstrap.js and preferences.xhtml",
+    "typings/global.d.ts Addon and ZToolkit import paths updated",
+    "npm test passes, tsc --noEmit passes, npm run build produces valid XPI",
+    "MANUAL: All features work identically to pre-M009 (including preferences panel load)"
+  ]
+}

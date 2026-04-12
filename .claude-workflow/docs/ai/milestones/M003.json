@@ -1,0 +1,28 @@
+{
+  "id": "M003",
+  "title": "Zotero 9-only core: manifest + direct mergeItems",
+  "phase": "Zotero 9 Migration",
+  "status": "planned",
+  "depends_on": ["M002"],
+  "goal": "Make plugin Zotero 9 only: update version source files (manifest.json, update-template.json) to strict_min/max 9.0/9.*, switch merger.ts to direct ChromeUtils.importESModule mergeItems, delete dead patchMergePDFAttachments. No version branching.",
+  "in_scope": [
+    "Update version source files: manifest.json and update-template.json to strict_min_version 9.0, strict_max_version 9.* (update.json/update-beta.json are generated from template by build.mjs:139)",
+    "Delete patchMergePDFAttachments (target gone in Zotero 9)",
+    "merger.ts uses ChromeUtils.importESModule for mergeItems directly (no Zotero.Items.merge fallback)",
+    "Add ChromeUtils stub to test setup",
+    "Add tests for mergeItems call path and JSON prefill logic"
+  ],
+  "out_of_scope": [
+    "Customizing or extending mergeItems behavior (Zotero 9 features like annotation preservation come for free via direct call)",
+    "Menu migration (M004)",
+    "Version branching or Zotero 8 fallback"
+  ],
+  "acceptance": [
+    "manifest.json and update-template.json have strict_min_version 9.0 AND strict_max_version 9.*; npm run build generates correct update.json/update-beta.json",
+    "patchMergePDFAttachments grep returns 0 matches",
+    "merger.ts calls mergeItems via ChromeUtils.importESModule directly",
+    "No isZotero9OrLater or version.ts in codebase",
+    "npm test passes, tsc --noEmit passes",
+    "MANUAL: Plugin installs and merges work in Zotero 9"
+  ]
+}

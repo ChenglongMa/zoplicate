@@ -1,0 +1,23 @@
+{
+  "id": "M005",
+  "title": "Typed AppState replacing addon.data",
+  "phase": "Architecture - State",
+  "status": "planned",
+  "depends_on": ["M003"],
+  "goal": "Replace untyped addon.data with typed AppState interface and scoped accessor functions. Entry-point files (index.ts, addon.ts) may access addon.data directly; all others use accessors.",
+  "in_scope": [
+    "Define AppState interface with sub-interfaces in src/addon.ts",
+    "Create src/utils/state.ts with typed accessors",
+    "Update all consuming files to use typed accessors",
+    "Add tests for accessor functions"
+  ],
+  "out_of_scope": [
+    "DI container or service locator",
+    "Moving state ownership",
+    "Runtime behavior changes"
+  ],
+  "acceptance": [
+    "Grep addon.data. in src/ returns matches ONLY in addon.ts, state.ts, and index.ts",
+    "npm test passes, tsc --noEmit passes"
+  ]
+}

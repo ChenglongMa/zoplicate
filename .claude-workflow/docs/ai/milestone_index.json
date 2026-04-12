@@ -3,41 +3,118 @@
   "milestones": [
     {
       "id": "M001",
-      "title": "Define the first bounded maintenance milestone",
+      "title": "Workflow bootstrap (superseded)",
       "phase": "Workflow Bootstrap",
+      "status": "accepted",
+      "depends_on": [],
+      "goal": "Superseded by M002-M009 Zotero 9 migration + refactoring roadmap.",
+      "in_scope": ["Replaced by M002-M009"],
+      "out_of_scope": [],
+      "acceptance": ["Replaced by M002-M009"]
+    },
+    {
+      "id": "M002",
+      "title": "Test foundation for pure logic",
+      "phase": "Test Infrastructure",
       "status": "next",
       "depends_on": [],
-      "goal": "Create the first real Claude-managed maintenance slice for Zoplicate without broadening into unrelated refactors.",
-      "in_scope": [
-        "Define the first bounded product task after workflow adoption.",
-        "Identify the exact source, test, and Zotero manual-verification surfaces implicated by that task.",
-        "Document non-goals and acceptance in a milestone spec that Claude can execute without guessing."
-      ],
-      "out_of_scope": [
-        "Shipping product behavior changes",
-        "Multi-milestone planning",
-        "Broad workflow rewrites unrelated to adoption"
-      ],
-      "acceptance": [
-        "The milestone has explicit in-scope and out-of-scope boundaries.",
-        "The milestone names the implicated files or directories and the expected test coverage.",
-        "Any required manual Zotero verification is called out explicitly."
-      ]
+      "goal": "Jest coverage for pure logic with globalThis.Zotero stubs via setupFiles.",
+      "in_scope": ["Zotero global mocks", "DuplicateItems tests", "merger tests", "stats tests", "utils tests"],
+      "out_of_scope": ["Production code changes", "UI/DB/patch testing"],
+      "acceptance": ["npm test passes", ">= 30 tests", "setupFiles-based Zotero stubs"]
+    },
+    {
+      "id": "M003",
+      "title": "Zotero 9-only core: manifest + direct mergeItems",
+      "phase": "Zotero 9 Migration",
+      "status": "planned",
+      "depends_on": ["M002"],
+      "goal": "Zotero 9 only: all version metadata updated, direct mergeItems ESM, dead code removed.",
+      "in_scope": ["Version source files (manifest + template) updated", "direct mergeItems", "delete dead patch", "ChromeUtils test stub"],
+      "out_of_scope": ["Customizing mergeItems behavior", "menu migration", "Zotero 8 fallback"],
+      "acceptance": ["manifest + template have 9.0/9.*; build generates correct update files", "no version branching", "manual Zotero 9 test"]
+    },
+    {
+      "id": "M004",
+      "title": "Zotero 9 MenuManager-only migration",
+      "phase": "Zotero 9 Migration",
+      "status": "planned",
+      "depends_on": ["M003"],
+      "goal": "MenuManager-only: context callbacks, FTL .label, prefixed l10nID, sync onShowing, explicit unregisterMenu.",
+      "in_scope": ["MenuManager-only menus", "delete menu.ts + update ztoolkit.ts", "context-based callbacks (target-specific)", "fix toggleNonDuplicates with optional libraryID", "FTL .label attrs", "visibility cache with invalidation", "unregisterMenu in onShutdown"],
+      "out_of_scope": ["Menu redesign", "Zotero 8 fallback"],
+      "acceptance": ["No ztoolkit.Menu usage", "menu.ts deleted + ztoolkit.ts cleaned", "item callbacks use ctx.items; collection callbacks use ctx.collectionTreeRow", "no active-pane dependency in menu command path", "cache miss → disabled submenu; cache invalidated after mark/unmark", "manual: mark/unmark toggles correctly on re-right-click"]
+    },
+    {
+      "id": "M005",
+      "title": "Typed AppState replacing addon.data",
+      "phase": "Architecture - State",
+      "status": "planned",
+      "depends_on": ["M003"],
+      "goal": "Typed AppState interface + scoped accessors. Entry-points (index.ts, addon.ts) exempt.",
+      "in_scope": ["AppState interface", "state.ts accessors", "migrate all consumers"],
+      "out_of_scope": ["DI container", "behavior changes"],
+      "acceptance": ["addon.data. only in addon.ts/state.ts/index.ts", "tsc + tests pass"]
+    },
+    {
+      "id": "M006",
+      "title": "Lifecycle disposers + patch split + own patchMethod",
+      "phase": "Architecture - Lifecycle",
+      "status": "planned",
+      "depends_on": ["M004", "M005", "M007"],
+      "goal": "DisposerRegistry + patchMethod() (restores originals) + patch split + wire ALL resources.",
+      "in_scope": ["DisposerRegistry (LIFO, async, double-dispose safe)", "patchMethod() + compositeDisposer()", "3 patch files", "all resources return Disposers", "global + window registries with explicit win param", "Scope BulkDuplicates window state per Window; remove singleton this.win", "Remove feature import from ztoolkit.ts (unregisterNonDuplicatesSection)"],
+      "out_of_scope": ["Patch behavior changes"],
+      "acceptance": ["patcher.ts deleted", "patchMethod restores originals (safe skip when externally modified)", "LIFO disposeAll + composite disposer tested", "per-window registrars use win.ZoteroPane not getActiveZoteroPane()", "no ztoolkit.Patch in entire src/", "ztoolkit.ts has no feature imports", ">= 10 lifecycle tests", "manual disable/re-enable test"]
+    },
+    {
+      "id": "M007",
+      "title": "Non-duplicates action/UI separation",
+      "phase": "Architecture - Modules",
+      "status": "planned",
+      "depends_on": ["M005"],
+      "goal": "Extract toggle/action logic from UI registration.",
+      "in_scope": ["nonDuplicateActions.ts", "action tests"],
+      "out_of_scope": ["DB changes", "UI changes"],
+      "acceptance": ["Clean separation", ">= 5 action tests"]
+    },
+    {
+      "id": "M008",
+      "title": "Resolve duplicates circular dependency",
+      "phase": "Architecture - Modules",
+      "status": "planned",
+      "depends_on": ["M006", "M007"],
+      "goal": "Break cycle via button ID constants + factory injection (not just file moves).",
+      "in_scope": ["duplicateButtonIDs.ts constants", "duplicatePaneUI.ts with factory params", "wire in hooks.ts"],
+      "out_of_scope": ["Class logic changes", "features/ directory"],
+      "acceptance": ["No cross-imports duplicates<->bulkDuplicates", "duplicatePaneUI doesn't import BulkDuplicates"]
+    },
+    {
+      "id": "M009",
+      "title": "Feature boundary reorganization",
+      "phase": "Architecture - Modules",
+      "status": "planned",
+      "depends_on": ["M008"],
+      "goal": "Reorganize src/ into feature boundaries. Two-level registration (global + window). Extract onNotify. Split menus. hooks.ts becomes composition root.",
+      "in_scope": ["Move src/modules/ + src/utils/ into features/integrations/app/shared", "two-level registerXxxGlobal() + registerXxxWindow(win)", "extract onNotify handlers into features; notifier.ts receives handlers via params (no feature imports)", "split menus.ts", "shared DuplicateItems/mergeItems"],
+      "out_of_scope": ["Behavior changes", "DI container"],
+      "acceptance": ["src/modules/ and src/utils/ directories do not exist", "two-level feature registration", "hooks.ts is pure composition root with no onNotify logic", "integrations/zotero/notifier.ts does not import feature modules directly", "no cross-feature circular imports", "Public addon.hooks contract compatible with bootstrap.js and preferences.xhtml", "typings/global.d.ts Addon and ZToolkit import paths updated"]
     }
   ],
   "deviation_policy": {
     "allowed_reasons": [
-      "Blocker repair: bug or design flaw in an accepted milestone blocking the current one",
+      "Blocker repair: bug or design flaw in accepted milestone blocking current",
       "Missing infrastructure: gap in tooling, CI, or test fixtures",
-      "External dependency changes: upstream breaking change forcing adapter updates",
-      "Critical safety issues: security vulnerability or data integrity problem"
+      "External dependency changes: upstream breaking change",
+      "Critical safety issues: security vulnerability or data integrity"
     ],
     "requirements": [
       "Scoped as tightly as possible",
-      "Verified with tests before resuming the planned milestone"
+      "Verified with tests before resuming planned milestone"
     ]
   },
   "backlog": [
-    "Replace the bootstrap milestone with the next real maintenance slice before the first unattended run."
+    "Adopt Zotero 9 advanced merge features (PDF hash matching, annotation preservation)",
+    "Increase test coverage for Zotero-dependent integration paths"
   ]
 }

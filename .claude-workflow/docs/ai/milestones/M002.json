@@ -1,0 +1,27 @@
+{
+  "id": "M002",
+  "title": "Test foundation for pure logic",
+  "phase": "Test Infrastructure",
+  "status": "next",
+  "depends_on": [],
+  "goal": "Establish Jest test coverage for pure logic using globalThis.Zotero stubs via setupFiles, before any restructuring.",
+  "in_scope": [
+    "Create tests/__setup__/globals.ts with globalThis.Zotero stub (not moduleNameMapper)",
+    "Tests for DuplicateItems.analyze() master-item selection (all 4 strategies)",
+    "Tests for merger.ts JSON merge field precedence logic",
+    "Export and test getDuplicateStats() from duplicateStats.ts",
+    "Expand utils.test.ts with normalizeString, cleanCreator, cleanDOI, truncateString, unique, unique2D",
+    "Update jest.config.ts with setupFiles entry (no moduleNameMapper needed)"
+  ],
+  "out_of_scope": [
+    "Testing areDuplicates/fetchDuplicates (too coupled to Zotero.Duplicates runtime)",
+    "Changing production code beyond exporting getDuplicateStats",
+    "Testing Zotero UI integration, SQLite, or patch application"
+  ],
+  "acceptance": [
+    "npm test passes with 0 failures",
+    "Combined test count >= 30",
+    "tests/__setup__/globals.ts provides globalThis.Zotero stub via setupFiles",
+    "No production .ts files modified beyond single export"
+  ]
+}
