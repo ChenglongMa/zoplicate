@@ -232,3 +232,4 @@ __marimo__/
 # CLAUDE.md
 .claude/settings.local.json
 .tmp/
+coverage/
