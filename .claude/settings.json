@@ -34,7 +34,8 @@
       "Bash(npm run build *)",
       "Bash(npm run start *)",
       "WebSearch",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(cat *)"
     ],
     "ask": [
       "Bash(git commit *)",
