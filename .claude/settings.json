@@ -33,7 +33,8 @@
       "Bash(npx eslint *)",
       "Bash(npm run build *)",
       "Bash(npm run start *)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(node *)"
     ],
     "ask": [
       "Bash(git commit *)",
