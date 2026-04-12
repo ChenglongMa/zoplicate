@@ -1,6 +1,6 @@
 import { config } from "../../package.json";
 import { showingDuplicateStats } from "../utils/prefs";
-import { toggleNonDuplicates } from "./nonDuplicates";
+import { toggleNonDuplicates } from "./nonDuplicateActions";
 import { NonDuplicatesDB } from "../db/nonDuplicates";
 import { fetchAllDuplicates, fetchDuplicates } from "../utils/duplicates";
 import { menuCache } from "./menuCache";

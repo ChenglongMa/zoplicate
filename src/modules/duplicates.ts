@@ -5,7 +5,7 @@ import { Action, getPref, MasterItem, setPref } from "../utils/prefs";
 import { merge } from "./merger";
 import { activeItemsView, goToDuplicatesPane, isInDuplicatesPane } from "../utils/zotero";
 import { DuplicateItems } from "./duplicateItems";
-import { createNonDuplicateButton, NonDuplicates } from "./nonDuplicates";
+import { createNonDuplicateButton, NonDuplicates } from "./nonDuplicateActions";
 import { BulkDuplicates } from "./bulkDuplicates";
 import { toggleButtonHidden } from "../utils/view";
 import { bringToFront } from "../utils/window";

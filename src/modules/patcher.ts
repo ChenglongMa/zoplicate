@@ -1,4 +1,4 @@
-import { NonDuplicates } from "./nonDuplicates";
+import { NonDuplicates } from "./nonDuplicateActions";
 import { refreshDuplicateStats } from "./duplicateStats";
 import { NonDuplicatesDB } from "../db/nonDuplicates";
 import { DuplicateItems } from "./duplicateItems";

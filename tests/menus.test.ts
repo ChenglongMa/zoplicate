@@ -21,7 +21,7 @@ jest.mock("../src/modules/menuCache", () => ({
 }));
 
 const toggleNonDuplicatesMock = jest.fn<(...args: any[]) => Promise<void>>(async () => undefined);
-jest.mock("../src/modules/nonDuplicates", () => ({
+jest.mock("../src/modules/nonDuplicateActions", () => ({
   toggleNonDuplicates: toggleNonDuplicatesMock,
 }));
 

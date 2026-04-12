@@ -2,7 +2,7 @@
   "id": "M007",
   "title": "Non-duplicates action/UI separation",
   "phase": "Architecture - Modules",
-  "status": "planned",
+  "status": "accepted",
   "depends_on": ["M005"],
   "goal": "Separate toggle/action logic from ItemPaneManager UI registration in the nonDuplicates module.",
   "in_scope": [
