@@ -1,0 +1,25 @@
+{
+  "id": "M007",
+  "title": "Non-duplicates action/UI separation",
+  "phase": "Architecture - Modules",
+  "status": "planned",
+  "depends_on": ["M005"],
+  "goal": "Separate toggle/action logic from ItemPaneManager UI registration in the nonDuplicates module.",
+  "in_scope": [
+    "Extract toggleNonDuplicates, createNonDuplicateButton, NonDuplicates class into nonDuplicateActions.ts",
+    "Keep registerNonDuplicatesSection, unregisterNonDuplicatesSection in nonDuplicates.ts",
+    "Update imports in menus.ts, duplicates.ts, patch files",
+    "Add tests for toggleNonDuplicates with mocked DB"
+  ],
+  "out_of_scope": [
+    "Changing NonDuplicatesDB internals",
+    "Introducing repository interface",
+    "Changing section UI or behavior"
+  ],
+  "acceptance": [
+    "nonDuplicateActions.ts exists with extracted functions/class",
+    "nonDuplicates.ts contains only section registration",
+    "tests/nonDuplicateActions.test.ts >= 5 test cases",
+    "npm test passes, tsc --noEmit passes"
+  ]
+}

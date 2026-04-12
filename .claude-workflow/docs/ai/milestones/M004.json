@@ -1,0 +1,35 @@
+{
+  "id": "M004",
+  "title": "Zotero 9 MenuManager-only migration",
+  "phase": "Zotero 9 Migration",
+  "status": "planned",
+  "depends_on": ["M003"],
+  "goal": "Replace ztoolkit.Menu/LocalMenuRegistrar with Zotero.MenuManager.registerMenu(). Use context objects (ctx.items, ctx.collectionTreeRow), FTL .label attributes, prefixed l10nIDs, three-level visibility (sync/cache/async), unregisterMenu() in onShutdown.",
+  "in_scope": [
+    "Rewrite menus.ts to MenuManager-only (delete ztoolkit.Menu/LocalMenuRegistrar usage)",
+    "Delete src/utils/menu.ts; update src/utils/ztoolkit.ts to remove LocalMenuRegistrar import and Menu field",
+    "Startup-level registration (not per-window)",
+    "Context-based callbacks: item menu uses ctx.items, collection menu uses ctx.collectionTreeRow",
+    "Fix toggleNonDuplicates(): add optional libraryID param; MenuManager callers pass ctx.items[0].libraryID; number[] resolved via Zotero.Items.get()",
+    "FTL .label attributes on menu keys, addon-name key added",
+    "Add insertFTLIfNeeded for addon.ftl in onMainWindowLoad (preserving existing itemSection.ftl)",
+    "Three-level visibility with cache invalidation: sync prereq, cache-based submenu enabled/disabled, child items cached+async; cache cleared after mark/unmark, duplicate refresh, notifier events",
+    "Save registeredIDs, call unregisterMenu() in hooks.ts onShutdown (M006 migrates to DisposerRegistry)"
+  ],
+  "out_of_scope": [
+    "Redesigning menu structure",
+    "Zotero 8 fallback"
+  ],
+  "acceptance": [
+    "menus.ts uses only Zotero.MenuManager.registerMenu()",
+    "src/utils/menu.ts deleted; ztoolkit.ts has no LocalMenuRegistrar/Menu references",
+    "Menu registration at startup level (not per-window)",
+    "Item menu callbacks use ctx.items; collection menu callbacks use ctx.collectionTreeRow?.isDuplicates()",
+    "Context-driven menu commands do not depend on active pane for items/libraryID when items provided",
+    "FTL keys have .label attributes; addon-name key in all locales",
+    "registerMenus() returns IDs; hooks.ts calls unregisterMenu() in onShutdown",
+    "Cache miss shows disabled (not empty) submenu; cache invalidated after mark/unmark",
+    "tsc --noEmit passes, npm test passes",
+    "MANUAL: menus render with correct labels; mark then re-right-click shows unmark; unmark then re-right-click shows mark; cache warm + unrelated items hides submenu; disable/re-enable leaves no duplicate menus"
+  ]
+}
