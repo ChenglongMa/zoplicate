@@ -12,6 +12,9 @@ RESOLUTION="${ZOTERO_REMOTE_RESOLUTION:-1920x1080x24}"
 VNC_PORT="${ZOTERO_REMOTE_VNC_PORT:-5901}"
 ENABLE_VNC="${ZOTERO_REMOTE_VNC:-1}"
 VNC_LOCALHOST="${ZOTERO_REMOTE_VNC_LOCALHOST:-1}"
+ENABLE_NOVNC="${ZOTERO_REMOTE_NOVNC:-1}"
+NOVNC_PORT="${ZOTERO_REMOTE_NOVNC_PORT:-6080}"
+NOVNC_HOST="${ZOTERO_REMOTE_NOVNC_HOST:-127.0.0.1}"
 WM_COMMAND="${ZOTERO_REMOTE_WM:-auto}"
 INSTALL_DIR="${ZOTERO_REMOTE_INSTALL_DIR:-$ROOT_DIR/.scaffold/zotero}"
 DOWNLOAD_URL="${ZOTERO_DOWNLOAD_URL:-https://www.zotero.org/download/client/dl?channel=release&platform=linux-x86_64}"
@@ -19,6 +22,8 @@ DOWNLOAD_URL="${ZOTERO_DOWNLOAD_URL:-https://www.zotero.org/download/client/dl?c
 APT_PACKAGES=(
   xvfb
   x11vnc
+  novnc
+  websockify
   fluxbox
   dbus-x11
   xdotool
@@ -54,6 +59,8 @@ Useful environment variables:
   ZOTERO_REMOTE_RESOLUTION       Xvfb screen, default 1920x1080x24.
   ZOTERO_REMOTE_VNC_PORT         Localhost VNC port, default 5901.
   ZOTERO_REMOTE_VNC              Set to 0 to disable x11vnc.
+  ZOTERO_REMOTE_NOVNC            Set to 0 to disable browser-based noVNC.
+  ZOTERO_REMOTE_NOVNC_PORT       Localhost noVNC HTTP port, default 6080.
   ZOTERO_REMOTE_INSTALL_DIR      Zotero tarball install dir, default .scaffold/zotero.
 USAGE
 }
@@ -296,7 +303,9 @@ start_window_manager() {
 }
 
 start_vnc() {
-  [[ "$ENABLE_VNC" == "1" ]] || return 0
+  if [[ "$ENABLE_VNC" != "1" && "$ENABLE_NOVNC" != "1" ]]; then
+    return 0
+  fi
   command -v x11vnc >/dev/null 2>&1 || {
     warn "x11vnc not found; VNC disabled. Run install-deps or install package x11vnc."
     return 0
@@ -322,8 +331,52 @@ start_vnc() {
   printf '%s\n' "$!" >"$pid_file"
 }
 
+novnc_web_root() {
+  local candidate
+  for candidate in /usr/share/novnc /usr/share/novnc/noVNC "$ROOT_DIR/.scaffold/novnc"; do
+    if [[ -f "$candidate/vnc.html" ]]; then
+      printf '%s' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+start_novnc() {
+  [[ "$ENABLE_NOVNC" == "1" ]] || return 0
+  command -v websockify >/dev/null 2>&1 || {
+    warn "websockify not found; noVNC disabled. Run install-deps or install package novnc."
+    return 0
+  }
+
+  local web_root
+  web_root="$(novnc_web_root || true)"
+  if [[ -z "$web_root" ]]; then
+    warn "noVNC web files not found; noVNC disabled. Run install-deps or install package novnc."
+    return 0
+  fi
+
+  local pid_file="$STATE_DIR/novnc.pid"
+  pid_is_alive "$pid_file" && return 0
+
+  log "Starting noVNC on http://$NOVNC_HOST:$NOVNC_PORT"
+  websockify \
+    --web "$web_root" \
+    "$NOVNC_HOST:$NOVNC_PORT" \
+    "127.0.0.1:$VNC_PORT" \
+    >"$LOG_DIR/novnc.log" 2>&1 &
+  printf '%s\n' "$!" >"$pid_file"
+}
+
 print_connection_info() {
   log "Virtual display: $DISPLAY_NAME"
+  if [[ "$ENABLE_NOVNC" == "1" ]]; then
+    log "noVNC is bound to http://$NOVNC_HOST:$NOVNC_PORT/vnc.html"
+    log "From VS Code Remote-SSH, forward port $NOVNC_PORT and open:"
+    printf '  http://localhost:%s/vnc.html?host=localhost&port=%s&path=websockify&autoconnect=1&resize=scale\n' "$NOVNC_PORT" "$NOVNC_PORT"
+    log "Or tunnel from a local terminal with:"
+    printf '  ssh -L %s:%s:%s <user>@<server>\n' "$NOVNC_PORT" "$NOVNC_HOST" "$NOVNC_PORT"
+  fi
   if [[ "$ENABLE_VNC" == "1" ]]; then
     log "VNC is bound to localhost:$VNC_PORT"
     log "From your local machine, tunnel with:"
@@ -382,7 +435,7 @@ doctor() {
 
   local missing=()
   local cmd
-  for cmd in node npm Xvfb x11vnc fluxbox dbus-run-session xdotool scrot xdpyinfo curl tar xz bzip2; do
+  for cmd in node npm Xvfb x11vnc websockify fluxbox dbus-run-session xdotool scrot xdpyinfo curl tar xz bzip2; do
     if command -v "$cmd" >/dev/null 2>&1; then
       printf 'ok      %s -> %s\n' "$cmd" "$(command -v "$cmd")"
     else
@@ -410,6 +463,16 @@ doctor() {
   printf 'info    dataDir -> %s\n' "$(default_data_dir)"
   printf 'info    display -> %s (%s)\n' "$DISPLAY_NAME" "$RESOLUTION"
   printf 'info    vnc     -> localhost:%s\n' "$VNC_PORT"
+  printf 'info    noVNC   -> http://localhost:%s/vnc.html\n' "$NOVNC_PORT"
+
+  if [[ "$ENABLE_NOVNC" == "1" ]]; then
+    if novnc_web_root >/dev/null; then
+      printf 'ok      noVNC web root -> %s\n' "$(novnc_web_root)"
+    else
+      printf 'missing noVNC web root; install package novnc\n'
+      missing+=("novnc")
+    fi
+  fi
 
   if ((${#missing[@]} > 0)); then
     printf '\nInstall Ubuntu GUI/debug dependencies with:\n'
@@ -448,6 +511,7 @@ start() {
   export DISPLAY="$DISPLAY_NAME"
   start_window_manager
   start_vnc
+  start_novnc
   print_connection_info
 
   log "Real Zotero binary: $real_bin"
@@ -467,6 +531,7 @@ start() {
 }
 
 stop() {
+  kill_pid_file "$STATE_DIR/novnc.pid"
   kill_pid_file "$STATE_DIR/zotero.pid"
   kill_pid_file "$STATE_DIR/x11vnc.pid"
   kill_pid_file "$STATE_DIR/wm.pid"

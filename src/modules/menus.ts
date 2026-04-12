@@ -1,150 +1,186 @@
-import { getString } from "../utils/locale";
 import { config } from "../../package.json";
 import { showingDuplicateStats } from "../utils/prefs";
-import { isInDuplicatesPane } from "../utils/zotero";
-import MenuPopup = XUL.MenuPopup;
 import { toggleNonDuplicates } from "./nonDuplicates";
 import { NonDuplicatesDB } from "../db/nonDuplicates";
 import { fetchAllDuplicates, fetchDuplicates } from "../utils/duplicates";
-import type { LocalMenuRegistrar } from "../utils/menu";
+import { menuCache } from "./menuCache";
+import { getString } from "../utils/locale";
 
-function registerMenus(win: Window) {
-  const menuManager = new ztoolkit.Menu();
-  registerDuplicateCollectionMenu(menuManager, win);
-  registerItemsViewMenu(menuManager, win);
+/**
+ * Register all menus via Zotero.MenuManager (Zotero 9 API).
+ * Returns an array of registered menu IDs for later cleanup.
+ */
+export function registerMenus(): string[] {
+  const ids: string[] = [];
+
+  const itemMenuID = registerItemMenu();
+  if (itemMenuID) {
+    ids.push(itemMenuID);
+  }
+
+  const collectionMenuID = registerCollectionMenu();
+  if (collectionMenuID) {
+    ids.push(collectionMenuID);
+  }
+
+  return ids;
 }
 
-function registerItemsViewMenu(menuManager: LocalMenuRegistrar, win: Window) {
-  const itemMenu = win.document.querySelector("#zotero-itemmenu") as MenuPopup | null;
-  if (!itemMenu) {
+/**
+ * Unregister all menus by their IDs.
+ */
+export function unregisterMenus(ids: string[]): void {
+  for (const id of ids) {
+    Zotero.MenuManager.unregisterMenu(id);
+  }
+}
+
+/**
+ * Warm the menu visibility cache for a set of item IDs.
+ * Queries NonDuplicatesDB and fetchDuplicates to populate the cache.
+ */
+export async function warmCache(itemIDs: number[]): Promise<void> {
+  if (itemIDs.length < 2) {
     return;
   }
 
-  const nonDuplicateMenuTitle = getString("menuitem-not-duplicate");
-  const isDuplicateMenuTitle = getString("menuitem-is-duplicate");
-  let showingIsDuplicate = false;
-  let showingNotDuplicate = false;
-  menuManager.register(itemMenu, {
-    tag: "menu",
-    label: config.addonName,
-    id: `${config.addonRef}-itemsview-menu`,
-    icon: `chrome://zotero/skin/16/universal/duplicate.svg`,
-    classList: ["zotero-menuitem-show-duplicates"],
-    children: [
+  const key = menuCache.buildKey(itemIDs);
+  const isNonDuplicate = await NonDuplicatesDB.instance.existsNonDuplicates(itemIDs);
+
+  const { duplicatesObj } = await fetchDuplicates();
+  const duplicateSet = new Set(duplicatesObj.getSetItemsByItemID(itemIDs[0]));
+  const isDuplicateSet = itemIDs.every((id) => duplicateSet.has(id));
+
+  menuCache.set(key, { isNonDuplicate, isDuplicateSet });
+}
+
+// ---------------------------------------------------------------------------
+// Item context menu (submenu with mark/unmark children)
+// ---------------------------------------------------------------------------
+
+function registerItemMenu(): string | false {
+  return Zotero.MenuManager.registerMenu({
+    pluginID: config.addonID,
+    target: "main/library/item",
+    menus: [
       {
-        tag: "menuitem",
-        icon: `chrome://zotero/skin/16/universal/duplicate.svg`,
-        classList: ["zotero-menuitem-show-duplicates"],
-        label: isDuplicateMenuTitle,
-        id: `${config.addonRef}-menuitem-is-duplicate`,
-        commandListener: async (ev) => {
-          await toggleNonDuplicates("unmark");
+        menuType: "submenu",
+        l10nID: `${config.addonRef}-menu-submenu-title`,
+        icon: "chrome://zotero/skin/16/universal/duplicate.svg",
+        onShowing(event: Event, context: Zotero.MenuContext) {
+          const items = context.items;
+          if (!items || items.length < 2) {
+            context.setVisible(false);
+            return;
+          }
+
+          const itemIDs = items.map((item) => item.id);
+          const key = menuCache.buildKey(itemIDs);
+          const cached = menuCache.get(key);
+
+          if (!cached) {
+            // Cache miss: show submenu but disable it; fire async warm
+            context.setVisible(true);
+            context.setEnabled(false);
+            // Fire-and-forget cache warming for next open
+            warmCache(itemIDs);
+            return;
+          }
+
+          // Cache hit: show submenu if relevant
+          const show = cached.isNonDuplicate || cached.isDuplicateSet;
+          context.setVisible(show);
+          context.setEnabled(show);
         },
-        isHidden: (elem, ev) => {
-          return !showingIsDuplicate;
-        },
-      },
-      {
-        tag: "menuitem",
-        classList: ["zotero-menuitem-show-duplicates"],
-        label: nonDuplicateMenuTitle,
-        id: `${config.addonRef}-menuitem-not-duplicate`,
-        icon: `chrome://${config.addonRef}/content/icons/menu/non-duplicate.svg`,
-        commandListener: async (ev) => {
-          await toggleNonDuplicates("mark");
-        },
-        isHidden: (elem, ev) => {
-          return !showingNotDuplicate;
-        },
+        menus: [
+          {
+            menuType: "menuitem",
+            l10nID: `${config.addonRef}-menu-unmark-non-duplicate`,
+            icon: "chrome://zotero/skin/16/universal/duplicate.svg",
+            onShowing(event: Event, context: Zotero.MenuContext) {
+              const items = context.items;
+              if (!items || items.length < 2) {
+                context.setVisible(false);
+                return;
+              }
+              const key = menuCache.buildKey(items.map((i) => i.id));
+              const cached = menuCache.get(key);
+              context.setVisible(cached?.isNonDuplicate === true);
+            },
+            onCommand(event: Event, context: Zotero.MenuContext) {
+              const items = context.items;
+              if (!items || items.length < 2) return;
+              toggleNonDuplicates("unmark", items, items[0].libraryID);
+            },
+          },
+          {
+            menuType: "menuitem",
+            l10nID: `${config.addonRef}-menu-mark-non-duplicate`,
+            icon: `chrome://${config.addonRef}/content/icons/menu/non-duplicate.svg`,
+            onShowing(event: Event, context: Zotero.MenuContext) {
+              const items = context.items;
+              if (!items || items.length < 2) {
+                context.setVisible(false);
+                return;
+              }
+              const key = menuCache.buildKey(items.map((i) => i.id));
+              const cached = menuCache.get(key);
+              // Show mark option only when items are in the same duplicate set
+              // and are NOT already marked as non-duplicates
+              context.setVisible(cached?.isDuplicateSet === true && cached?.isNonDuplicate !== true);
+            },
+            onCommand(event: Event, context: Zotero.MenuContext) {
+              const items = context.items;
+              if (!items || items.length < 2) return;
+              toggleNonDuplicates("mark", items, items[0].libraryID);
+            },
+          },
+        ],
       },
     ],
   });
-
-  function setVisibilityListeners(win: Window) {
-    const menu = win.document.getElementById("zotero-itemmenu") as HTMLElement;
-    menu.addEventListener("popupshowing", (ev) => {
-      const target = ev.target as MenuPopup;
-      if (target.id !== "zotero-itemmenu") {
-        return;
-      }
-      const selectedItems = Zotero.getActiveZoteroPane().getSelectedItems();
-      const mainMenu = win.document.getElementById(`${config.addonRef}-itemsview-menu`) as HTMLElement;
-      mainMenu.setAttribute("hidden", "true");
-      const showing = selectedItems.length > 1;
-      if (!showing) {
-        return;
-      }
-      const isDuplicateMenuItem = win.document.getElementById(
-        `${config.addonRef}-menuitem-is-duplicate`,
-      ) as HTMLElement;
-      const notDuplicateMenuItem = win.document.getElementById(
-        `${config.addonRef}-menuitem-not-duplicate`,
-      ) as HTMLElement;
-      const itemIDs = selectedItems.map((item) => item.id);
-
-      setTimeout(async () => {
-        showingIsDuplicate = await NonDuplicatesDB.instance.existsNonDuplicates(itemIDs);
-        if (showingIsDuplicate) {
-          mainMenu.removeAttribute("hidden");
-          isDuplicateMenuItem.removeAttribute("hidden");
-          notDuplicateMenuItem.setAttribute("hidden", "true");
-        } else {
-          isDuplicateMenuItem.setAttribute("hidden", "true");
-
-          const { duplicatesObj } = await fetchDuplicates();
-          const duplicateItems = new Set(duplicatesObj.getSetItemsByItemID(itemIDs[0]));
-
-          showingNotDuplicate = itemIDs.every((itemID) => duplicateItems.has(itemID));
-          if (showingNotDuplicate) {
-            mainMenu.removeAttribute("hidden");
-            notDuplicateMenuItem.removeAttribute("hidden");
-          } else {
-            notDuplicateMenuItem.setAttribute("hidden", "true");
-            mainMenu.setAttribute("hidden", "true");
-          }
-        }
-      }, 0);
-    });
-  }
-
-  setVisibilityListeners(win);
 }
 
-function registerDuplicateCollectionMenu(menuManager: LocalMenuRegistrar, win: Window) {
-  const collectionMenu = win.document.querySelector("#zotero-collectionmenu") as MenuPopup | null;
-  if (!collectionMenu) {
-    return;
-  }
+// ---------------------------------------------------------------------------
+// Collection context menu (refresh duplicates)
+// ---------------------------------------------------------------------------
 
-  const menuTitle = getString("menuitem-refresh-duplicates");
-  const menuIcon = `chrome://zotero/skin/16/universal/sync.svg`;
-  menuManager.register(collectionMenu, {
-    tag: "menuitem",
-    classList: ["zotero-menuitem-sync"],
-    id: `${config.addonRef}-menuitem-refresh-duplicate-stats`,
-    label: menuTitle,
-    commandListener: (ev) => {
-      fetchAllDuplicates(true).then((r) => {
-        new ztoolkit.ProgressWindow(menuTitle, {
-          closeOnClick: true,
-          closeTime: 2000,
-        })
-          .createLine({
-            text: getString("refresh-duplicates-done"),
-            type: "default",
-            progress: 100,
-          })
-          .show();
-      });
-    },
-    icon: menuIcon,
-    isHidden: (elem, ev) => {
-      const showStats = showingDuplicateStats();
-      return !(showStats && isInDuplicatesPane());
-    },
+function registerCollectionMenu(): string | false {
+  return Zotero.MenuManager.registerMenu({
+    pluginID: config.addonID,
+    target: "main/library/collection",
+    menus: [
+      {
+        menuType: "menuitem",
+        l10nID: `${config.addonRef}-menu-refresh-duplicates`,
+        icon: "chrome://zotero/skin/16/universal/sync.svg",
+        onShowing(event: Event, context: Zotero.MenuContext) {
+          const showStats = showingDuplicateStats();
+          const row = context.collectionTreeRow as { isDuplicates?: () => boolean } | undefined;
+          const inDuplicates = row?.isDuplicates?.() ?? false;
+          context.setVisible(showStats && inDuplicates);
+        },
+        onCommand(event: Event, _context: Zotero.MenuContext) {
+          fetchAllDuplicates(true).then(() => {
+            new ztoolkit.ProgressWindow(getString("menuitem-refresh-duplicates"), {
+              closeOnClick: true,
+              closeTime: 2000,
+            })
+              .createLine({
+                text: getString("refresh-duplicates-done"),
+                type: "default",
+                progress: 100,
+              })
+              .show();
+          });
+        },
+      },
+    ],
   });
 }
 
 export default {
   registerMenus,
+  unregisterMenus,
+  warmCache,
 };

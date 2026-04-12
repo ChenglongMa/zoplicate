@@ -4,6 +4,7 @@ import type { TagElementProps } from "zotero-plugin-toolkit";
 import { getString } from "../utils/locale";
 import { NonDuplicatesDB } from "../db/nonDuplicates";
 import { areDuplicates, fetchDuplicates } from "../utils/duplicates";
+import { menuCache } from "./menuCache";
 
 export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
   unregisterNonDuplicatesSection();
@@ -192,15 +193,17 @@ export function unregisterNonDuplicatesSection() {
   }
 }
 
-export async function toggleNonDuplicates(action: "mark" | "unmark", items?: number[] | Zotero.Item[]) {
+export async function toggleNonDuplicates(action: "mark" | "unmark", items?: number[] | Zotero.Item[], libraryID?: number) {
   const selectedItems = items && items.length ? items : Zotero.getActiveZoteroPane().getSelectedItems();
   const itemIDs = selectedItems.map((item) => (typeof item === "number" ? item : item.id));
   if (action === "mark") {
-    await NonDuplicatesDB.instance.insertNonDuplicates(itemIDs, Zotero.getActiveZoteroPane().getSelectedLibraryID());
+    const libID = libraryID ?? Zotero.getActiveZoteroPane().getSelectedLibraryID();
+    await NonDuplicatesDB.instance.insertNonDuplicates(itemIDs, libID);
   } else if (action === "unmark") {
     await NonDuplicatesDB.instance.deleteNonDuplicates(itemIDs);
   }
   await fetchDuplicates({ refresh: true });
+  menuCache.invalidateAll();
   if (isInDuplicatesPane()) {
     refreshItemTree();
   }

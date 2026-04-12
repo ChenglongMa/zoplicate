@@ -70,6 +70,16 @@ refresh-duplicates-done = 重复条目已刷新
 menuitem-not-duplicate = 标记为非重复条目
 menuitem-is-duplicate = 标记为重复条目
 
+## MenuManager FTL keys (require .label attribute)
+menu-submenu-title =
+    .label = Zoplicate
+menu-mark-non-duplicate =
+    .label = 标记为非重复条目
+menu-unmark-non-duplicate =
+    .label = 标记为重复条目
+menu-refresh-duplicates =
+    .label = 刷新
+
 # Add non-duplicate
 add-not-duplicates-alert-error-duplicates = 所选条目没有被识别为重复条目。
 add-not-duplicates-alert-error-exist = 所选条目已存在。

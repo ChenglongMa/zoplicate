@@ -6,7 +6,7 @@ import { whenItemsDeleted, registerNotifier } from "./modules/notifier";
 import { registerStyleSheets } from "./utils/window";
 import { BulkDuplicates } from "./modules/bulkDuplicates";
 import { Duplicates, registerButtonsInDuplicatePane } from "./modules/duplicates";
-import menus from "./modules/menus";
+import { registerMenus, unregisterMenus } from "./modules/menus";
 // import "./modules/zduplicates.js";
 import { registerNonDuplicatesSection, unregisterNonDuplicatesSection } from "./modules/nonDuplicates";
 import {
@@ -19,6 +19,7 @@ import { registerDuplicateStats } from "./modules/duplicateStats";
 import { waitUntilAsync } from "./utils/wait";
 import { NonDuplicatesDB } from "./db/nonDuplicates";
 import { fetchDuplicates } from "./utils/duplicates";
+import { menuCache } from "./modules/menuCache";
 
 let mainWindowLoaded = false;
 const notifyQueue: { event: string; type: string; ids: number[] | string[]; extraData: { [key: string]: any } }[] = [];
@@ -41,12 +42,17 @@ async function onStartup() {
   await Promise.all(
     Zotero.getMainWindows().map((win) => onMainWindowLoad(win)),
   );
+
+  // Register menus at startup level (MenuManager handles multi-window internally).
+  // FTL is loaded in onMainWindowLoad before this point.
+  addon.data.menuRegisteredIDs = registerMenus();
 }
 
 async function onMainWindowLoad(win: Window): Promise<void> {
   // await waitUntilAsync(() => document.readyState === "complete");
   ztoolkit.log("addon onMainWindowLoad");
   win.MozXULElement.insertFTLIfNeeded(`${config.addonRef}-itemSection.ftl`);
+  win.MozXULElement.insertFTLIfNeeded(`${config.addonRef}-addon.ftl`);
   registerStyleSheets(win);
 
   // register duplicate UI elements
@@ -56,8 +62,6 @@ async function onMainWindowLoad(win: Window): Promise<void> {
   const nonDuplicatesDB = NonDuplicatesDB.instance;
   await nonDuplicatesDB.init();
   registerNonDuplicatesSection(nonDuplicatesDB);
-
-  menus.registerMenus(win);
 
   if (addon.data.env === "development") {
     await registerDevColumn();
@@ -83,6 +87,7 @@ async function onMainWindowUnload(win: Window): Promise<void> {
 
 async function onShutdown() {
   debug("addon onShutdown");
+  unregisterMenus(addon.data.menuRegisteredIDs);
   ztoolkit.unregisterAll();
   addon.data.dialogs.dialog?.window?.close();
   await NonDuplicatesDB.instance.close();
@@ -122,6 +127,11 @@ async function onNotify(event: string, type: string, ids: number[] | string[], e
 
   // You can add your code to the corresponding `notify type`
   ztoolkit.log("notify", event, type, ids, extraData);
+
+  // Invalidate menu visibility cache on item changes that may affect duplicate status
+  if (type == "item" || type == "trash") {
+    menuCache.invalidateAll();
+  }
 
   const isDeleted = type == "item" && event == "delete" && ids.length > 0;
 
