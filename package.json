@@ -12,6 +12,13 @@
   "main": "src/index.ts",
   "scripts": {
     "start": "zotero-plugin serve",
+    "zotero:debug": "bash scripts/zotero-remote-debug.sh start",
+    "zotero:doctor": "bash scripts/zotero-remote-debug.sh doctor",
+    "zotero:install": "bash scripts/zotero-remote-debug.sh install-zotero",
+    "zotero:deps": "bash scripts/zotero-remote-debug.sh install-deps",
+    "zotero:stop": "bash scripts/zotero-remote-debug.sh stop",
+    "zotero:logs": "bash scripts/zotero-remote-debug.sh logs",
+    "zotero:screenshot": "bash scripts/zotero-remote-debug.sh screenshot",
     "build": "tsc --noEmit && zotero-plugin build",
     "stop-old": "node scripts/stop.mjs",
     "lint": "prettier --write . && eslint . --ext .ts --fix",

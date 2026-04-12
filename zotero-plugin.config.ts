@@ -13,7 +13,10 @@ export default defineConfig({
   server: {
     // asProxy: true,
     devtools: true,
-    startArgs: [],
+    startArgs: ["-ZoteroDebugText"],
+    prefs: {
+      "extensions.zotero.debug.log": true,
+    },
   },
 
   build: {
