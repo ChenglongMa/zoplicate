@@ -2,7 +2,7 @@
   "id": "M002",
   "title": "Test foundation for pure logic",
   "phase": "Test Infrastructure",
-  "status": "next",
+  "status": "accepted",
   "depends_on": [],
   "goal": "Establish Jest test coverage for pure logic using globalThis.Zotero stubs via setupFiles, before any restructuring.",
   "in_scope": [
