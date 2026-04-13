@@ -5,6 +5,11 @@ import { getString } from "../utils/locale";
 import { NonDuplicatesDB } from "../db/nonDuplicates";
 import { fetchDuplicates } from "../utils/duplicates";
 import { menuCache } from "./menuCache";
+import {
+  NON_DUPLICATE_BUTTON_ID,
+  NON_DUPLICATE_INNER_BUTTON_ID,
+  NON_DUPLICATE_EXTERNAL_BUTTON_ID,
+} from "./duplicateButtonIDs";
 
 export async function toggleNonDuplicates(action: "mark" | "unmark", items?: number[] | Zotero.Item[], libraryID?: number) {
   const selectedItems = items && items.length ? items : Zotero.getActiveZoteroPane().getSelectedItems();
@@ -56,9 +61,9 @@ export class NonDuplicates {
   private static _instance: NonDuplicates;
 
   public allNonDuplicates: Set<string> = new Set();
-  public static readonly nonDuplicateButtonID = "non-duplicates-button";
-  public static readonly innerButtonID = this.nonDuplicateButtonID + "-inner";
-  public static readonly externalButtonID = this.nonDuplicateButtonID + "-external";
+  public static readonly nonDuplicateButtonID = NON_DUPLICATE_BUTTON_ID;
+  public static readonly innerButtonID = NON_DUPLICATE_INNER_BUTTON_ID;
+  public static readonly externalButtonID = NON_DUPLICATE_EXTERNAL_BUTTON_ID;
 
   private constructor() {}
 

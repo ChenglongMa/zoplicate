@@ -4,7 +4,9 @@ import { registerPrefs, registerPrefsScripts } from "./modules/preferenceScript"
 import { whenItemsDeleted, registerNotifier } from "./modules/notifier";
 import { registerStyleSheets } from "./utils/window";
 import { BulkDuplicates } from "./modules/bulkDuplicates";
-import { Duplicates, registerButtonsInDuplicatePane } from "./modules/duplicates";
+import { Duplicates } from "./modules/duplicates";
+import { registerButtonsInDuplicatePane } from "./modules/duplicatePaneUI";
+import { createNonDuplicateButton } from "./modules/nonDuplicateActions";
 import { registerMenus, unregisterMenus } from "./modules/menus";
 import { registerNonDuplicatesSection, unregisterNonDuplicatesSection } from "./modules/nonDuplicates";
 import {
@@ -78,7 +80,11 @@ async function onMainWindowLoad(win: Window): Promise<void> {
   winRegistry.add(statsDisposer);
 
   // DOM buttons cleaned by window destruction -- no disposer needed
-  await registerButtonsInDuplicatePane(win);
+  await registerButtonsInDuplicatePane(
+    win,
+    (w, id) => BulkDuplicates.instance.createBulkMergeButton(w, id),
+    (id, showing) => createNonDuplicateButton(id, showing),
+  );
 
   const bulkDisposer = BulkDuplicates.instance.registerUIElements(win);
   winRegistry.add(bulkDisposer);

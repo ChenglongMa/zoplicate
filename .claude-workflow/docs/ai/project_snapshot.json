@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
-  "latest_accepted_milestone": "M007",
-  "current_target_milestone": "M008",
+  "latest_accepted_milestone": "M008",
+  "current_target_milestone": "M009",
   "current_status": "idle",
-  "last_updated_utc": "2026-04-12T14:00:00Z",
+  "last_updated_utc": "2026-04-13T04:30:00Z",
   "open_risks_summary": [
     "Zotero UI/import flows cannot be fully verified with Jest alone.",
     "FTL .label attribute rendering requires manual Zotero 9 runtime verification.",
@@ -19,6 +19,7 @@
     "AppState.config uses inline type rather than typeof config from package.json — must stay in sync manually.",
     "Zotero.Plugins.removeObserver was removed entirely from notifier.ts (lifecycle owned by DisposerRegistry in hooks.ts).",
     "BulkDuplicates.isRunning setter still uses getActiveZoteroPane() for getSelectedLibraryID outside registerUIElements closure scope.",
-    "getMenuRegisteredIDs/setMenuRegisteredIDs in state.ts may be dead code after M006 menu disposer wiring — cleanup deferred."
+    "getMenuRegisteredIDs/setMenuRegisteredIDs in state.ts may be dead code after M006 menu disposer wiring — cleanup deferred.",
+    "Factory type signatures in hooks.ts must stay in sync with createBulkMergeButton and createNonDuplicateButton signatures."
   ]
 }

@@ -3,58 +3,12 @@ import { getString } from "../utils/locale";
 import type { DialogHelper, TagElementProps } from "zotero-plugin-toolkit";
 import { Action, getPref, MasterItem, setPref } from "../utils/prefs";
 import { merge } from "./merger";
-import { activeItemsView, goToDuplicatesPane, isInDuplicatesPane } from "../utils/zotero";
+import { goToDuplicatesPane } from "../utils/zotero";
 import { DuplicateItems } from "./duplicateItems";
-import { createNonDuplicateButton, NonDuplicates } from "./nonDuplicateActions";
-import { BulkDuplicates } from "./bulkDuplicates";
-import { toggleButtonHidden } from "../utils/view";
 import { bringToFront } from "../utils/window";
 import { showHintWithLink } from "../utils/utils";
 import { waitUntilAsync } from "../utils/wait";
-import { areDuplicates } from "../utils/duplicates";
 import { getDialogs, setProcessing } from "../utils/state";
-
-function addButtonsInDuplicatePanes(innerButton: boolean, siblingElement: Element) {
-  const mergeButtonID = innerButton ? BulkDuplicates.innerButtonID : BulkDuplicates.externalButtonID;
-  const nonDuplicateButtonID = innerButton ? NonDuplicates.innerButtonID : NonDuplicates.externalButtonID;
-  ztoolkit.UI.insertElementBefore(
-    {
-      tag: "div",
-      namespace: "html",
-      classList: ["duplicate-custom-head"],
-      children: [
-        BulkDuplicates.instance.createBulkMergeButton(siblingElement.ownerDocument.defaultView!, mergeButtonID),
-        createNonDuplicateButton(nonDuplicateButtonID),
-      ],
-    },
-    siblingElement,
-  );
-}
-
-export async function registerButtonsInDuplicatePane(win: Window) {
-  // const duplicatePane = win.document.getElementById("zotero-duplicates-merge-pane");
-  // 1. when selecting items in duplicatePane
-  const mergeButton = win.document.getElementById("zotero-duplicates-merge-button");
-  if (mergeButton) {
-    const groupBox = mergeButton.parentElement as Element;
-    addButtonsInDuplicatePanes(true, groupBox);
-  }
-  // 2. when not selecting items, i.e., in itemMessagePane
-  const customHead = win.document.querySelector("item-message-pane .custom-head");
-  if (customHead) {
-    addButtonsInDuplicatePanes(false, customHead);
-  }
-
-  await updateDuplicateButtonsVisibilities(win);
-}
-
-export async function updateDuplicateButtonsVisibilities(win: Window) {
-  const inDuplicatePane = isInDuplicatesPane();
-  const showBulkMergeButton = inDuplicatePane && (activeItemsView()?.rowCount ?? 0) > 0;
-  const showNonDuplicateButton = inDuplicatePane && (await areDuplicates());
-  toggleButtonHidden(win, !showBulkMergeButton, BulkDuplicates.innerButtonID, BulkDuplicates.externalButtonID);
-  toggleButtonHidden(win, !showNonDuplicateButton, NonDuplicates.innerButtonID, NonDuplicates.externalButtonID);
-}
 
 export class Duplicates {
   private static _instance: Duplicates;
