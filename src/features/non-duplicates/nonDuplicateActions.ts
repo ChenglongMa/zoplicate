@@ -1,15 +1,15 @@
-import { config } from "../../package.json";
-import { isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
+import { config } from "../../../package.json";
+import { isInDuplicatesPane, refreshItemTree } from "../../shared/zotero";
 import type { TagElementProps } from "zotero-plugin-toolkit";
-import { getString } from "../utils/locale";
-import { NonDuplicatesDB } from "../db/nonDuplicates";
-import { fetchDuplicates } from "../utils/duplicates";
-import { menuCache } from "./menuCache";
+import { getString } from "../../shared/locale";
+import { NonDuplicatesDB } from "../../db/nonDuplicates";
+import { fetchDuplicates } from "../../shared/duplicateQueries";
+import { menuCache } from "../../integrations/zotero/menuCache";
 import {
   NON_DUPLICATE_BUTTON_ID,
   NON_DUPLICATE_INNER_BUTTON_ID,
   NON_DUPLICATE_EXTERNAL_BUTTON_ID,
-} from "./duplicateButtonIDs";
+} from "../../shared/duplicates/duplicateButtonIDs";
 
 export async function toggleNonDuplicates(action: "mark" | "unmark", items?: number[] | Zotero.Item[], libraryID?: number) {
   const selectedItems = items && items.length ? items : Zotero.getActiveZoteroPane().getSelectedItems();

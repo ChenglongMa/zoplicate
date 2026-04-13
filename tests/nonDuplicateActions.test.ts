@@ -7,7 +7,7 @@ import { describe, expect, test, beforeEach, jest } from "@jest/globals";
 // ---------------------------------------------------------------------------
 
 const invalidateAllMock = jest.fn();
-jest.mock("../src/modules/menuCache", () => ({
+jest.mock("../src/integrations/zotero/menuCache", () => ({
   menuCache: {
     invalidateAll: invalidateAllMock,
     buildKey: jest.fn((ids: number[]) => [...ids].sort((a, b) => a - b).join("-")),
@@ -33,20 +33,20 @@ const fetchDuplicatesMock = jest.fn<(...args: any[]) => Promise<any>>(async () =
   duplicatesObj: { getSetItemsByItemID: jest.fn(() => []) },
   duplicateItems: [],
 }));
-jest.mock("../src/utils/duplicates", () => ({
+jest.mock("../src/shared/duplicateQueries", () => ({
   fetchDuplicates: fetchDuplicatesMock,
   areDuplicates: jest.fn(async () => false),
 }));
 
 const refreshItemTreeMock = jest.fn();
 const isInDuplicatesPaneMock = jest.fn(() => false);
-jest.mock("../src/utils/zotero", () => ({
+jest.mock("../src/shared/zotero", () => ({
   isInDuplicatesPane: isInDuplicatesPaneMock,
   refreshItemTree: refreshItemTreeMock,
   debug: jest.fn(),
 }));
 
-jest.mock("../src/utils/locale", () => ({
+jest.mock("../src/shared/locale", () => ({
   getString: jest.fn((key: string) => key),
   initLocale: jest.fn(),
 }));
@@ -78,7 +78,7 @@ _Zotero.ItemTreeManager = {
 // Import after mocks
 // ---------------------------------------------------------------------------
 
-import { toggleNonDuplicates, createNonDuplicateButton, NonDuplicates } from "../src/modules/nonDuplicateActions";
+import { toggleNonDuplicates, createNonDuplicateButton, NonDuplicates } from "../src/features/non-duplicates/nonDuplicateActions";
 
 // ---------------------------------------------------------------------------
 // Tests - toggleNonDuplicates (relocated from nonDuplicates.test.ts)

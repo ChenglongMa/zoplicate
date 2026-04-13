@@ -1,14 +1,14 @@
-import { config } from "../../package.json";
-import { getString } from "../utils/locale";
+import { config } from "../../../package.json";
+import { getString } from "../../shared/locale";
 import type { DialogHelper, TagElementProps } from "zotero-plugin-toolkit";
-import { Action, getPref, MasterItem, setPref } from "../utils/prefs";
-import { merge } from "./merger";
-import { goToDuplicatesPane } from "../utils/zotero";
-import { DuplicateItems } from "./duplicateItems";
-import { bringToFront } from "../utils/window";
-import { showHintWithLink } from "../utils/utils";
-import { waitUntilAsync } from "../utils/wait";
-import { getDialogs, setProcessing } from "../utils/state";
+import { Action, getPref, MasterItem, setPref } from "../../shared/prefs";
+import { merge } from "../../shared/duplicates/merger";
+import { goToDuplicatesPane } from "../../shared/zotero";
+import { DuplicateItems } from "../../shared/duplicates/duplicateItems";
+import { bringToFront } from "../../shared/window";
+import { showHintWithLink } from "../../shared/utils";
+import { waitUntilAsync } from "../../shared/wait";
+import { getDialogs, setProcessing } from "../../app/state";
 
 export class Duplicates {
   private static _instance: Duplicates;

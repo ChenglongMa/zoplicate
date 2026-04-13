@@ -2,7 +2,7 @@
   "id": "M009",
   "title": "Feature boundary reorganization",
   "phase": "Architecture - Modules",
-  "status": "planned",
+  "status": "accepted",
   "depends_on": ["M008"],
   "goal": "Reorganize src/ into feature-oriented boundaries. Two-level registration: registerXxxGlobal() + registerXxxWindow(win). hooks.ts becomes composition root. onNotify logic extracted. menus split into thin wrapper + feature menus.",
   "in_scope": [

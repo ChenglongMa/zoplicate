@@ -1,9 +1,9 @@
-import { config } from "../../package.json";
-import { debug } from "../utils/zotero";
-import { getString } from "../utils/locale";
-import { NonDuplicatesDB } from "../db/nonDuplicates";
-import { areDuplicates } from "../utils/duplicates";
-import { getNonDuplicateSectionID, setNonDuplicateSectionID } from "../utils/state";
+import { config } from "../../../package.json";
+import { debug } from "../../shared/zotero";
+import { getString } from "../../shared/locale";
+import { NonDuplicatesDB } from "../../db/nonDuplicates";
+import { areDuplicates } from "../../shared/duplicateQueries";
+import { getNonDuplicateSectionID, setNonDuplicateSectionID } from "../../app/state";
 import { toggleNonDuplicates } from "./nonDuplicateActions";
 
 export function registerNonDuplicatesSection(db: NonDuplicatesDB) {

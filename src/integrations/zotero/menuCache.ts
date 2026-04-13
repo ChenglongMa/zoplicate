@@ -4,6 +4,9 @@
  * keyed by sorted item IDs.
  */
 
+import { NonDuplicatesDB } from "../../db/nonDuplicates";
+import { fetchDuplicates } from "../../shared/duplicateQueries";
+
 export interface MenuCacheEntry {
   isNonDuplicate: boolean;
   isDuplicateSet: boolean;
@@ -38,3 +41,22 @@ class MenuCache {
 }
 
 export const menuCache = new MenuCache();
+
+/**
+ * Warm the menu visibility cache for a set of item IDs.
+ * Queries NonDuplicatesDB and fetchDuplicates to populate the cache.
+ */
+export async function warmCache(itemIDs: number[]): Promise<void> {
+  if (itemIDs.length < 2) {
+    return;
+  }
+
+  const key = menuCache.buildKey(itemIDs);
+  const isNonDuplicate = await NonDuplicatesDB.instance.existsNonDuplicates(itemIDs);
+
+  const { duplicatesObj } = await fetchDuplicates();
+  const duplicateSet = new Set(duplicatesObj.getSetItemsByItemID(itemIDs[0]));
+  const isDuplicateSet = itemIDs.every((id) => duplicateSet.has(id));
+
+  menuCache.set(key, { isNonDuplicate, isDuplicateSet });
+}

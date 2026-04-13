@@ -1,7 +1,7 @@
-import { config, homepage } from "../../package.json";
-import { getString } from "../utils/locale";
-import { fetchAllDuplicates } from "../utils/duplicates";
-import { setPrefs, getPrefs } from "../utils/state";
+import { config, homepage } from "../../../package.json";
+import { getString } from "../../shared/locale";
+import { fetchAllDuplicates } from "../../shared/duplicateQueries";
+import { setPrefs, getPrefs } from "../../app/state";
 
 export function registerPrefs() {
   Zotero.PreferencePanes.register({

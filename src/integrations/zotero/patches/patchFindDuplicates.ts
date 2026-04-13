@@ -1,21 +1,27 @@
-import { NonDuplicates } from "../nonDuplicateActions";
-import { NonDuplicatesDB } from "../../db/nonDuplicates";
-import { patchMethod, compositeDisposer, type Disposer } from "../../lifecycle";
+import { NonDuplicatesDB } from "../../../db/nonDuplicates";
+import { patchMethod, compositeDisposer, type Disposer } from "../../../app/lifecycle";
 
 /**
  * Patch `Zotero.Duplicates.prototype._findDuplicates` and
  * `Zotero.DisjointSetForest.prototype.union` to exclude non-duplicate pairs.
  *
  * Returns a composite disposer that restores both patches.
+ *
+ * @param db - NonDuplicatesDB instance
+ * @param getNonDuplicatesInstance - callback returning the NonDuplicates singleton
+ *   (injected to avoid cross-feature import from integrations into features)
  */
-export function patchFindDuplicates(db: NonDuplicatesDB): Disposer {
+export function patchFindDuplicates(
+  db: NonDuplicatesDB,
+  getNonDuplicatesInstance: () => { allNonDuplicates: Set<string> },
+): Disposer {
   const disposer1 = patchMethod(
     Zotero.Duplicates.prototype,
     "_findDuplicates" as any,
     (original: any) =>
       async function (this: any) {
         const duplicateSets = await db.getNonDuplicates({ libraryID: this.libraryID });
-        NonDuplicates.getInstance().allNonDuplicates = new Set(
+        getNonDuplicatesInstance().allNonDuplicates = new Set(
           duplicateSets.map(({ itemID, itemID2 }) => [itemID, itemID2].sort().join(",")),
         );
         await original.call(this);
@@ -27,7 +33,7 @@ export function patchFindDuplicates(db: NonDuplicatesDB): Disposer {
     "union" as any,
     (original: any) =>
       function (this: any, x: { id: number }, y: { id: number }) {
-        const allNonDuplicates = NonDuplicates.getInstance().allNonDuplicates;
+        const allNonDuplicates = getNonDuplicatesInstance().allNonDuplicates;
         const pair = [x.id, y.id].sort().join(",");
         if (allNonDuplicates.has(pair)) {
           return;

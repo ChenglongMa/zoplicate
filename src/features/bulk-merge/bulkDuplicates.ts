@@ -1,20 +1,19 @@
 import type { TagElementProps } from "zotero-plugin-toolkit";
-import { getString } from "../utils/locale";
-import { config } from "../../package.json";
-import { getPref, MasterItem } from "../utils/prefs";
-import { truncateString } from "../utils/utils";
-import { updateDuplicateButtonsVisibilities } from "./duplicatePaneUI";
-import { merge } from "./merger";
-import { isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
-import { DuplicateItems } from "./duplicateItems";
-import { fetchDuplicates } from "../utils/duplicates";
-import { markDuplicateSearchDirty } from "../utils/state";
-import { type Disposer } from "../lifecycle";
+import { getString } from "../../shared/locale";
+import { config } from "../../../package.json";
+import { getPref, MasterItem } from "../../shared/prefs";
+import { truncateString } from "../../shared/utils";
+import { merge } from "../../shared/duplicates/merger";
+import { isInDuplicatesPane, refreshItemTree } from "../../shared/zotero";
+import { DuplicateItems } from "../../shared/duplicates/duplicateItems";
+import { fetchDuplicates } from "../../shared/duplicateQueries";
+import { markDuplicateSearchDirty } from "../../app/state";
+import { type Disposer } from "../../app/lifecycle";
 import {
   BULK_MERGE_BUTTON_ID,
   BULK_MERGE_INNER_BUTTON_ID,
   BULK_MERGE_EXTERNAL_BUTTON_ID,
-} from "./duplicateButtonIDs";
+} from "../../shared/duplicates/duplicateButtonIDs";
 
 export class BulkDuplicates {
   public static get instance(): BulkDuplicates {
@@ -188,7 +187,10 @@ export class BulkDuplicates {
     popWin.startCloseTimer(5000);
   }
 
-  registerUIElements(win: Window): Disposer {
+  registerUIElements(
+    win: Window,
+    updateDuplicateButtonsVisibilities: (win: Window) => Promise<void>,
+  ): Disposer {
     this.win = win;
 
     const zoteroPane = (win as any).ZoteroPane;

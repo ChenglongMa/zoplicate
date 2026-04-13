@@ -3,13 +3,13 @@
     "zoplicate@chenglongma.com": {
       "updates": [
         {
-          "version": "4.0.0",
-          "update_link": "https://github.com/ChenglongMa/zoplicate/releases/download/v4.0.0/zoplicate.xpi",
-          "update_hash": "sha512:133c8661415c27d94a0d748d771798e35a7596fee4e193ca4eaf268da32b6c14bfa0603be9bd46898bc70485b4fd93b41f2e6b067deed0e6b13c99c58c269713",
+          "version": "5.0.0",
+          "update_link": "https://github.com/ChenglongMa/zoplicate/releases/download/v5.0.0/zoplicate.xpi",
+          "update_hash": "sha512:1089e28332d00e3b352d707b2d743d80129b9112d354a9024af0bfdc7f83b081c71090b974de47bfd2cc5e521e5ac6d1b8adb351d2fdd39f47c90a66d3297eb8",
           "applications": {
             "zotero": {
-              "strict_min_version": "6.999",
-              "strict_max_version": "8.*"
+              "strict_min_version": "9.0",
+              "strict_max_version": "9.*"
             }
           }
         }

@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach } from "@jest/globals";
-import { DuplicateItems } from "../src/modules/duplicateItems";
-import { MasterItem } from "../src/utils/prefs";
+import { DuplicateItems } from "../src/shared/duplicates/duplicateItems";
+import { MasterItem } from "../src/shared/prefs";
 import { createMockItem } from "./__setup__/globals";
 
 /**

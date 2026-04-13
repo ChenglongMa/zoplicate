@@ -1,4 +1,4 @@
-import { cleanCreator, cleanDOI, cleanISBN, normalizeString, unique } from "../utils/utils";
+import { cleanCreator, cleanDOI, cleanISBN, normalizeString, unique } from "../shared/utils";
 
 export class DuplicateFinder {
   private readonly item: Zotero.Item;
@@ -29,9 +29,9 @@ export class DuplicateFinder {
   }
 
   public static async findByRelations(item: Zotero.Item, predicate: _ZoteroTypes.RelationsPredicate, asIDs = true) {
-    let queue: Zotero.Item[] = [item];
-    let candidates = [];
-    let processedURIs = new Set<string>();
+    const queue: Zotero.Item[] = [item];
+    const candidates = [];
+    const processedURIs = new Set<string>();
 
     while (queue.length > 0) {
       const currentItem = queue.shift();

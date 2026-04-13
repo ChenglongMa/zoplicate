@@ -1,13 +1,13 @@
 import type { TagElementProps } from "zotero-plugin-toolkit";
-import { toggleButtonHidden } from "../utils/view";
-import { isInDuplicatesPane, activeItemsView } from "../utils/zotero";
-import { areDuplicates } from "../utils/duplicates";
+import { toggleButtonHidden } from "../../shared/view";
+import { isInDuplicatesPane, activeItemsView } from "../../shared/zotero";
+import { areDuplicates } from "../../shared/duplicateQueries";
 import {
   BULK_MERGE_INNER_BUTTON_ID,
   BULK_MERGE_EXTERNAL_BUTTON_ID,
   NON_DUPLICATE_INNER_BUTTON_ID,
   NON_DUPLICATE_EXTERNAL_BUTTON_ID,
-} from "./duplicateButtonIDs";
+} from "../../shared/duplicates/duplicateButtonIDs";
 
 function addButtonsInDuplicatePanes(
   innerButton: boolean,

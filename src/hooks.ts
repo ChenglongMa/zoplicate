@@ -1,30 +1,32 @@
 import { config } from "../package.json";
-import { initLocale } from "./utils/locale";
-import { registerPrefs, registerPrefsScripts } from "./modules/preferenceScript";
-import { whenItemsDeleted, registerNotifier } from "./modules/notifier";
-import { registerStyleSheets } from "./utils/window";
-import { BulkDuplicates } from "./modules/bulkDuplicates";
-import { Duplicates } from "./modules/duplicates";
-import { registerButtonsInDuplicatePane } from "./modules/duplicatePaneUI";
-import { createNonDuplicateButton } from "./modules/nonDuplicateActions";
-import { registerMenus, unregisterMenus } from "./modules/menus";
-import { registerNonDuplicatesSection, unregisterNonDuplicatesSection } from "./modules/nonDuplicates";
+import { initLocale } from "./shared/locale";
+import { registerPreferencesGlobal, registerPrefsScripts } from "./features/preferences";
+import { registerNotifier } from "./integrations/zotero/notifier";
+import { registerStyleSheets } from "./shared/window";
+import { BulkDuplicates } from "./features/bulk-merge";
+import {
+  registerDuplicatesGlobal,
+  registerDuplicatesWindow,
+  refreshDuplicateStats,
+  updateDuplicateButtonsVisibilities,
+} from "./features/duplicates";
+import { createNonDuplicateButton, registerNonDuplicatesGlobal, registerNonDuplicatesWindow } from "./features/non-duplicates";
+import { registerMenus, unregisterMenus } from "./integrations/zotero/menuManager";
 import {
   patchFindDuplicates,
   patchGetSearchObject,
   patchItemSaveData,
-} from "./modules/patches";
-import { containsRegularItem, debug, isInDuplicatesPane, refreshItemTree } from "./utils/zotero";
-import { registerDuplicateStats } from "./modules/duplicateStats";
+} from "./integrations/zotero/patches";
+import { debug } from "./shared/zotero";
 import { NonDuplicatesDB } from "./db/nonDuplicates";
-import { fetchDuplicates } from "./utils/duplicates";
-import { menuCache } from "./modules/menuCache";
+import { menuCache } from "./integrations/zotero/menuCache";
 import {
   getEnv,
   setAlive,
   closeDialogWindow,
-} from "./utils/state";
-import { DisposerRegistry } from "./lifecycle";
+} from "./app/state";
+import { DisposerRegistry } from "./app/lifecycle";
+import { NonDuplicates } from "./features/non-duplicates";
 
 // ---------------------------------------------------------------------------
 // Disposer registries
@@ -36,11 +38,27 @@ const windowDisposers = new WeakMap<Window, DisposerRegistry>();
 let mainWindowLoaded = false;
 const notifyQueue: { event: string; type: string; ids: number[] | string[]; extraData: { [key: string]: any } }[] = [];
 
+// ---------------------------------------------------------------------------
+// Feature notify handlers (populated during window registration)
+// ---------------------------------------------------------------------------
+
+type NotifyHandler = (event: string, type: string, ids: number[] | string[], extraData: { [key: string]: any }) => Promise<void>;
+type DeleteHandler = (ids: number[]) => Promise<void>;
+
+let duplicatesNotifyHandler: NotifyHandler | null = null;
+let nonDuplicatesDeleteHandler: DeleteHandler | null = null;
+
+// ---------------------------------------------------------------------------
+// Lifecycle hooks
+// ---------------------------------------------------------------------------
+
 async function onStartup() {
   await Promise.all([Zotero.initializationPromise, Zotero.unlockPromise, Zotero.uiReadyPromise]);
   initLocale();
   ztoolkit.log("addon onStartup");
-  registerPrefs();
+
+  // Preferences (global)
+  registerPreferencesGlobal();
 
   // Notifier -- returns disposer
   globalDisposers.add(registerNotifier());
@@ -50,8 +68,8 @@ async function onStartup() {
   await nonDuplicatesDB.init();
 
   // Patches -- each returns a disposer
-  globalDisposers.add(patchFindDuplicates(nonDuplicatesDB));
-  globalDisposers.add(patchGetSearchObject());
+  globalDisposers.add(patchFindDuplicates(nonDuplicatesDB, () => NonDuplicates.getInstance()));
+  globalDisposers.add(patchGetSearchObject(refreshDuplicateStats));
   globalDisposers.add(patchItemSaveData());
 
   await Promise.all(
@@ -60,7 +78,10 @@ async function onStartup() {
 
   // Register menus at startup level (MenuManager handles multi-window internally).
   // FTL is loaded in onMainWindowLoad before this point.
-  const menuIDs = registerMenus();
+  const menuIDs = registerMenus([
+    registerNonDuplicatesGlobal(),
+    registerDuplicatesGlobal(),
+  ]);
   globalDisposers.add(() => {
     unregisterMenus(menuIDs);
   });
@@ -75,26 +96,25 @@ async function onMainWindowLoad(win: Window): Promise<void> {
   const winRegistry = new DisposerRegistry();
   windowDisposers.set(win, winRegistry);
 
-  // register duplicate UI elements
-  const statsDisposer = await registerDuplicateStats(win);
-  winRegistry.add(statsDisposer);
-
-  // DOM buttons cleaned by window destruction -- no disposer needed
-  await registerButtonsInDuplicatePane(
+  // Duplicates feature (window-level)
+  const duplicatesResult = await registerDuplicatesWindow(
     win,
     (w, id) => BulkDuplicates.instance.createBulkMergeButton(w, id),
     (id, showing) => createNonDuplicateButton(id, showing),
+    () => BulkDuplicates.instance.isRunning,
   );
+  winRegistry.add(duplicatesResult.disposer);
+  duplicatesNotifyHandler = duplicatesResult.notifyHandler;
 
-  const bulkDisposer = BulkDuplicates.instance.registerUIElements(win);
+  // Bulk-merge feature (window-level)
+  const { registerBulkMergeWindow } = await import("./features/bulk-merge");
+  const bulkDisposer = registerBulkMergeWindow(win, updateDuplicateButtonsVisibilities);
   winRegistry.add(bulkDisposer);
 
-  const nonDuplicatesDB = NonDuplicatesDB.instance;
-  await nonDuplicatesDB.init();
-  registerNonDuplicatesSection(nonDuplicatesDB);
-  winRegistry.add(() => {
-    unregisterNonDuplicatesSection();
-  });
+  // Non-duplicates feature (window-level)
+  const nonDuplicatesResult = await registerNonDuplicatesWindow(win);
+  winRegistry.add(nonDuplicatesResult.disposer);
+  nonDuplicatesDeleteHandler = nonDuplicatesResult.deleteHandler;
 
   if (getEnv() === "development") {
     await registerDevColumn();
@@ -113,6 +133,10 @@ async function onMainWindowUnload(win: Window): Promise<void> {
   debug("addon onMainWindowUnload");
   mainWindowLoaded = false;
   closeDialogWindow();
+
+  // Clear feature notify handlers for this window
+  duplicatesNotifyHandler = null;
+  nonDuplicatesDeleteHandler = null;
 
   const winRegistry = windowDisposers.get(win);
   if (winRegistry) {
@@ -151,10 +175,12 @@ async function registerDevColumn() {
 }
 
 /**
- * This function is just an example of dispatcher for Notify events.
- * Any operations should be placed in a function to keep this function clear.
+ * Composition-root dispatcher for Notify events.
+ * Queue/mainWindowLoaded gating stays here as infrastructure.
+ * Business logic is delegated to feature notify handlers registered during window setup.
  *
- * Refer to: https://github.com/zotero/zotero/blob/main/chrome/content/zotero/xpcom/notifier.js
+ * menuCache invalidation is kept here as an infrastructure concern:
+ * menuCache is an integration-level module, not a feature module.
  */
 async function onNotify(event: string, type: string, ids: number[] | string[], extraData: { [key: string]: any }) {
   if (!mainWindowLoaded) {
@@ -163,65 +189,28 @@ async function onNotify(event: string, type: string, ids: number[] | string[], e
     return;
   }
 
-  // You can add your code to the corresponding `notify type`
   ztoolkit.log("notify", event, type, ids, extraData);
 
-  // Invalidate menu visibility cache on item changes that may affect duplicate status
+  // Infrastructure: invalidate menu visibility cache on item changes
   if (type == "item" || type == "trash") {
     menuCache.invalidateAll();
   }
 
+  // Delegate to non-duplicates delete handler
   const isDeleted = type == "item" && event == "delete" && ids.length > 0;
-
-  if (isDeleted) {
-    await whenItemsDeleted(ids as number[]);
+  if (isDeleted && nonDuplicatesDeleteHandler) {
+    await nonDuplicatesDeleteHandler(ids as number[]);
     return;
   }
 
-  const precondition = ids && ids.length > 0 && !BulkDuplicates.instance.isRunning;
-
-  if (!precondition) {
-    // ignore when bulk duplicates is running and no ids
-    return;
-  }
-
-  if (type == "item" && event == "removeDuplicatesMaster" && isInDuplicatesPane()) {
-    refreshItemTree();
-    return;
-  }
-
-  let libraryIDs = [Zotero.getActiveZoteroPane().getSelectedLibraryID()];
-
-  const toRefresh =
-    // subset of "modify" event (modification on item data and authors) on regular items
-    (extraData && Object.values(extraData).some((data) => data.refreshDuplicates)) ||
-    // "add" event on regular items
-    (type == "item" && event == "add" && containsRegularItem(ids)) ||
-    // "refresh" event on trash
-    (type == "trash" && event == "refresh");
-
-  ztoolkit.log("refreshDuplicates", toRefresh);
-
-  if (toRefresh) {
-    if (type == "item") {
-      libraryIDs = ids.map((id) => Zotero.Items.get(id).libraryID);
-    }
-    if (type == "trash") {
-      libraryIDs = ids as number[];
-    }
-    const libraryID = libraryIDs[0]; // normally only one libraryID
-    const { duplicatesObj } = await fetchDuplicates({ libraryID, refresh: true });
-    if (type == "item" && event == "add") {
-      await Duplicates.instance.whenItemsAdded(duplicatesObj, ids as number[]);
-    }
+  // Delegate to duplicates notify handler
+  if (duplicatesNotifyHandler) {
+    await duplicatesNotifyHandler(event, type, ids, extraData);
   }
 }
 
 /**
- * This function is just an example of dispatcher for Preference UI events.
- * Any operations should be placed in a function to keep this funcion clear.
- * @param type event type
- * @param data event data
+ * Dispatcher for Preference UI events.
  */
 async function onPrefsEvent(type: string, data: { [key: string]: any }) {
   switch (type) {
@@ -236,10 +225,6 @@ async function onPrefsEvent(type: string, data: { [key: string]: any }) {
 function onShortcuts(type: string) {}
 
 async function onDialogEvents(type: string) {}
-
-// Add your hooks here. For element click, etc.
-// Keep in mind hooks only do dispatch. Don't add code that does real jobs in hooks.
-// Otherwise the code would be hard to read and maintain.
 
 export default {
   onStartup,

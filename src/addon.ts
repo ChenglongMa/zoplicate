@@ -1,7 +1,7 @@
 import hooks from "./hooks";
-import { createZToolkit } from "./utils/ztoolkit";
+import { createZToolkit } from "./shared/ztoolkit";
 import { config } from "../package.json";
-import type { AppState } from "./utils/state";
+import type { AppState } from "./app/state";
 
 class Addon {
   public data: AppState;
