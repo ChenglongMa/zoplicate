@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach } from "@jest/globals";
-import { menuCache } from "../src/modules/menuCache";
+import { menuCache } from "../src/integrations/zotero/menuCache";
 
 describe("menuCache", () => {
   beforeEach(() => {

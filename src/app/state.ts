@@ -9,7 +9,7 @@
  */
 
 import type { ColumnOptions, DialogHelper } from "zotero-plugin-toolkit";
-import type { Action } from "./prefs";
+import type { Action } from "../shared/prefs";
 
 // ---------------------------------------------------------------------------
 // Sub-state interfaces

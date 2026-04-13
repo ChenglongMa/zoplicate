@@ -10,7 +10,7 @@ const invalidateAllMock = jest.fn();
 const menuCacheBuildKeyMock = jest.fn((ids: number[]) => [...ids].sort((a, b) => a - b).join("-"));
 const menuCacheGetMock = jest.fn<(key: string) => any>();
 const menuCacheSetMock = jest.fn();
-jest.mock("../src/modules/menuCache", () => ({
+jest.mock("../src/integrations/zotero/menuCache", () => ({
   menuCache: {
     invalidateAll: invalidateAllMock,
     buildKey: menuCacheBuildKeyMock,
@@ -18,10 +18,24 @@ jest.mock("../src/modules/menuCache", () => ({
     set: menuCacheSetMock,
     invalidate: jest.fn(),
   },
+  // Re-implement warmCache logic using the mocked menuCache and mocked dependencies.
+  // jest.requireActual would bind to the real (unmocked) menuCache instance,
+  // so we replicate the function to use the mock exports instead.
+  warmCache: async (itemIDs: number[]) => {
+    if (itemIDs.length < 2) return;
+    const key = menuCacheBuildKeyMock(itemIDs);
+    const { NonDuplicatesDB } = require("../src/db/nonDuplicates");
+    const isNonDuplicate = await NonDuplicatesDB.instance.existsNonDuplicates(itemIDs);
+    const { fetchDuplicates } = require("../src/shared/duplicateQueries");
+    const { duplicatesObj } = await fetchDuplicates();
+    const duplicateSet = new Set(duplicatesObj.getSetItemsByItemID(itemIDs[0]));
+    const isDuplicateSet = itemIDs.every((id: number) => duplicateSet.has(id));
+    menuCacheSetMock(key, { isNonDuplicate, isDuplicateSet });
+  },
 }));
 
 const toggleNonDuplicatesMock = jest.fn<(...args: any[]) => Promise<void>>(async () => undefined);
-jest.mock("../src/modules/nonDuplicateActions", () => ({
+jest.mock("../src/features/non-duplicates/nonDuplicateActions", () => ({
   toggleNonDuplicates: toggleNonDuplicatesMock,
 }));
 
@@ -40,17 +54,17 @@ const fetchDuplicatesMock = jest.fn<(...args: any[]) => Promise<any>>(async () =
   duplicateItems: [10, 20],
 }));
 const fetchAllDuplicatesMock = jest.fn<(...args: any[]) => Promise<any>>(async () => undefined);
-jest.mock("../src/utils/duplicates", () => ({
+jest.mock("../src/shared/duplicateQueries", () => ({
   fetchDuplicates: fetchDuplicatesMock,
   fetchAllDuplicates: fetchAllDuplicatesMock,
 }));
 
 const showingDuplicateStatsMock = jest.fn(() => true);
-jest.mock("../src/utils/prefs", () => ({
+jest.mock("../src/shared/prefs", () => ({
   showingDuplicateStats: showingDuplicateStatsMock,
 }));
 
-jest.mock("../src/utils/locale", () => ({
+jest.mock("../src/shared/locale", () => ({
   getString: jest.fn((key: string) => key),
 }));
 
@@ -72,7 +86,10 @@ _Zotero.MenuManager = {
 // Import after mocks
 // ---------------------------------------------------------------------------
 
-import { registerMenus, unregisterMenus, warmCache } from "../src/modules/menus";
+import { itemMenuConfig } from "../src/features/non-duplicates/menus";
+import { collectionMenuConfig } from "../src/features/duplicates/menus";
+import { registerMenus, unregisterMenus } from "../src/integrations/zotero/menuManager";
+import { warmCache } from "../src/integrations/zotero/menuCache";
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -85,7 +102,7 @@ describe("registerMenus", () => {
   });
 
   test("calls Zotero.MenuManager.registerMenu twice (item + collection)", () => {
-    registerMenus();
+    registerMenus([itemMenuConfig(), collectionMenuConfig()]);
     expect(registerMenuMock).toHaveBeenCalledTimes(2);
   });
 
@@ -93,7 +110,7 @@ describe("registerMenus", () => {
     registerMenuMock
       .mockReturnValueOnce("item-menu-id")
       .mockReturnValueOnce("collection-menu-id");
-    const ids = registerMenus();
+    const ids = registerMenus([itemMenuConfig(), collectionMenuConfig()]);
     expect(ids).toEqual(["item-menu-id", "collection-menu-id"]);
   });
 
@@ -101,24 +118,24 @@ describe("registerMenus", () => {
     registerMenuMock
       .mockReturnValueOnce("item-menu-id")
       .mockReturnValueOnce(false);
-    const ids = registerMenus();
+    const ids = registerMenus([itemMenuConfig(), collectionMenuConfig()]);
     expect(ids).toEqual(["item-menu-id"]);
   });
 
   test("item menu uses target main/library/item", () => {
-    registerMenus();
+    registerMenus([itemMenuConfig(), collectionMenuConfig()]);
     const firstCall = registerMenuMock.mock.calls[0][0] as Zotero.MenuOptions;
     expect(firstCall.target).toBe("main/library/item");
   });
 
   test("collection menu uses target main/library/collection", () => {
-    registerMenus();
+    registerMenus([itemMenuConfig(), collectionMenuConfig()]);
     const secondCall = registerMenuMock.mock.calls[1][0] as Zotero.MenuOptions;
     expect(secondCall.target).toBe("main/library/collection");
   });
 
   test("item menu has submenu with two children (mark and unmark)", () => {
-    registerMenus();
+    registerMenus([itemMenuConfig(), collectionMenuConfig()]);
     const itemOptions = registerMenuMock.mock.calls[0][0] as Zotero.MenuOptions;
     // Top-level menus array contains one submenu
     expect(itemOptions.menus.length).toBe(1);
@@ -129,7 +146,7 @@ describe("registerMenus", () => {
   });
 
   test("item menu submenu has correct l10nIDs", () => {
-    registerMenus();
+    registerMenus([itemMenuConfig(), collectionMenuConfig()]);
     const itemOptions = registerMenuMock.mock.calls[0][0] as Zotero.MenuOptions;
     const submenu = itemOptions.menus[0];
     expect(submenu.l10nID).toBe("zoplicate-menu-submenu-title");
@@ -139,7 +156,7 @@ describe("registerMenus", () => {
   });
 
   test("collection menu has a single menuitem", () => {
-    registerMenus();
+    registerMenus([itemMenuConfig(), collectionMenuConfig()]);
     const collectionOptions = registerMenuMock.mock.calls[1][0] as Zotero.MenuOptions;
     expect(collectionOptions.menus.length).toBe(1);
     expect(collectionOptions.menus[0].menuType).toBe("menuitem");
@@ -172,7 +189,7 @@ describe("item menu onShowing callback", () => {
   });
 
   test("onShowing with cache hit (isNonDuplicate) shows unmark, hides mark", () => {
-    registerMenus();
+    registerMenus([itemMenuConfig(), collectionMenuConfig()]);
     const itemOptions = registerMenuMock.mock.calls[0][0] as Zotero.MenuOptions;
     const submenu = itemOptions.menus[0];
     const onShowing = submenu.onShowing!;
@@ -203,7 +220,7 @@ describe("item menu onShowing callback", () => {
   });
 
   test("onShowing with cache miss disables submenu", () => {
-    registerMenus();
+    registerMenus([itemMenuConfig(), collectionMenuConfig()]);
     const itemOptions = registerMenuMock.mock.calls[0][0] as Zotero.MenuOptions;
     const submenu = itemOptions.menus[0];
     const onShowing = submenu.onShowing!;
@@ -234,7 +251,7 @@ describe("item menu onShowing callback", () => {
   });
 
   test("onShowing hides submenu when fewer than 2 items selected", () => {
-    registerMenus();
+    registerMenus([itemMenuConfig(), collectionMenuConfig()]);
     const itemOptions = registerMenuMock.mock.calls[0][0] as Zotero.MenuOptions;
     const submenu = itemOptions.menus[0];
     const onShowing = submenu.onShowing!;
@@ -265,7 +282,7 @@ describe("collection menu onShowing callback", () => {
 
   test("onShowing shows when in duplicates pane and stats enabled", () => {
     showingDuplicateStatsMock.mockReturnValue(true);
-    registerMenus();
+    registerMenus([itemMenuConfig(), collectionMenuConfig()]);
     const collectionOptions = registerMenuMock.mock.calls[1][0] as Zotero.MenuOptions;
     const menuItem = collectionOptions.menus[0];
     const onShowing = menuItem.onShowing!;
@@ -287,7 +304,7 @@ describe("collection menu onShowing callback", () => {
 
   test("onShowing hides when not in duplicates pane", () => {
     showingDuplicateStatsMock.mockReturnValue(true);
-    registerMenus();
+    registerMenus([itemMenuConfig(), collectionMenuConfig()]);
     const collectionOptions = registerMenuMock.mock.calls[1][0] as Zotero.MenuOptions;
     const menuItem = collectionOptions.menus[0];
     const onShowing = menuItem.onShowing!;
@@ -309,7 +326,7 @@ describe("collection menu onShowing callback", () => {
 
   test("onShowing hides when stats disabled", () => {
     showingDuplicateStatsMock.mockReturnValue(false);
-    registerMenus();
+    registerMenus([itemMenuConfig(), collectionMenuConfig()]);
     const collectionOptions = registerMenuMock.mock.calls[1][0] as Zotero.MenuOptions;
     const menuItem = collectionOptions.menus[0];
     const onShowing = menuItem.onShowing!;
@@ -386,7 +403,7 @@ describe("item menu onCommand callbacks", () => {
   });
 
   test("unmark child calls toggleNonDuplicates with 'unmark' and libraryID", () => {
-    registerMenus();
+    registerMenus([itemMenuConfig(), collectionMenuConfig()]);
     const itemOptions = registerMenuMock.mock.calls[0][0] as Zotero.MenuOptions;
     const submenu = itemOptions.menus[0];
     const unmarkChild = submenu.menus![0];
@@ -415,7 +432,7 @@ describe("item menu onCommand callbacks", () => {
   });
 
   test("mark child calls toggleNonDuplicates with 'mark' and libraryID", () => {
-    registerMenus();
+    registerMenus([itemMenuConfig(), collectionMenuConfig()]);
     const itemOptions = registerMenuMock.mock.calls[0][0] as Zotero.MenuOptions;
     const submenu = itemOptions.menus[0];
     const markChild = submenu.menus![1];

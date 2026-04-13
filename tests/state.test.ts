@@ -33,7 +33,7 @@ import {
   setDuplicateSets,
   getNeedResetDuplicateSearch,
   setNeedResetDuplicateSearch,
-} from "../src/utils/state";
+} from "../src/app/state";
 
 // ---------------------------------------------------------------------------
 // Helpers

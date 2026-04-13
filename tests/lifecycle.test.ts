@@ -12,7 +12,7 @@ import {
   DisposerRegistry,
   patchMethod,
   compositeDisposer,
-} from "../src/lifecycle";
+} from "../src/app/lifecycle";
 
 // ---------------------------------------------------------------------------
 // 1. Disposer type contract

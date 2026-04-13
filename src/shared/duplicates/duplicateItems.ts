@@ -1,4 +1,4 @@
-import { MasterItem } from "../utils/prefs";
+import { MasterItem } from "../prefs";
 
 /**
  * This class is used to store duplicate items.

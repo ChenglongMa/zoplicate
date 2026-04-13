@@ -1,7 +1,7 @@
-import { DuplicateFinder } from "../../db/duplicateFinder";
-import { DuplicateItems } from "../duplicateItems";
-import { getPref, MasterItem } from "../../utils/prefs";
-import { patchMethod, type Disposer } from "../../lifecycle";
+import { DuplicateFinder } from "../../../db/duplicateFinder";
+import { DuplicateItems } from "../../../shared/duplicates/duplicateItems";
+import { getPref, MasterItem } from "../../../shared/prefs";
+import { patchMethod, type Disposer } from "../../../app/lifecycle";
 
 /**
  * Patch `Zotero.Item.prototype._saveData` to re-parent child items when

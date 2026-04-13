@@ -1,5 +1,5 @@
 import { describe, expect, test, jest, beforeAll, it, afterAll, afterEach } from "@jest/globals";
-import { cleanISBNString, truncateString, normalizeString, cleanCreator, cleanDOI, unique, unique2D } from "../src/utils/utils";
+import { cleanISBNString, truncateString, normalizeString, cleanCreator, cleanDOI, unique, unique2D } from "../src/shared/utils";
 import { createMockItem } from "./__setup__/globals";
 
 describe("Clean ISBN values", () => {

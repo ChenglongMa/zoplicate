@@ -1,4 +1,4 @@
-import { markDuplicateSearchDirty } from "./state";
+import { markDuplicateSearchDirty } from "../app/state";
 
 /**
  * Get or refresh duplicates DB for the selected library

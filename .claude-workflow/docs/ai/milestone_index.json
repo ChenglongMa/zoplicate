@@ -93,7 +93,7 @@
       "id": "M009",
       "title": "Feature boundary reorganization",
       "phase": "Architecture - Modules",
-      "status": "next",
+      "status": "accepted",
       "depends_on": ["M008"],
       "goal": "Reorganize src/ into feature boundaries. Two-level registration (global + window). Extract onNotify. Split menus. hooks.ts becomes composition root.",
       "in_scope": ["Move src/modules/ + src/utils/ into features/integrations/app/shared", "two-level registerXxxGlobal() + registerXxxWindow(win)", "extract onNotify handlers into features; notifier.ts receives handlers via params (no feature imports)", "split menus.ts", "shared DuplicateItems/mergeItems"],

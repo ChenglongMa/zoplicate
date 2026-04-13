@@ -10,26 +10,26 @@ import { jest, describe, expect, test } from "@jest/globals";
 
 // Mock every sibling import that duplicateStats.ts pulls in.
 // Paths are relative to the SOURCE file (jest resolves from the importing module).
-jest.mock("../src/utils/prefs", () => ({
+jest.mock("../src/shared/prefs", () => ({
   showingDuplicateStats: jest.fn(() => false),
 }));
-jest.mock("../src/utils/locale", () => ({
+jest.mock("../src/shared/locale", () => ({
   getString: jest.fn(() => ""),
   initLocale: jest.fn(),
 }));
-jest.mock("../src/utils/view", () => ({
+jest.mock("../src/shared/view", () => ({
   removeSiblings: jest.fn(),
 }));
-jest.mock("../src/utils/duplicates", () => ({
+jest.mock("../src/shared/duplicateQueries", () => ({
   fetchAllDuplicates: jest.fn(async () => undefined),
   fetchDuplicates: jest.fn(async () => ({ libraryID: 1, duplicatesObj: {}, duplicateItems: [] })),
 }));
-jest.mock("../src/utils/zotero", () => ({
+jest.mock("../src/shared/zotero", () => ({
   activeCollectionsView: jest.fn(() => undefined),
 }));
 
 // Now import the function under test -- safe because siblings are mocked.
-import { getDuplicateStats } from "../src/modules/duplicateStats";
+import { getDuplicateStats } from "../src/features/duplicates/duplicateStats";
 
 // Helper: build a duplicatesObj with known set mappings.
 function makeDuplicatesObj(sets: number[][]) {

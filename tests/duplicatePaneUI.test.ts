@@ -12,20 +12,20 @@ const insertElementBeforeMock = jest.fn();
 };
 
 const toggleButtonHiddenMock = jest.fn();
-jest.mock("../src/utils/view", () => ({
+jest.mock("../src/shared/view", () => ({
   toggleButtonHidden: toggleButtonHiddenMock,
 }));
 
 const isInDuplicatesPaneMock = jest.fn(() => false);
 const activeItemsViewMock = jest.fn(() => undefined as any);
-jest.mock("../src/utils/zotero", () => ({
+jest.mock("../src/shared/zotero", () => ({
   isInDuplicatesPane: isInDuplicatesPaneMock,
   activeItemsView: activeItemsViewMock,
   debug: jest.fn(),
 }));
 
 const areDuplicatesMock = jest.fn<() => Promise<boolean>>(async () => false);
-jest.mock("../src/utils/duplicates", () => ({
+jest.mock("../src/shared/duplicateQueries", () => ({
   areDuplicates: areDuplicatesMock,
   fetchDuplicates: jest.fn(async () => ({
     libraryID: 1,
@@ -34,7 +34,7 @@ jest.mock("../src/utils/duplicates", () => ({
   })),
 }));
 
-jest.mock("../src/utils/locale", () => ({
+jest.mock("../src/shared/locale", () => ({
   getString: jest.fn((key: string) => key),
   initLocale: jest.fn(),
 }));
@@ -50,12 +50,12 @@ import {
   NON_DUPLICATE_BUTTON_ID,
   NON_DUPLICATE_INNER_BUTTON_ID,
   NON_DUPLICATE_EXTERNAL_BUTTON_ID,
-} from "../src/modules/duplicateButtonIDs";
+} from "../src/shared/duplicates/duplicateButtonIDs";
 
 import {
   registerButtonsInDuplicatePane,
   updateDuplicateButtonsVisibilities,
-} from "../src/modules/duplicatePaneUI";
+} from "../src/features/duplicates/duplicatePaneUI";
 
 // ---------------------------------------------------------------------------
 // Helpers

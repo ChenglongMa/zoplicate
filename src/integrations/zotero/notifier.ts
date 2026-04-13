@@ -1,20 +1,12 @@
-import { NonDuplicatesDB } from "../db/nonDuplicates";
-import { isAlive } from "../utils/state";
-import { type Disposer } from "../lifecycle";
-
-export async function whenItemsDeleted(ids: number[]) {
-  if (ids.length === 0) {
-    return;
-  }
-  await NonDuplicatesDB.instance.deleteRecords(...ids);
-}
+import { isAlive } from "../../app/state";
+import { type Disposer } from "../../app/lifecycle";
 
 /**
  * Register Zotero notifier observer.
  * Returns a Disposer that unregisters the observer.
  *
- * Note: The Plugins.addObserver({ shutdown }) pattern has been removed.
- * The DisposerRegistry in hooks.ts now owns lifecycle cleanup.
+ * Note: This module does NOT import from src/features/.
+ * All feature-level dispatch is handled by hooks.ts (the composition root).
  */
 export function registerNotifier(): Disposer {
   const callback = {

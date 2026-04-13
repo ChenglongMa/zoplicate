@@ -1,5 +1,4 @@
-import { refreshDuplicateStats } from "../duplicateStats";
-import { patchMethod, type Disposer } from "../../lifecycle";
+import { patchMethod, type Disposer } from "../../../app/lifecycle";
 import {
   getNeedResetDuplicateSearch,
   setNeedResetDuplicateSearch,
@@ -7,15 +6,19 @@ import {
   setDuplicateSearchObj,
   getDuplicateSets,
   setDuplicateSets,
-} from "../../utils/state";
+} from "../../../app/state";
 
 /**
  * Patch `Zotero.Duplicates.prototype.getSearchObject` to cache search results
  * and refresh duplicate statistics.
  *
+ * @param refreshDuplicateStats - callback to refresh stats after search reset;
+ *   injected from the composition root to avoid cross-layer imports.
  * Returns a disposer that restores the original method.
  */
-export function patchGetSearchObject(): Disposer {
+export function patchGetSearchObject(
+  refreshDuplicateStats: (libraryID: number, duplicatesObj: any, searchResultIDs: number[]) => Promise<void>,
+): Disposer {
   return patchMethod(
     Zotero.Duplicates.prototype,
     "getSearchObject" as any,

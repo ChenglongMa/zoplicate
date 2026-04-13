@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach, jest } from "@jest/globals";
-import { merge } from "../src/modules/merger";
+import { merge } from "../src/shared/duplicates/merger";
 import { createMockItem } from "./__setup__/globals";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

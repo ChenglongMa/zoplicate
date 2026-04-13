@@ -1,11 +1,11 @@
-import { config } from "../../package.json";
-import { showingDuplicateStats } from "../utils/prefs";
-import { getString } from "../utils/locale";
-import { removeSiblings } from "../utils/view";
+import { config } from "../../../package.json";
+import { showingDuplicateStats } from "../../shared/prefs";
+import { getString } from "../../shared/locale";
+import { removeSiblings } from "../../shared/view";
 import CollectionTreeRow = Zotero.CollectionTreeRow;
-import { fetchAllDuplicates } from "../utils/duplicates";
-import { getDuplicateCounts, setDuplicateCounts } from "../utils/state";
-import { patchMethod, type Disposer } from "../lifecycle";
+import { fetchAllDuplicates } from "../../shared/duplicateQueries";
+import { getDuplicateCounts, setDuplicateCounts } from "../../app/state";
+import { patchMethod, type Disposer } from "../../app/lifecycle";
 
 export async function registerDuplicateStats(win: Window): Promise<Disposer> {
   let showStats = showingDuplicateStats();

@@ -1,5 +1,5 @@
 import { config } from "../../package.json";
-import { getLocale, setLocale } from "./state";
+import { getLocale, setLocale } from "../app/state";
 
 export { initLocale, getString };
 
