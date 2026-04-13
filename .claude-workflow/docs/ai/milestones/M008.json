@@ -2,7 +2,7 @@
   "id": "M008",
   "title": "Resolve duplicates circular dependency",
   "phase": "Architecture - Modules",
-  "status": "planned",
+  "status": "accepted",
   "depends_on": ["M006", "M007"],
   "goal": "Break circular import between duplicates.ts and bulkDuplicates.ts using button ID constants extraction and factory injection.",
   "in_scope": [

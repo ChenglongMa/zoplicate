@@ -3,13 +3,18 @@ import { getString } from "../utils/locale";
 import { config } from "../../package.json";
 import { getPref, MasterItem } from "../utils/prefs";
 import { truncateString } from "../utils/utils";
-import { updateDuplicateButtonsVisibilities } from "./duplicates";
+import { updateDuplicateButtonsVisibilities } from "./duplicatePaneUI";
 import { merge } from "./merger";
 import { isInDuplicatesPane, refreshItemTree } from "../utils/zotero";
 import { DuplicateItems } from "./duplicateItems";
 import { fetchDuplicates } from "../utils/duplicates";
 import { markDuplicateSearchDirty } from "../utils/state";
 import { type Disposer } from "../lifecycle";
+import {
+  BULK_MERGE_BUTTON_ID,
+  BULK_MERGE_INNER_BUTTON_ID,
+  BULK_MERGE_EXTERNAL_BUTTON_ID,
+} from "./duplicateButtonIDs";
 
 export class BulkDuplicates {
   public static get instance(): BulkDuplicates {
@@ -21,9 +26,9 @@ export class BulkDuplicates {
 
   private constructor() {}
 
-  public static readonly bulkMergeButtonID = "zoplicate-bulk-merge-button";
-  public static readonly innerButtonID = this.bulkMergeButtonID + "-inner";
-  public static readonly externalButtonID = this.bulkMergeButtonID + "-external";
+  public static readonly bulkMergeButtonID = BULK_MERGE_BUTTON_ID;
+  public static readonly innerButtonID = BULK_MERGE_INNER_BUTTON_ID;
+  public static readonly externalButtonID = BULK_MERGE_EXTERNAL_BUTTON_ID;
   private win: Window | undefined;
   private static _instance: BulkDuplicates;
   private _isRunning = false;
