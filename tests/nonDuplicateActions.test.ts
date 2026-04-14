@@ -33,17 +33,23 @@ const fetchDuplicatesMock = jest.fn<(...args: any[]) => Promise<any>>(async () =
   duplicatesObj: { getSetItemsByItemID: jest.fn(() => []) },
   duplicateItems: [],
 }));
-jest.mock("../src/shared/duplicateQueries", () => ({
+jest.mock("../src/integrations/zotero/duplicateSearch", () => ({
   fetchDuplicates: fetchDuplicatesMock,
   areDuplicates: jest.fn(async () => false),
 }));
 
 const refreshItemTreeMock = jest.fn();
 const isInDuplicatesPaneMock = jest.fn(() => false);
-jest.mock("../src/shared/zotero", () => ({
+const getSelectedItemsMock = jest.fn((_win?: Window) => [
+  { id: 10, libraryID: 1 },
+  { id: 20, libraryID: 1 },
+]);
+const getSelectedLibraryIDMock = jest.fn((_win?: Window) => 1);
+jest.mock("../src/integrations/zotero/windows", () => ({
   isInDuplicatesPane: isInDuplicatesPaneMock,
   refreshItemTree: refreshItemTreeMock,
-  debug: jest.fn(),
+  getSelectedItems: getSelectedItemsMock,
+  getSelectedLibraryID: getSelectedLibraryIDMock,
 }));
 
 jest.mock("../src/shared/locale", () => ({
@@ -58,16 +64,6 @@ jest.mock("../src/shared/locale", () => ({
 const _Zotero = (globalThis as any).Zotero;
 
 const getItemMock = _Zotero.Items.get as jest.Mock<any>;
-const getSelectedItemsMock = jest.fn(() => [
-  { id: 10, libraryID: 1 },
-  { id: 20, libraryID: 1 },
-]);
-const getSelectedLibraryIDMock = jest.fn(() => 1);
-
-_Zotero.getActiveZoteroPane = jest.fn(() => ({
-  getSelectedItems: getSelectedItemsMock,
-  getSelectedLibraryID: getSelectedLibraryIDMock,
-}));
 _Zotero.Notifier = {
   trigger: jest.fn<(...args: any[]) => Promise<void>>(async () => undefined),
 };
@@ -79,7 +75,12 @@ _Zotero.ItemTreeManager = {
 // Import after mocks
 // ---------------------------------------------------------------------------
 
-import { toggleNonDuplicates, createNonDuplicateButton, NonDuplicates } from "../src/features/non-duplicates/nonDuplicateActions";
+import {
+  toggleNonDuplicates,
+  toggleSelectedNonDuplicates,
+  createNonDuplicateButton,
+  NonDuplicates,
+} from "../src/features/nonDuplicates/nonDuplicateActions";
 
 // ---------------------------------------------------------------------------
 // Tests - toggleNonDuplicates (relocated from nonDuplicates.test.ts)
@@ -120,15 +121,13 @@ describe("toggleNonDuplicates", () => {
     expect(getSelectedLibraryIDMock).not.toHaveBeenCalled();
   });
 
-  test("falls back to selected library when no item library can be resolved", async () => {
-    getSelectedItemsMock.mockReturnValue([]);
+  test("does nothing when no libraryID can be resolved", async () => {
+    getItemMock.mockImplementation((input: any) => ({ id: input }));
 
-    await toggleNonDuplicates("mark");
+    await toggleNonDuplicates("mark", [10, 20]);
 
-    expect(getSelectedItemsMock).toHaveBeenCalled();
-    expect(getSelectedLibraryIDMock).toHaveBeenCalled();
-    expect(insertNonDuplicatesMock).toHaveBeenCalledWith([], 1);
-    expect(fetchDuplicatesMock).toHaveBeenCalledWith({ libraryID: 1, refresh: true });
+    expect(insertNonDuplicatesMock).not.toHaveBeenCalled();
+    expect(fetchDuplicatesMock).not.toHaveBeenCalled();
   });
 
   test("unmark calls deleteNonDuplicates", async () => {
@@ -143,10 +142,12 @@ describe("toggleNonDuplicates", () => {
     expect(invalidateAllMock).toHaveBeenCalled();
   });
 
-  test("uses selected items when items param is omitted", async () => {
-    await toggleNonDuplicates("mark");
+  test("toggleSelectedNonDuplicates uses selected items from the provided window", async () => {
+    const win = {} as Window;
+    await toggleSelectedNonDuplicates("mark", win);
 
-    expect(getSelectedItemsMock).toHaveBeenCalled();
+    expect(getSelectedItemsMock).toHaveBeenCalledWith(expect.anything());
+    expect(getSelectedLibraryIDMock).toHaveBeenCalledWith(expect.anything());
     expect(insertNonDuplicatesMock).toHaveBeenCalledWith([10, 20], 1);
     expect(fetchDuplicatesMock).toHaveBeenCalledWith({ libraryID: 1, refresh: true });
   });
@@ -158,7 +159,7 @@ describe("toggleNonDuplicates", () => {
 
 describe("createNonDuplicateButton", () => {
   test("returns a TagElementProps with the given id and xul namespace", () => {
-    const result = createNonDuplicateButton("test-btn-id");
+    const result = createNonDuplicateButton({} as Window, "test-btn-id");
     expect(result.tag).toBe("button");
     expect(result.id).toBe("test-btn-id");
     expect(result.namespace).toBe("xul");
@@ -166,12 +167,12 @@ describe("createNonDuplicateButton", () => {
   });
 
   test("sets hidden=false when showing is true (default)", () => {
-    const result = createNonDuplicateButton("btn-1");
+    const result = createNonDuplicateButton({} as Window, "btn-1");
     expect(result.attributes!.hidden).toBe(false);
   });
 
   test("sets hidden=true when showing is false", () => {
-    const result = createNonDuplicateButton("btn-2", false);
+    const result = createNonDuplicateButton({} as Window, "btn-2", false);
     expect(result.attributes!.hidden).toBe(true);
   });
 });

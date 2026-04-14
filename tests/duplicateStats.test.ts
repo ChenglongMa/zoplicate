@@ -1,5 +1,5 @@
 /**
- * Tests for getDuplicateStats in src/features/duplicates/duplicateStats.ts.
+ * Tests for getDuplicateStats in src/features/duplicateStats/duplicateStats.ts.
  *
  * CRITICAL: jest.mock() calls must appear before the import of the module
  * under test, to prevent side-effect-laden sibling imports from executing
@@ -20,16 +20,12 @@ jest.mock("../src/shared/locale", () => ({
 jest.mock("../src/shared/view", () => ({
   removeSiblings: jest.fn(),
 }));
-jest.mock("../src/shared/duplicateQueries", () => ({
+jest.mock("../src/integrations/zotero/duplicateSearch", () => ({
   fetchAllDuplicates: jest.fn(async () => undefined),
   fetchDuplicates: jest.fn(async () => ({ libraryID: 1, duplicatesObj: {}, duplicateItems: [] })),
 }));
-jest.mock("../src/shared/zotero", () => ({
-  activeCollectionsView: jest.fn(() => undefined),
-}));
-
 // Now import the function under test -- safe because siblings are mocked.
-import { getDuplicateStats } from "../src/features/duplicates/duplicateStats";
+import { getDuplicateStats } from "../src/features/duplicateStats/duplicateStats";
 
 // Helper: build a duplicatesObj with known set mappings.
 function makeDuplicatesObj(sets: number[][]) {

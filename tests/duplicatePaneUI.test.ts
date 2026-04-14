@@ -17,15 +17,18 @@ jest.mock("../src/shared/view", () => ({
 }));
 
 const isInDuplicatesPaneMock = jest.fn(() => false);
-const activeItemsViewMock = jest.fn(() => undefined as any);
-jest.mock("../src/shared/zotero", () => ({
+const getItemsViewMock = jest.fn(() => undefined as any);
+const getSelectedItemsMock = jest.fn(() => [] as any[]);
+const getSelectedLibraryIDMock = jest.fn(() => 1);
+jest.mock("../src/integrations/zotero/windows", () => ({
   isInDuplicatesPane: isInDuplicatesPaneMock,
-  activeItemsView: activeItemsViewMock,
-  debug: jest.fn(),
+  getItemsView: getItemsViewMock,
+  getSelectedItems: getSelectedItemsMock,
+  getSelectedLibraryID: getSelectedLibraryIDMock,
 }));
 
-const areDuplicatesMock = jest.fn<() => Promise<boolean>>(async () => false);
-jest.mock("../src/shared/duplicateQueries", () => ({
+const areDuplicatesMock = jest.fn<(...args: any[]) => Promise<boolean>>(async () => false);
+jest.mock("../src/integrations/zotero/duplicateSearch", () => ({
   areDuplicates: areDuplicatesMock,
   fetchDuplicates: jest.fn(async () => ({
     libraryID: 1,
@@ -64,11 +67,6 @@ import {
 function makeWin(opts: { hasMergeButton?: boolean; hasCustomHead?: boolean } = {}): any {
   const elements: Record<string, any> = {};
 
-  if (opts.hasMergeButton) {
-    const parentElement = { ownerDocument: { defaultView: {} } };
-    elements["zotero-duplicates-merge-button"] = { parentElement };
-  }
-
   const win: any = {
     document: {
       getElementById: jest.fn((id: string) => elements[id] ?? null),
@@ -80,6 +78,10 @@ function makeWin(opts: { hasMergeButton?: boolean; hasCustomHead?: boolean } = {
       }),
     },
   };
+  if (opts.hasMergeButton) {
+    const parentElement = { ownerDocument: { defaultView: win } };
+    elements["zotero-duplicates-merge-button"] = { parentElement };
+  }
   return win;
 }
 
@@ -115,7 +117,7 @@ describe("duplicateButtonIDs", () => {
 
 describe("registerButtonsInDuplicatePane", () => {
   const bulkFactory = jest.fn((_win: any, id: string) => ({ tag: "button" as const, id }));
-  const nonDupFactory = jest.fn((id: string, _showing?: boolean) => ({ tag: "button" as const, id }));
+  const nonDupFactory = jest.fn((_win: any, id: string, _showing?: boolean) => ({ tag: "button" as const, id }));
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -130,7 +132,7 @@ describe("registerButtonsInDuplicatePane", () => {
       expect.anything(),
       BULK_MERGE_INNER_BUTTON_ID,
     );
-    expect(nonDupFactory).toHaveBeenCalledWith(NON_DUPLICATE_INNER_BUTTON_ID);
+    expect(nonDupFactory).toHaveBeenCalledWith(win, NON_DUPLICATE_INNER_BUTTON_ID);
   });
 
   test("calls factories with correct external IDs when custom head exists", async () => {
@@ -141,7 +143,7 @@ describe("registerButtonsInDuplicatePane", () => {
       expect.anything(),
       BULK_MERGE_EXTERNAL_BUTTON_ID,
     );
-    expect(nonDupFactory).toHaveBeenCalledWith(NON_DUPLICATE_EXTERNAL_BUTTON_ID);
+    expect(nonDupFactory).toHaveBeenCalledWith(win, NON_DUPLICATE_EXTERNAL_BUTTON_ID);
   });
 
   test("calls insertElementBefore for both panes when both anchors exist", async () => {
@@ -162,6 +164,11 @@ describe("registerButtonsInDuplicatePane", () => {
 describe("updateDuplicateButtonsVisibilities", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    getSelectedItemsMock.mockReturnValue([
+      { id: 10, libraryID: 1 },
+      { id: 20, libraryID: 1 },
+    ]);
+    getSelectedLibraryIDMock.mockReturnValue(1);
   });
 
   test("calls toggleButtonHidden with correct IDs", async () => {
@@ -185,7 +192,7 @@ describe("updateDuplicateButtonsVisibilities", () => {
 
   test("shows bulk buttons in duplicates pane with rows", async () => {
     isInDuplicatesPaneMock.mockReturnValue(true);
-    activeItemsViewMock.mockReturnValue({ rowCount: 5 });
+    getItemsViewMock.mockReturnValue({ rowCount: 5 });
     areDuplicatesMock.mockResolvedValue(false);
     const win = makeWin();
     await updateDuplicateButtonsVisibilities(win);
@@ -208,7 +215,7 @@ describe("updateDuplicateButtonsVisibilities", () => {
 
   test("shows non-duplicate buttons when areDuplicates returns true", async () => {
     isInDuplicatesPaneMock.mockReturnValue(true);
-    activeItemsViewMock.mockReturnValue({ rowCount: 5 });
+    getItemsViewMock.mockReturnValue({ rowCount: 5 });
     areDuplicatesMock.mockResolvedValue(true);
     const win = makeWin();
     await updateDuplicateButtonsVisibilities(win);

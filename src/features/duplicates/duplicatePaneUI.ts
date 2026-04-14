@@ -1,7 +1,7 @@
 import type { TagElementProps } from "zotero-plugin-toolkit";
 import { toggleButtonHidden } from "../../shared/view";
-import { isInDuplicatesPane, activeItemsView } from "../../shared/zotero";
-import { areDuplicates } from "../../shared/duplicateQueries";
+import { areDuplicates } from "../../integrations/zotero/duplicateSearch";
+import { getItemsView, getSelectedItems, getSelectedLibraryID, isInDuplicatesPane } from "../../integrations/zotero/windows";
 import {
   BULK_MERGE_INNER_BUTTON_ID,
   BULK_MERGE_EXTERNAL_BUTTON_ID,
@@ -13,8 +13,9 @@ function addButtonsInDuplicatePanes(
   innerButton: boolean,
   siblingElement: Element,
   bulkButtonFactory: (win: Window, id: string) => TagElementProps,
-  nonDupButtonFactory: (id: string, showing?: boolean) => TagElementProps,
+  nonDupButtonFactory: (win: Window, id: string, showing?: boolean) => TagElementProps,
 ) {
+  const win = siblingElement.ownerDocument.defaultView!;
   const mergeButtonID = innerButton ? BULK_MERGE_INNER_BUTTON_ID : BULK_MERGE_EXTERNAL_BUTTON_ID;
   const nonDuplicateButtonID = innerButton ? NON_DUPLICATE_INNER_BUTTON_ID : NON_DUPLICATE_EXTERNAL_BUTTON_ID;
   ztoolkit.UI.insertElementBefore(
@@ -23,8 +24,8 @@ function addButtonsInDuplicatePanes(
       namespace: "html",
       classList: ["duplicate-custom-head"],
       children: [
-        bulkButtonFactory(siblingElement.ownerDocument.defaultView!, mergeButtonID),
-        nonDupButtonFactory(nonDuplicateButtonID),
+        bulkButtonFactory(win, mergeButtonID),
+        nonDupButtonFactory(win, nonDuplicateButtonID),
       ],
     },
     siblingElement,
@@ -34,7 +35,7 @@ function addButtonsInDuplicatePanes(
 export async function registerButtonsInDuplicatePane(
   win: Window,
   bulkButtonFactory: (win: Window, id: string) => TagElementProps,
-  nonDupButtonFactory: (id: string, showing?: boolean) => TagElementProps,
+  nonDupButtonFactory: (win: Window, id: string, showing?: boolean) => TagElementProps,
 ): Promise<void> {
   // 1. when selecting items in duplicatePane
   const mergeButton = win.document.getElementById("zotero-duplicates-merge-button");
@@ -52,9 +53,11 @@ export async function registerButtonsInDuplicatePane(
 }
 
 export async function updateDuplicateButtonsVisibilities(win: Window): Promise<void> {
-  const inDuplicatePane = isInDuplicatesPane();
-  const showBulkMergeButton = inDuplicatePane && (activeItemsView()?.rowCount ?? 0) > 0;
-  const showNonDuplicateButton = inDuplicatePane && (await areDuplicates());
+  const inDuplicatePane = isInDuplicatesPane(win);
+  const selectedItems = inDuplicatePane ? getSelectedItems(win) : [];
+  const libraryID = inDuplicatePane ? getSelectedLibraryID(win) : undefined;
+  const showBulkMergeButton = inDuplicatePane && (getItemsView(win)?.rowCount ?? 0) > 0;
+  const showNonDuplicateButton = inDuplicatePane && (await areDuplicates(selectedItems, libraryID));
   toggleButtonHidden(win, !showBulkMergeButton, BULK_MERGE_INNER_BUTTON_ID, BULK_MERGE_EXTERNAL_BUTTON_ID);
   toggleButtonHidden(win, !showNonDuplicateButton, NON_DUPLICATE_INNER_BUTTON_ID, NON_DUPLICATE_EXTERNAL_BUTTON_ID);
 }

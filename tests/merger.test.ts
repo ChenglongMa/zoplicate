@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach, jest } from "@jest/globals";
-import { merge } from "../src/shared/duplicates/merger";
+import { merge } from "../src/shared/duplicates/mergeItems";
 import { createMockItem } from "./__setup__/globals";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -8,7 +8,7 @@ const _ChromeUtils = (globalThis as any).ChromeUtils;
 const _mergeItemsMock = (globalThis as any)._mergeItemsMock;
 
 /**
- * Tests for the merge() function in merger.ts.
+ * Tests for the merge() function in mergeItems.ts.
  * Verifies JSON field precedence, itemTypeID filtering,
  * ChromeUtils.importESModule call path, and that mergeItems is invoked correctly.
  */

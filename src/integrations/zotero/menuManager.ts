@@ -7,6 +7,8 @@ export interface MenuConfig {
   register(): string | false;
 }
 
+import type { Disposer } from "../../app/lifecycle";
+
 /**
  * Register an array of menu configs and return the registered IDs.
  */
@@ -28,4 +30,11 @@ export function unregisterMenus(ids: string[]): void {
   for (const id of ids) {
     Zotero.MenuManager.unregisterMenu(id);
   }
+}
+
+export function registerMenuDisposer(configs: MenuConfig[]): Disposer {
+  const ids = registerMenus(configs);
+  return () => {
+    unregisterMenus(ids);
+  };
 }

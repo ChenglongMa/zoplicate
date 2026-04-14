@@ -1,4 +1,5 @@
 export { registerPrefs, registerPrefsScripts } from "./preferenceScript";
+import type { Disposer } from "../../app/lifecycle";
 
 // ---------------------------------------------------------------------------
 // Two-level registration wrapper
@@ -8,7 +9,8 @@ export { registerPrefs, registerPrefsScripts } from "./preferenceScript";
  * Global-level registration for the preferences feature.
  * Registers the preference pane in Zotero.
  */
-export function registerPreferencesGlobal(): void {
+export async function registerPreferencesGlobal(): Promise<Disposer> {
   const { registerPrefs } = require("./preferenceScript");
   registerPrefs();
+  return () => {};
 }

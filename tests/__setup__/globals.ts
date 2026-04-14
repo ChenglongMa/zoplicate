@@ -89,6 +89,10 @@ export function createMockItem(overrides: MockItemOverrides = {}): any {
     registerObserver: jest.fn(() => "notifier-id"),
     unregisterObserver: jest.fn(),
   },
+  Plugins: {
+    addObserver: jest.fn(),
+    removeObserver: jest.fn(),
+  },
 };
 
 // ---------------------------------------------------------------------------

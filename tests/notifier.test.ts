@@ -33,10 +33,19 @@ describe("registerNotifier", () => {
 
   test("disposer unregisters Zotero observer", () => {
     const disposer = registerNotifier(jest.fn<NotifyHandler>());
+    const pluginObserver = _Zotero.Plugins.addObserver.mock.calls[0][0];
 
     disposer();
 
     expect(_Zotero.Notifier.unregisterObserver).toHaveBeenCalledWith("notifier-id");
+    expect(_Zotero.Plugins.removeObserver).toHaveBeenCalledWith(pluginObserver);
+  });
+
+  test("registers a Zotero Plugins observer", () => {
+    registerNotifier(jest.fn<NotifyHandler>(), { pluginID: "zoplicate@chenglongma.com" });
+
+    expect(_Zotero.Plugins.addObserver).toHaveBeenCalledTimes(1);
+    expect(_Zotero.Plugins.addObserver.mock.calls[0][0]).toHaveProperty("shutdown");
   });
 });
 

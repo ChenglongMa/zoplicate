@@ -2,10 +2,10 @@ import { config } from "../../../package.json";
 import { getString } from "../../shared/locale";
 import type { DialogHelper, TagElementProps } from "zotero-plugin-toolkit";
 import { Action, getPref, MasterItem, setPref } from "../../shared/prefs";
-import { merge } from "../../shared/duplicates/merger";
-import { goToDuplicatesPane } from "../../shared/zotero";
+import { merge } from "../../shared/duplicates/mergeItems";
+import { goToDuplicatesPane } from "../../integrations/zotero/windows";
 import { DuplicateItems } from "../../shared/duplicates/duplicateItems";
-import { bringToFront } from "../../shared/window";
+import { bringToFront } from "../../integrations/zotero/windowChrome";
 import { showHintWithLink } from "../../shared/utils";
 import { waitUntilAsync } from "../../shared/wait";
 import { getDialogs, setProcessing } from "../../app/state";
@@ -138,7 +138,7 @@ export class Duplicates {
 
     if (!this.document?.hasFocus()) {
       await showHintWithLink(config.addonName, getString("du-dialog-title"), getString("du-dialog-hint"), async () => {
-        bringToFront(this.window);
+        bringToFront(this.dialogWindow);
       });
     }
 
@@ -154,10 +154,10 @@ export class Duplicates {
 
       // const scrollWidth = this.document?.body.scrollWidth || 0;
       // const scrollHeight = this.document?.body.scrollHeight || 0;
-      // this.window?.resizeBy(scrollWidth - prevScrollWidth, scrollHeight - prevScrollHeight);
+      // this.dialogWindow?.resizeBy(scrollWidth - prevScrollWidth, scrollHeight - prevScrollHeight);
       // Temporary solution: enlarge dialog size and then resize to content
-      this.window?.resizeBy(100, 100);
-      (this.window as any).sizeToContent();
+      this.dialogWindow?.resizeBy(100, 100);
+      (this.dialogWindow as any).sizeToContent();
     } else {
       // If dialog is not opened, create dialog
       this.dialog = await this.createDialog();
@@ -194,12 +194,12 @@ export class Duplicates {
     getDialogs().duplicateMaps = value;
   }
 
-  private get window(): Window | undefined {
+  private get dialogWindow(): Window | undefined {
     return this.dialog?.window;
   }
 
   private get document(): Document | undefined {
-    return this.window?.document;
+    return this.dialogWindow?.document;
   }
 
   private get newItemIDs(): number[] {
@@ -274,8 +274,8 @@ export class Duplicates {
           const currentHeight = this.document?.getElementById("table_container")?.clientHeight || 0;
           if (currentHeight > 500) {
             (this.document?.getElementById("table_container") as HTMLElement).style.height = "500px";
-            (this.window as any).sizeToContent();
-            this.window?.resizeBy(20, 0); // Add 20px to width for scrollbar
+            (this.dialogWindow as any).sizeToContent();
+            this.dialogWindow?.resizeBy(20, 0); // Add 20px to width for scrollbar
           }
         }, 500);
       },
@@ -376,7 +376,8 @@ export class Duplicates {
       })
       .addButton(getString("du-dialog-button-go-duplicates"), "btn_go_duplicate", {
         callback: (e) => {
-          goToDuplicatesPane();
+          const win = this.dialogWindow ?? Zotero.getMainWindow();
+          goToDuplicatesPane(win);
         },
       })
       .addButton(getString("general-cancel"), "btn_cancel");

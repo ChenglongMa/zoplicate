@@ -2,6 +2,7 @@ import { config } from "../../../package.json";
 import { toggleNonDuplicates } from "./nonDuplicateActions";
 import { menuCache, warmCache } from "../../integrations/zotero/menuCache";
 import type { MenuConfig } from "../../integrations/zotero/menuManager";
+import { getWindowFromEvent } from "../../integrations/zotero/windows";
 
 /**
  * Item context menu: submenu with mark/unmark non-duplicate children.
@@ -60,7 +61,7 @@ export function itemMenuConfig(): MenuConfig {
                 onCommand(event: Event, context: Zotero.MenuContext) {
                   const items = context.items;
                   if (!items || items.length < 2) return;
-                  toggleNonDuplicates("unmark", items, items[0].libraryID);
+                  toggleNonDuplicates("unmark", items, items[0].libraryID, { win: getWindowFromEvent(event) });
                 },
               },
               {
@@ -82,7 +83,7 @@ export function itemMenuConfig(): MenuConfig {
                 onCommand(event: Event, context: Zotero.MenuContext) {
                   const items = context.items;
                   if (!items || items.length < 2) return;
-                  toggleNonDuplicates("mark", items, items[0].libraryID);
+                  toggleNonDuplicates("mark", items, items[0].libraryID, { win: getWindowFromEvent(event) });
                 },
               },
             ],
