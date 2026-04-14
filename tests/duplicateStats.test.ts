@@ -1,5 +1,5 @@
 /**
- * Tests for getDuplicateStats in src/modules/duplicateStats.ts.
+ * Tests for getDuplicateStats in src/features/duplicates/duplicateStats.ts.
  *
  * CRITICAL: jest.mock() calls must appear before the import of the module
  * under test, to prevent side-effect-laden sibling imports from executing

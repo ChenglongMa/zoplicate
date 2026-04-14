@@ -19,26 +19,32 @@ export interface LocaleState {
   current: any;
 }
 
-export interface PrefsState {
+export interface PrefsWindowState {
   window: Window;
   columns?: Array<ColumnOptions>;
   rows?: Array<{ [dataKey: string]: string }>;
 }
 
-export interface DialogsState {
+export interface DialogState {
   dialog?: DialogHelper;
   duplicateMaps?: Map<number, { existingItemIDs: number[]; action: Action }>;
 }
 
-export interface DuplicateSearchState {
-  [libraryID: number]: boolean;
+export interface DuplicateCache {
+  needResetDuplicateSearch: { [libraryID: number]: boolean };
+  duplicateSearchObj: { [libraryID: number]: Zotero.Search };
+  duplicateSets: { [libraryID: number]: typeof Zotero.DisjointSetForest };
+}
+
+export interface DuplicateStatsState {
+  duplicateCounts: { [libraryID: number]: { total: number; unique: number } };
 }
 
 // ---------------------------------------------------------------------------
 // AppState (the full shape of addon.data)
 // ---------------------------------------------------------------------------
 
-export interface AppState {
+export interface AppState extends DuplicateCache, DuplicateStatsState {
   alive: boolean;
   config: {
     addonName: string;
@@ -51,12 +57,8 @@ export interface AppState {
   database: "SQLite" | "IndexedDB";
   ztoolkit: ZToolkit;
   locale?: LocaleState;
-  prefs?: PrefsState;
-  dialogs: DialogsState;
-  needResetDuplicateSearch: { [libraryID: number]: boolean };
-  duplicateSearchObj: { [libraryID: number]: Zotero.Search };
-  duplicateCounts: { [libraryID: number]: { total: number; unique: number } };
-  duplicateSets: { [libraryID: number]: typeof Zotero.DisjointSetForest };
+  prefs?: PrefsWindowState;
+  dialogs: DialogState;
   nonDuplicateSectionID: string | false;
   menuRegisteredIDs: string[];
   processing: boolean;
@@ -92,17 +94,17 @@ export function setLocale(value: LocaleState): void {
 }
 
 /** Return the prefs sub-state (may be undefined before prefs window opens). */
-export function getPrefs(): PrefsState | undefined {
+export function getPrefs(): PrefsWindowState | undefined {
   return addon.data.prefs;
 }
 
 /** Set the prefs sub-state. */
-export function setPrefs(value: PrefsState): void {
+export function setPrefs(value: PrefsWindowState): void {
   addon.data.prefs = value;
 }
 
 /** Return a mutable reference to the dialogs sub-state. */
-export function getDialogs(): DialogsState {
+export function getDialogs(): DialogState {
   return addon.data.dialogs;
 }
 

@@ -26,16 +26,10 @@ export async function registerPrefsScripts(_window: Window) {
 }
 
 async function updatePrefsUI() {
-  // You can initialize some UI elements on prefs window
-  // with addon.data.prefs.window.document
-  // Or bind some events to the elements
-  // Refer to:
-  // https://github.com/windingwind/zotero-plugin-template/blob/main/src/modules/preferenceScript.ts#L44-L107
+  // Initialize UI elements on prefs window, or bind events to the elements.
 }
 
 function bindPrefEvents() {
-  // Refer to:
-  // https://github.com/windingwind/zotero-plugin-template/blob/main/src/modules/preferenceScript.ts#L109-L130
   getPrefs()
     ?.window.document.querySelector(`#zotero-prefpane-${config.addonRef}-view-duplicate-stats-enable`)
     ?.addEventListener("command", async (e) => {
