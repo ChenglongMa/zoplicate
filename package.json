@@ -20,7 +20,6 @@
     "zotero:logs": "bash scripts/zotero-remote-debug.sh logs",
     "zotero:screenshot": "bash scripts/zotero-remote-debug.sh screenshot",
     "build": "tsc --noEmit && zotero-plugin build",
-    "stop-old": "node scripts/stop.mjs",
     "lint": "prettier --write . && eslint . --ext .ts --fix",
     "release": "zotero-plugin release",
     "test": "jest",

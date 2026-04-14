@@ -15,7 +15,7 @@ export function itemMenuConfig(): MenuConfig {
         menus: [
           {
             menuType: "submenu",
-            l10nID: `${config.addonRef}-menu-submenu-title`,
+            l10nID: `${config.addonRef}-addon-name`,
             icon: "chrome://zotero/skin/16/universal/duplicate.svg",
             onShowing(event: Event, context: Zotero.MenuContext) {
               const items = context.items;
@@ -33,7 +33,7 @@ export function itemMenuConfig(): MenuConfig {
                 context.setVisible(true);
                 context.setEnabled(false);
                 // Fire-and-forget cache warming for next open
-                warmCache(itemIDs);
+                warmCache(itemIDs, items[0].libraryID);
                 return;
               }
 

@@ -13,14 +13,15 @@ import {
 
 export async function toggleNonDuplicates(action: "mark" | "unmark", items?: number[] | Zotero.Item[], libraryID?: number) {
   const selectedItems = items && items.length ? items : Zotero.getActiveZoteroPane().getSelectedItems();
-  const itemIDs = selectedItems.map((item) => (typeof item === "number" ? item : item.id));
+  const resolvedItems = selectedItems.map((item) => (typeof item === "number" ? Zotero.Items.get(item) : item));
+  const itemIDs = resolvedItems.map((item) => item.id);
+  const resolvedLibraryID = libraryID ?? resolvedItems[0]?.libraryID ?? Zotero.getActiveZoteroPane().getSelectedLibraryID();
   if (action === "mark") {
-    const libID = libraryID ?? Zotero.getActiveZoteroPane().getSelectedLibraryID();
-    await NonDuplicatesDB.instance.insertNonDuplicates(itemIDs, libID);
+    await NonDuplicatesDB.instance.insertNonDuplicates(itemIDs, resolvedLibraryID);
   } else if (action === "unmark") {
     await NonDuplicatesDB.instance.deleteNonDuplicates(itemIDs);
   }
-  await fetchDuplicates({ refresh: true });
+  await fetchDuplicates({ libraryID: resolvedLibraryID, refresh: true });
   menuCache.invalidateAll();
   if (isInDuplicatesPane()) {
     refreshItemTree();

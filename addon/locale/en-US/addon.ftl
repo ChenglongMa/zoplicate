@@ -70,6 +70,8 @@ menuitem-not-duplicate = They are NOT duplicates
 menuitem-is-duplicate = They are duplicates
 
 ## MenuManager FTL keys (require .label attribute)
+addon-name =
+    .label = Zoplicate
 menu-submenu-title =
     .label = Zoplicate
 menu-mark-non-duplicate =

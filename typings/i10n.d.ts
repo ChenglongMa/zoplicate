@@ -6,6 +6,7 @@ export type FluentMessageId =
   | 'add-not-duplicates-alert-error-diff-library'
   | 'add-not-duplicates-alert-error-duplicates'
   | 'add-not-duplicates-alert-error-exist'
+  | 'addon-name'
   | 'bulk-merge-master-item-detailed'
   | 'bulk-merge-master-item-modified'
   | 'bulk-merge-master-item-newest'

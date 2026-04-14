@@ -71,6 +71,8 @@ menuitem-not-duplicate = 标记为非重复条目
 menuitem-is-duplicate = 标记为重复条目
 
 ## MenuManager FTL keys (require .label attribute)
+addon-name =
+    .label = Zoplicate
 menu-submenu-title =
     .label = Zoplicate
 menu-mark-non-duplicate =

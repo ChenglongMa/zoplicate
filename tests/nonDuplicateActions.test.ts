@@ -57,6 +57,7 @@ jest.mock("../src/shared/locale", () => ({
 
 const _Zotero = (globalThis as any).Zotero;
 
+const getItemMock = _Zotero.Items.get as jest.Mock<any>;
 const getSelectedItemsMock = jest.fn(() => [
   { id: 10, libraryID: 1 },
   { id: 20, libraryID: 1 },
@@ -87,21 +88,47 @@ import { toggleNonDuplicates, createNonDuplicateButton, NonDuplicates } from "..
 describe("toggleNonDuplicates", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    getItemMock.mockImplementation((input: any) => {
+      if (Array.isArray(input)) {
+        return input.map((id: number) => ({ id, libraryID: 77 }));
+      }
+      return { id: input, libraryID: 77 };
+    });
+    getSelectedItemsMock.mockReturnValue([
+      { id: 10, libraryID: 1 },
+      { id: 20, libraryID: 1 },
+    ]);
+    getSelectedLibraryIDMock.mockReturnValue(1);
   });
 
-  test("mark with explicit libraryID skips getActiveZoteroPane for library ID", async () => {
+  test("mark with explicit libraryID uses it for insert and duplicate refresh", async () => {
     await toggleNonDuplicates("mark", [10, 20], 99);
 
     expect(insertNonDuplicatesMock).toHaveBeenCalledWith([10, 20], 99);
+    expect(fetchDuplicatesMock).toHaveBeenCalledWith({ libraryID: 99, refresh: true });
     // Should NOT call getSelectedLibraryID since we provided libraryID
     expect(getSelectedLibraryIDMock).not.toHaveBeenCalled();
   });
 
-  test("mark without libraryID falls back to getActiveZoteroPane", async () => {
+  test("mark with number items resolves libraryID via Zotero.Items.get", async () => {
     await toggleNonDuplicates("mark", [10, 20]);
 
-    expect(insertNonDuplicatesMock).toHaveBeenCalledWith([10, 20], 1);
+    expect(getItemMock).toHaveBeenCalledWith(10);
+    expect(getItemMock).toHaveBeenCalledWith(20);
+    expect(insertNonDuplicatesMock).toHaveBeenCalledWith([10, 20], 77);
+    expect(fetchDuplicatesMock).toHaveBeenCalledWith({ libraryID: 77, refresh: true });
+    expect(getSelectedLibraryIDMock).not.toHaveBeenCalled();
+  });
+
+  test("falls back to selected library when no item library can be resolved", async () => {
+    getSelectedItemsMock.mockReturnValue([]);
+
+    await toggleNonDuplicates("mark");
+
+    expect(getSelectedItemsMock).toHaveBeenCalled();
     expect(getSelectedLibraryIDMock).toHaveBeenCalled();
+    expect(insertNonDuplicatesMock).toHaveBeenCalledWith([], 1);
+    expect(fetchDuplicatesMock).toHaveBeenCalledWith({ libraryID: 1, refresh: true });
   });
 
   test("unmark calls deleteNonDuplicates", async () => {
@@ -121,6 +148,7 @@ describe("toggleNonDuplicates", () => {
 
     expect(getSelectedItemsMock).toHaveBeenCalled();
     expect(insertNonDuplicatesMock).toHaveBeenCalledWith([10, 20], 1);
+    expect(fetchDuplicatesMock).toHaveBeenCalledWith({ libraryID: 1, refresh: true });
   });
 });
 

@@ -3,6 +3,7 @@ import { showingDuplicateStats } from "../../shared/prefs";
 import { fetchAllDuplicates } from "../../shared/duplicateQueries";
 import { getString } from "../../shared/locale";
 import type { MenuConfig } from "../../integrations/zotero/menuManager";
+import { menuCache } from "../../integrations/zotero/menuCache";
 
 /**
  * Collection context menu: refresh duplicates.
@@ -26,6 +27,7 @@ export function collectionMenuConfig(): MenuConfig {
             },
             onCommand(event: Event, _context: Zotero.MenuContext) {
               fetchAllDuplicates(true).then(() => {
+                menuCache.invalidateAll();
                 new ztoolkit.ProgressWindow(getString("menuitem-refresh-duplicates"), {
                   closeOnClick: true,
                   closeTime: 2000,

@@ -4,9 +4,11 @@
   "phase": "Zotero 9 Migration",
   "status": "accepted",
   "depends_on": ["M002"],
-  "goal": "Make plugin Zotero 9 only: update version source files (manifest.json, update-template.json) to strict_min/max 9.0/9.*, switch merger.ts to direct ChromeUtils.importESModule mergeItems, delete dead patchMergePDFAttachments. No version branching.",
+  "goal": "Make plugin Zotero 9 only: update manifest compatibility source to strict_min/max 9.0/9.* and rely on zotero-plugin-scaffold to generate update.json/update-beta.json from the built manifest; switch merger.ts to direct ChromeUtils.importESModule mergeItems; delete dead patchMergePDFAttachments. No version branching.",
   "in_scope": [
-    "Update version source files: manifest.json and update-template.json to strict_min_version 9.0, strict_max_version 9.* (update.json/update-beta.json are generated from template by build.mjs:139)",
+    "Update addon/manifest.json to strict_min_version 9.0, strict_max_version 9.*",
+    "Use zotero-plugin-scaffold build flow: update.json/update-beta.json are generated from build/addon/manifest.json and copied to repo root by zotero-plugin.config.ts build:makeUpdateJSON hook",
+    "Remove legacy dependency on scripts/build.mjs and scripts/update-template.json for update manifest generation",
     "Delete patchMergePDFAttachments (target gone in Zotero 9)",
     "merger.ts uses ChromeUtils.importESModule for mergeItems directly (no Zotero.Items.merge fallback)",
     "Add ChromeUtils stub to test setup",
@@ -18,7 +20,8 @@
     "Version branching or Zotero 8 fallback"
   ],
   "acceptance": [
-    "manifest.json and update-template.json have strict_min_version 9.0 AND strict_max_version 9.*; npm run build generates correct update.json/update-beta.json",
+    "addon/manifest.json has strict_min_version 9.0 AND strict_max_version 9.*; npm run build generates build/update.json, build/update-beta.json, root update.json, and root update-beta.json with the same Zotero compatibility bounds",
+    "scripts/update-template.json and scripts/build.mjs are not referenced by active package scripts or build configuration",
     "patchMergePDFAttachments grep returns 0 matches",
     "merger.ts calls mergeItems via ChromeUtils.importESModule directly",
     "No isZotero9OrLater or version.ts in codebase",
