@@ -1,5 +1,5 @@
 /**
- * Tests for src/utils/state.ts accessor functions.
+ * Tests for src/app/state.ts accessor functions.
  *
  * The global `addon` stub is set up in tests/__setup__/globals.ts.
  * Each test manipulates addon.data directly to verify accessors.

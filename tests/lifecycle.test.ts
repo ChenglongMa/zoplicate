@@ -1,5 +1,5 @@
 /**
- * Tests for src/lifecycle.ts: Disposer, DisposerRegistry, patchMethod, compositeDisposer.
+ * Tests for src/app/lifecycle.ts: Disposer, DisposerRegistry, patchMethod, compositeDisposer.
  *
  * TDD: these tests are written before the implementation exists.
  */

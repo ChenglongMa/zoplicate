@@ -6,6 +6,7 @@
 
 import { NonDuplicatesDB } from "../../db/nonDuplicates";
 import { fetchDuplicates } from "../../shared/duplicateQueries";
+import type { NotifyHandler } from "./notifier";
 
 export interface MenuCacheEntry {
   isNonDuplicate: boolean;
@@ -41,6 +42,14 @@ class MenuCache {
 }
 
 export const menuCache = new MenuCache();
+
+export function createMenuCacheNotifyHandler(): NotifyHandler {
+  return async (_event, type) => {
+    if (type == "item" || type == "trash") {
+      menuCache.invalidateAll();
+    }
+  };
+}
 
 /**
  * Warm the menu visibility cache for a set of item IDs.

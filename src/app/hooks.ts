@@ -1,32 +1,36 @@
-import { config } from "../package.json";
-import { initLocale } from "./shared/locale";
-import { registerPreferencesGlobal, registerPrefsScripts } from "./features/preferences";
-import { registerNotifier } from "./integrations/zotero/notifier";
-import { registerStyleSheets } from "./shared/window";
-import { BulkDuplicates } from "./features/bulk-merge";
+import { config } from "../../package.json";
+import { initLocale } from "../shared/locale";
+import { registerPreferencesGlobal, registerPrefsScripts } from "../features/preferences";
+import { registerNotifier, notifyDispatcher } from "../integrations/zotero/notifier";
+import { registerStyleSheets } from "../shared/window";
+import { BulkDuplicates } from "../features/bulk-merge";
 import {
   registerDuplicatesGlobal,
   registerDuplicatesWindow,
   refreshDuplicateStats,
   updateDuplicateButtonsVisibilities,
-} from "./features/duplicates";
-import { createNonDuplicateButton, registerNonDuplicatesGlobal, registerNonDuplicatesWindow } from "./features/non-duplicates";
-import { registerMenus, unregisterMenus } from "./integrations/zotero/menuManager";
+} from "../features/duplicates";
+import {
+  createNonDuplicateButton,
+  registerNonDuplicatesGlobal,
+  registerNonDuplicatesWindow,
+} from "../features/non-duplicates";
+import { registerMenus, unregisterMenus } from "../integrations/zotero/menuManager";
 import {
   patchFindDuplicates,
   patchGetSearchObject,
   patchItemSaveData,
-} from "./integrations/zotero/patches";
-import { debug } from "./shared/zotero";
-import { NonDuplicatesDB } from "./db/nonDuplicates";
-import { menuCache } from "./integrations/zotero/menuCache";
+} from "../integrations/zotero/patches";
+import { debug } from "../shared/zotero";
+import { NonDuplicatesDB } from "../db/nonDuplicates";
+import { createMenuCacheNotifyHandler } from "../integrations/zotero/menuCache";
 import {
   getEnv,
   setAlive,
   closeDialogWindow,
-} from "./app/state";
-import { DisposerRegistry } from "./app/lifecycle";
-import { NonDuplicates } from "./features/non-duplicates";
+} from "./state";
+import { DisposerRegistry } from "./lifecycle";
+import { NonDuplicates } from "../features/non-duplicates";
 
 // ---------------------------------------------------------------------------
 // Disposer registries
@@ -34,19 +38,7 @@ import { NonDuplicates } from "./features/non-duplicates";
 
 const globalDisposers = new DisposerRegistry();
 const windowDisposers = new WeakMap<Window, DisposerRegistry>();
-
-let mainWindowLoaded = false;
-const notifyQueue: { event: string; type: string; ids: number[] | string[]; extraData: { [key: string]: any } }[] = [];
-
-// ---------------------------------------------------------------------------
-// Feature notify handlers (populated during window registration)
-// ---------------------------------------------------------------------------
-
-type NotifyHandler = (event: string, type: string, ids: number[] | string[], extraData: { [key: string]: any }) => Promise<void>;
-type DeleteHandler = (ids: number[]) => Promise<void>;
-
-let duplicatesNotifyHandler: NotifyHandler | null = null;
-let nonDuplicatesDeleteHandler: DeleteHandler | null = null;
+const loadedWindows = new Set<Window>();
 
 // ---------------------------------------------------------------------------
 // Lifecycle hooks
@@ -60,8 +52,8 @@ async function onStartup() {
   // Preferences (global)
   registerPreferencesGlobal();
 
-  // Notifier -- returns disposer
-  globalDisposers.add(registerNotifier());
+  globalDisposers.add(notifyDispatcher.registerHandler(createMenuCacheNotifyHandler()));
+  globalDisposers.add(registerNotifier((event, type, ids, extraData) => notifyDispatcher.dispatch(event, type, ids, extraData)));
 
   // init database
   const nonDuplicatesDB = NonDuplicatesDB.instance;
@@ -104,39 +96,38 @@ async function onMainWindowLoad(win: Window): Promise<void> {
     () => BulkDuplicates.instance.isRunning,
   );
   winRegistry.add(duplicatesResult.disposer);
-  duplicatesNotifyHandler = duplicatesResult.notifyHandler;
 
   // Bulk-merge feature (window-level)
-  const { registerBulkMergeWindow } = await import("./features/bulk-merge");
+  const { registerBulkMergeWindow } = await import("../features/bulk-merge");
   const bulkDisposer = registerBulkMergeWindow(win, updateDuplicateButtonsVisibilities);
   winRegistry.add(bulkDisposer);
 
   // Non-duplicates feature (window-level)
   const nonDuplicatesResult = await registerNonDuplicatesWindow(win);
   winRegistry.add(nonDuplicatesResult.disposer);
-  nonDuplicatesDeleteHandler = nonDuplicatesResult.deleteHandler;
+  winRegistry.add(notifyDispatcher.registerHandler(nonDuplicatesResult.notifyHandler));
+  winRegistry.add(notifyDispatcher.registerHandler(duplicatesResult.notifyHandler));
 
   if (getEnv() === "development") {
     await registerDevColumn();
   }
-  mainWindowLoaded = true;
-  setTimeout(async () => {
-    while (notifyQueue.length > 0) {
-      const { event, type, ids, extraData } = notifyQueue.shift()!;
-      debug("notify shift", event, type, ids, extraData);
-      await onNotify(event, type, ids, extraData);
+  loadedWindows.add(win);
+  winRegistry.add(async () => {
+    loadedWindows.delete(win);
+    if (loadedWindows.size === 0) {
+      await notifyDispatcher.setReady(false);
+    }
+  });
+  setTimeout(() => {
+    if (loadedWindows.has(win)) {
+      void notifyDispatcher.setReady(true);
     }
   }, 500);
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {
   debug("addon onMainWindowUnload");
-  mainWindowLoaded = false;
   closeDialogWindow();
-
-  // Clear feature notify handlers for this window
-  duplicatesNotifyHandler = null;
-  nonDuplicatesDeleteHandler = null;
 
   const winRegistry = windowDisposers.get(win);
   if (winRegistry) {
@@ -150,6 +141,7 @@ async function onMainWindowUnload(win: Window): Promise<void> {
 async function onShutdown() {
   debug("addon onShutdown");
   await globalDisposers.disposeAll();
+  notifyDispatcher.reset();
   ztoolkit.unregisterAll();
   closeDialogWindow();
   await NonDuplicatesDB.instance.close();
@@ -175,41 +167,6 @@ async function registerDevColumn() {
 }
 
 /**
- * Composition-root dispatcher for Notify events.
- * Queue/mainWindowLoaded gating stays here as infrastructure.
- * Business logic is delegated to feature notify handlers registered during window setup.
- *
- * menuCache invalidation is kept here as an infrastructure concern:
- * menuCache is an integration-level module, not a feature module.
- */
-async function onNotify(event: string, type: string, ids: number[] | string[], extraData: { [key: string]: any }) {
-  if (!mainWindowLoaded) {
-    debug("notify queue", event, type, ids, extraData);
-    notifyQueue.push({ event, type, ids, extraData });
-    return;
-  }
-
-  ztoolkit.log("notify", event, type, ids, extraData);
-
-  // Infrastructure: invalidate menu visibility cache on item changes
-  if (type == "item" || type == "trash") {
-    menuCache.invalidateAll();
-  }
-
-  // Delegate to non-duplicates delete handler
-  const isDeleted = type == "item" && event == "delete" && ids.length > 0;
-  if (isDeleted && nonDuplicatesDeleteHandler) {
-    await nonDuplicatesDeleteHandler(ids as number[]);
-    return;
-  }
-
-  // Delegate to duplicates notify handler
-  if (duplicatesNotifyHandler) {
-    await duplicatesNotifyHandler(event, type, ids, extraData);
-  }
-}
-
-/**
  * Dispatcher for Preference UI events.
  */
 async function onPrefsEvent(type: string, data: { [key: string]: any }) {
@@ -231,7 +188,6 @@ export default {
   onShutdown,
   onMainWindowLoad,
   onMainWindowUnload,
-  onNotify,
   onPrefsEvent,
   onShortcuts,
   onDialogEvents,

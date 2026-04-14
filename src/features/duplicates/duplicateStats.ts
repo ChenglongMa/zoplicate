@@ -41,7 +41,7 @@ export async function registerDuplicateStats(win: Window): Promise<Disposer> {
           originalDIV.setAttribute("title", tooltip);
 
           // https://github.com/zotero/zotero/blob/main/chrome/content/zotero/collectionTree.jsx#L321
-          // https://github.com/MuiseDestiny/zotero-style/blob/master/src/modules/views.ts#L3279
+          // Keep Zotero's collection row structure and swap only the visible label.
           const cell = originalDIV.querySelector("span.cell.label.primary") as Element;
           const collectionNameSpan = cell.querySelector("span.cell-text") as Element;
           removeSiblings(collectionNameSpan);
