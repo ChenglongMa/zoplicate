@@ -10,6 +10,17 @@ const invalidateAllMock = jest.fn();
 const menuCacheBuildKeyMock = jest.fn((ids: number[]) => [...ids].sort((a, b) => a - b).join("-"));
 const menuCacheGetMock = jest.fn<(key: string) => any>();
 const menuCacheSetMock = jest.fn();
+const warmCacheMock = jest.fn<(...args: any[]) => Promise<void>>(async (itemIDs: number[], libraryID?: number) => {
+  if (itemIDs.length < 2) return;
+  const key = menuCacheBuildKeyMock(itemIDs);
+  const { NonDuplicatesDB } = require("../src/db/nonDuplicates");
+  const isNonDuplicate = await NonDuplicatesDB.instance.existsNonDuplicates(itemIDs);
+  const { fetchDuplicates } = require("../src/shared/duplicateQueries");
+  const { duplicatesObj } = await fetchDuplicates({ libraryID, refresh: false });
+  const duplicateSet = new Set(duplicatesObj.getSetItemsByItemID(itemIDs[0]));
+  const isDuplicateSet = itemIDs.every((id: number) => duplicateSet.has(id));
+  menuCacheSetMock(key, { isNonDuplicate, isDuplicateSet });
+});
 jest.mock("../src/integrations/zotero/menuCache", () => ({
   menuCache: {
     invalidateAll: invalidateAllMock,
@@ -18,20 +29,7 @@ jest.mock("../src/integrations/zotero/menuCache", () => ({
     set: menuCacheSetMock,
     invalidate: jest.fn(),
   },
-  // Re-implement warmCache logic using the mocked menuCache and mocked dependencies.
-  // jest.requireActual would bind to the real (unmocked) menuCache instance,
-  // so we replicate the function to use the mock exports instead.
-  warmCache: async (itemIDs: number[]) => {
-    if (itemIDs.length < 2) return;
-    const key = menuCacheBuildKeyMock(itemIDs);
-    const { NonDuplicatesDB } = require("../src/db/nonDuplicates");
-    const isNonDuplicate = await NonDuplicatesDB.instance.existsNonDuplicates(itemIDs);
-    const { fetchDuplicates } = require("../src/shared/duplicateQueries");
-    const { duplicatesObj } = await fetchDuplicates();
-    const duplicateSet = new Set(duplicatesObj.getSetItemsByItemID(itemIDs[0]));
-    const isDuplicateSet = itemIDs.every((id: number) => duplicateSet.has(id));
-    menuCacheSetMock(key, { isNonDuplicate, isDuplicateSet });
-  },
+  warmCache: warmCacheMock,
 }));
 
 const toggleNonDuplicatesMock = jest.fn<(...args: any[]) => Promise<void>>(async () => undefined);
@@ -149,7 +147,7 @@ describe("registerMenus", () => {
     registerMenus([itemMenuConfig(), collectionMenuConfig()]);
     const itemOptions = registerMenuMock.mock.calls[0][0] as Zotero.MenuOptions;
     const submenu = itemOptions.menus[0];
-    expect(submenu.l10nID).toBe("zoplicate-menu-submenu-title");
+    expect(submenu.l10nID).toBe("zoplicate-addon-name");
     const children = submenu.menus!;
     expect(children[0].l10nID).toBe("zoplicate-menu-unmark-non-duplicate");
     expect(children[1].l10nID).toBe("zoplicate-menu-mark-non-duplicate");
@@ -248,6 +246,7 @@ describe("item menu onShowing callback", () => {
     // submenu visible but disabled on cache miss
     expect(setVisibleSubmenu).toHaveBeenCalledWith(true);
     expect(setEnabledSubmenu).toHaveBeenCalledWith(false);
+    expect(warmCacheMock).toHaveBeenCalledWith([10, 20], 1);
   });
 
   test("onShowing hides submenu when fewer than 2 items selected", () => {
@@ -345,6 +344,25 @@ describe("collection menu onShowing callback", () => {
     onShowing({} as Event, ctx);
     expect(setVisibleMenu).toHaveBeenCalledWith(false);
   });
+
+  test("onCommand refreshes duplicates then invalidates menu cache", async () => {
+    registerMenus([itemMenuConfig(), collectionMenuConfig()]);
+    const collectionOptions = registerMenuMock.mock.calls[1][0] as Zotero.MenuOptions;
+    const menuItem = collectionOptions.menus[0];
+    const onCommand = menuItem.onCommand!;
+    const progressWindow = {
+      createLine: jest.fn(() => progressWindow),
+      show: jest.fn(),
+    };
+    (globalThis as any).ztoolkit.ProgressWindow = jest.fn(() => progressWindow);
+
+    onCommand({} as Event, {} as Zotero.MenuContext);
+    await Promise.resolve();
+
+    expect(fetchAllDuplicatesMock).toHaveBeenCalledWith(true);
+    expect(invalidateAllMock).toHaveBeenCalled();
+    expect(progressWindow.show).toHaveBeenCalled();
+  });
 });
 
 describe("warmCache", () => {
@@ -362,8 +380,9 @@ describe("warmCache", () => {
       duplicateItems: [10, 20],
     });
 
-    await warmCache([10, 20]);
+    await warmCache([10, 20], 42);
 
+    expect(fetchDuplicatesMock).toHaveBeenCalledWith({ libraryID: 42, refresh: false });
     expect(menuCacheSetMock).toHaveBeenCalledWith("10-20", {
       isNonDuplicate: true,
       isDuplicateSet: true,

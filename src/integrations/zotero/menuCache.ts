@@ -46,7 +46,7 @@ export const menuCache = new MenuCache();
  * Warm the menu visibility cache for a set of item IDs.
  * Queries NonDuplicatesDB and fetchDuplicates to populate the cache.
  */
-export async function warmCache(itemIDs: number[]): Promise<void> {
+export async function warmCache(itemIDs: number[], libraryID?: number): Promise<void> {
   if (itemIDs.length < 2) {
     return;
   }
@@ -54,7 +54,7 @@ export async function warmCache(itemIDs: number[]): Promise<void> {
   const key = menuCache.buildKey(itemIDs);
   const isNonDuplicate = await NonDuplicatesDB.instance.existsNonDuplicates(itemIDs);
 
-  const { duplicatesObj } = await fetchDuplicates();
+  const { duplicatesObj } = await fetchDuplicates({ libraryID, refresh: false });
   const duplicateSet = new Set(duplicatesObj.getSetItemsByItemID(itemIDs[0]));
   const isDuplicateSet = itemIDs.every((id) => duplicateSet.has(id));
 
