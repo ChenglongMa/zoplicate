@@ -1,6 +1,6 @@
 import { config, homepage } from "../../../package.json";
 import { getString } from "../../shared/locale";
-import { fetchAllDuplicates } from "../../shared/duplicateQueries";
+import { fetchAllDuplicates } from "../../integrations/zotero/duplicateSearch";
 import { setPrefs, getPrefs } from "../../app/state";
 
 export function registerPrefs() {

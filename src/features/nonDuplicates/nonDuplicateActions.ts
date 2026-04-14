@@ -1,21 +1,34 @@
 import { config } from "../../../package.json";
-import { isInDuplicatesPane, refreshItemTree } from "../../shared/zotero";
 import type { TagElementProps } from "zotero-plugin-toolkit";
 import { getString } from "../../shared/locale";
 import { NonDuplicatesDB } from "../../db/nonDuplicates";
-import { fetchDuplicates } from "../../shared/duplicateQueries";
+import { fetchDuplicates } from "../../integrations/zotero/duplicateSearch";
 import { menuCache } from "../../integrations/zotero/menuCache";
+import { getSelectedItems, getSelectedLibraryID, isInDuplicatesPane, refreshItemTree } from "../../integrations/zotero/windows";
 import {
   NON_DUPLICATE_BUTTON_ID,
   NON_DUPLICATE_INNER_BUTTON_ID,
   NON_DUPLICATE_EXTERNAL_BUTTON_ID,
 } from "../../shared/duplicates/duplicateButtonIDs";
 
-export async function toggleNonDuplicates(action: "mark" | "unmark", items?: number[] | Zotero.Item[], libraryID?: number) {
-  const selectedItems = items && items.length ? items : Zotero.getActiveZoteroPane().getSelectedItems();
-  const resolvedItems = selectedItems.map((item) => (typeof item === "number" ? Zotero.Items.get(item) : item));
+interface ToggleNonDuplicatesOptions {
+  win?: Window;
+}
+
+export async function toggleNonDuplicates(
+  action: "mark" | "unmark",
+  items: number[] | Zotero.Item[],
+  libraryID?: number,
+  options: ToggleNonDuplicatesOptions = {},
+) {
+  const resolvedItems = items.map((item) => (typeof item === "number" ? Zotero.Items.get(item) : item));
   const itemIDs = resolvedItems.map((item) => item.id);
-  const resolvedLibraryID = libraryID ?? resolvedItems[0]?.libraryID ?? Zotero.getActiveZoteroPane().getSelectedLibraryID();
+  const resolvedLibraryID = libraryID ?? resolvedItems[0]?.libraryID;
+
+  if (resolvedLibraryID === undefined) {
+    return;
+  }
+
   if (action === "mark") {
     await NonDuplicatesDB.instance.insertNonDuplicates(itemIDs, resolvedLibraryID);
   } else if (action === "unmark") {
@@ -23,8 +36,8 @@ export async function toggleNonDuplicates(action: "mark" | "unmark", items?: num
   }
   await fetchDuplicates({ libraryID: resolvedLibraryID, refresh: true });
   menuCache.invalidateAll();
-  if (isInDuplicatesPane()) {
-    refreshItemTree();
+  if (options.win && isInDuplicatesPane(options.win)) {
+    refreshItemTree(options.win);
   }
   await Zotero.Notifier.trigger(
     // @ts-ignore
@@ -36,7 +49,11 @@ export async function toggleNonDuplicates(action: "mark" | "unmark", items?: num
   );
 }
 
-export function createNonDuplicateButton(id: string, showing = true): TagElementProps {
+export async function toggleSelectedNonDuplicates(action: "mark" | "unmark", win: Window) {
+  await toggleNonDuplicates(action, getSelectedItems(win), getSelectedLibraryID(win), { win });
+}
+
+export function createNonDuplicateButton(win: Window, id: string, showing = true): TagElementProps {
   return {
     tag: "button",
     id: id,
@@ -47,12 +64,12 @@ export function createNonDuplicateButton(id: string, showing = true): TagElement
     },
     namespace: "xul",
     listeners: [
-      {
-        type: "click",
-        listener: async (e) => {
-          await toggleNonDuplicates("mark");
+        {
+          type: "click",
+          listener: async (e) => {
+            await toggleSelectedNonDuplicates("mark", win);
+          },
         },
-      },
     ],
     ignoreIfExists: true,
   };

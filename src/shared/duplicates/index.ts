@@ -1,5 +1,5 @@
 export { DuplicateItems } from "./duplicateItems";
-export { merge } from "./merger";
+export { merge } from "./mergeItems";
 export {
   BULK_MERGE_BUTTON_ID,
   BULK_MERGE_INNER_BUTTON_ID,

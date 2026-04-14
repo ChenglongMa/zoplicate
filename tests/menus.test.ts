@@ -15,7 +15,7 @@ const warmCacheMock = jest.fn<(...args: any[]) => Promise<void>>(async (itemIDs:
   const key = menuCacheBuildKeyMock(itemIDs);
   const { NonDuplicatesDB } = require("../src/db/nonDuplicates");
   const isNonDuplicate = await NonDuplicatesDB.instance.existsNonDuplicates(itemIDs);
-  const { fetchDuplicates } = require("../src/shared/duplicateQueries");
+  const { fetchDuplicates } = require("../src/integrations/zotero/duplicateSearch");
   const { duplicatesObj } = await fetchDuplicates({ libraryID, refresh: false });
   const duplicateSet = new Set(duplicatesObj.getSetItemsByItemID(itemIDs[0]));
   const isDuplicateSet = itemIDs.every((id: number) => duplicateSet.has(id));
@@ -33,7 +33,7 @@ jest.mock("../src/integrations/zotero/menuCache", () => ({
 }));
 
 const toggleNonDuplicatesMock = jest.fn<(...args: any[]) => Promise<void>>(async () => undefined);
-jest.mock("../src/features/non-duplicates/nonDuplicateActions", () => ({
+jest.mock("../src/features/nonDuplicates/nonDuplicateActions", () => ({
   toggleNonDuplicates: toggleNonDuplicatesMock,
 }));
 
@@ -52,7 +52,7 @@ const fetchDuplicatesMock = jest.fn<(...args: any[]) => Promise<any>>(async () =
   duplicateItems: [10, 20],
 }));
 const fetchAllDuplicatesMock = jest.fn<(...args: any[]) => Promise<any>>(async () => undefined);
-jest.mock("../src/shared/duplicateQueries", () => ({
+jest.mock("../src/integrations/zotero/duplicateSearch", () => ({
   fetchDuplicates: fetchDuplicatesMock,
   fetchAllDuplicates: fetchAllDuplicatesMock,
 }));
@@ -84,8 +84,8 @@ _Zotero.MenuManager = {
 // Import after mocks
 // ---------------------------------------------------------------------------
 
-import { itemMenuConfig } from "../src/features/non-duplicates/menus";
-import { collectionMenuConfig } from "../src/features/duplicates/menus";
+import { itemMenuConfig } from "../src/features/nonDuplicates/nonDuplicateMenu";
+import { collectionMenuConfig } from "../src/features/duplicateStats/duplicateStatsMenu";
 import { registerMenus, unregisterMenus } from "../src/integrations/zotero/menuManager";
 import { warmCache } from "../src/integrations/zotero/menuCache";
 
@@ -447,6 +447,7 @@ describe("item menu onCommand callbacks", () => {
       "unmark",
       mockItems,
       42,
+      { win: undefined },
     );
   });
 
@@ -476,6 +477,7 @@ describe("item menu onCommand callbacks", () => {
       "mark",
       mockItems,
       7,
+      { win: undefined },
     );
   });
 });

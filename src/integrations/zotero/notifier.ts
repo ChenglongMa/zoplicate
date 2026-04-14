@@ -74,10 +74,10 @@ export const notifyDispatcher = new NotifyDispatcher();
  * Register Zotero notifier observer.
  * Returns a Disposer that unregisters the observer.
  *
- * Note: This module does NOT import from src/features/.
+ * Note: This module does NOT import feature modules.
  * All feature-level dispatch is injected by app/hooks.ts (the composition root).
  */
-export function registerNotifier(handler: NotifyHandler): Disposer {
+export function registerNotifier(handler: NotifyHandler, options: { pluginID?: string } = {}): Disposer {
   const callback = {
     notify: async (event: string, type: string, ids: number[] | string[], extraData: { [key: string]: any }) => {
       if (!isAlive()) {
@@ -108,7 +108,18 @@ export function registerNotifier(handler: NotifyHandler): Disposer {
     "tab",
   ]);
 
+  const pluginObserver: _ZoteroTypes.Plugins.observer = {
+    shutdown: ({ id }: { id: string }) => {
+      if (!options.pluginID || id === options.pluginID) {
+        ztoolkit.log("plugin shutdown observed", id);
+      }
+    },
+  };
+
+  Zotero.Plugins?.addObserver?.(pluginObserver);
+
   return () => {
     Zotero.Notifier.unregisterObserver(notifierID);
+    Zotero.Plugins?.removeObserver?.(pluginObserver);
   };
 }

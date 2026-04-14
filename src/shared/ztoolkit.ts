@@ -31,7 +31,7 @@ import { BasicTool, makeHelperTool, unregister } from "zotero-plugin-toolkit";
 import { UITool } from "zotero-plugin-toolkit";
 import { DialogHelper } from "zotero-plugin-toolkit";
 import { ProgressWindowHelper } from "zotero-plugin-toolkit";
-import { debug } from "./zotero";
+import { debug } from "./debug";
 
 class MyToolkit extends BasicTool {
   UI: UITool;

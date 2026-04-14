@@ -1,7 +1,7 @@
 /**
  * Lifecycle utilities: Disposer, DisposerRegistry, patchMethod, compositeDisposer.
  *
- * These replace all usage of ztoolkit.Patch and provide a structured way
+ * These replace toolkit-level monkey patching and provide a structured way
  * to track and clean up resources (patches, listeners, observers) on
  * shutdown or window unload.
  */

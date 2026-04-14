@@ -5,7 +5,7 @@
  */
 
 import { NonDuplicatesDB } from "../../db/nonDuplicates";
-import { fetchDuplicates } from "../../shared/duplicateQueries";
+import { fetchDuplicates } from "./duplicateSearch";
 import type { NotifyHandler } from "./notifier";
 
 export interface MenuCacheEntry {
@@ -63,7 +63,8 @@ export async function warmCache(itemIDs: number[], libraryID?: number): Promise<
   const key = menuCache.buildKey(itemIDs);
   const isNonDuplicate = await NonDuplicatesDB.instance.existsNonDuplicates(itemIDs);
 
-  const { duplicatesObj } = await fetchDuplicates({ libraryID, refresh: false });
+  const resolvedLibraryID = libraryID ?? Zotero.Items.get(itemIDs[0]).libraryID;
+  const { duplicatesObj } = await fetchDuplicates({ libraryID: resolvedLibraryID, refresh: false });
   const duplicateSet = new Set(duplicatesObj.getSetItemsByItemID(itemIDs[0]));
   const isDuplicateSet = itemIDs.every((id) => duplicateSet.has(id));
 

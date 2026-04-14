@@ -40,15 +40,15 @@ async function startup({ id, version, resourceURI, rootURI }, reason) {
     `${rootURI}/chrome/content/scripts/__addonRef__.js`,
     ctx,
   );
-  Zotero.__addonInstance__.hooks.onStartup();
+  await Zotero.__addonInstance__.hooks.onStartup();
 }
 
 async function onMainWindowLoad({ window }, reason) {
-  Zotero.__addonInstance__?.hooks.onMainWindowLoad(window);
+  await Zotero.__addonInstance__?.hooks.onMainWindowLoad(window);
 }
 
 async function onMainWindowUnload({ window }, reason) {
-  Zotero.__addonInstance__?.hooks.onMainWindowUnload(window);
+  await Zotero.__addonInstance__?.hooks.onMainWindowUnload(window);
 }
 
 async function shutdown({ id, version, resourceURI, rootURI }, reason) {

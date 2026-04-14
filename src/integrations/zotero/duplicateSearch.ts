@@ -1,4 +1,9 @@
-import { markDuplicateSearchDirty } from "../app/state";
+import { markDuplicateSearchDirty } from "../../app/state";
+
+interface FetchDuplicatesOptions {
+  libraryID: number;
+  refresh?: boolean;
+}
 
 /**
  * Get or refresh duplicates DB for the selected library
@@ -6,9 +11,9 @@ import { markDuplicateSearchDirty } from "../app/state";
  * @param refresh Whether to refresh the search, default is false
  */
 export async function fetchDuplicates({
-                                        libraryID = Zotero.getActiveZoteroPane().getSelectedLibraryID(),
-                                        refresh = false,
-                                      } = {}): Promise<{
+  libraryID,
+  refresh = false,
+}: FetchDuplicatesOptions): Promise<{
   libraryID: number;
   duplicatesObj: { getSetItemsByItemID(itemID: number): number[] };
   duplicateItems: number[];
@@ -21,7 +26,6 @@ export async function fetchDuplicates({
   const duplicateItems: number[] = await search.search();
   return { libraryID, duplicatesObj, duplicateItems };
 }
-
 
 /**
  * @deprecated
@@ -36,14 +40,15 @@ export async function findRetainedDuplicate(deletedItem: Zotero.Item | number) {
   return duplicates.map((id) => Zotero.Items.get(id)).find((item) => !item.deleted);
 }
 
-export async function areDuplicates(items: number[] | Zotero.Item[] = Zotero.getActiveZoteroPane().getSelectedItems()) {
+export async function areDuplicates(items: number[] | Zotero.Item[], libraryID?: number) {
   if (items.length < 2) return false;
   const libraryIDs = new Set(
     items.map((item) => (typeof item === "number" ? Zotero.Items.get(item).libraryID : item.libraryID)),
   );
 
   if (libraryIDs.size > 1) return false;
-  const { duplicatesObj } = await fetchDuplicates({ refresh: false });
+  const resolvedLibraryID = libraryID ?? [...libraryIDs][0];
+  const { duplicatesObj } = await fetchDuplicates({ libraryID: resolvedLibraryID, refresh: false });
   const itemIDs = items.map((item) => (typeof item === "number" ? item : item.id));
   const oneItem = itemIDs[0];
   const duplicateSets = new Set(duplicatesObj.getSetItemsByItemID(oneItem));

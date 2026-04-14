@@ -1,66 +1,41 @@
 import type { TagElementProps } from "zotero-plugin-toolkit";
-import { getString } from "../../shared/locale";
 import { config } from "../../../package.json";
-import { getPref, MasterItem } from "../../shared/prefs";
-import { truncateString } from "../../shared/utils";
-import { merge } from "../../shared/duplicates/merger";
-import { isInDuplicatesPane, refreshItemTree } from "../../shared/zotero";
-import { DuplicateItems } from "../../shared/duplicates/duplicateItems";
-import { fetchDuplicates } from "../../shared/duplicateQueries";
-import { markDuplicateSearchDirty } from "../../app/state";
 import { type Disposer } from "../../app/lifecycle";
+import { markDuplicateSearchDirty } from "../../app/state";
+import { fetchDuplicates } from "../../integrations/zotero/duplicateSearch";
+import {
+  getSelectedLibraryID,
+  getZoteroPane,
+  isInDuplicatesPane,
+  refreshItemTree,
+} from "../../integrations/zotero/windows";
+import { getString } from "../../shared/locale";
 import {
   BULK_MERGE_BUTTON_ID,
-  BULK_MERGE_INNER_BUTTON_ID,
   BULK_MERGE_EXTERNAL_BUTTON_ID,
+  BULK_MERGE_INNER_BUTTON_ID,
 } from "../../shared/duplicates/duplicateButtonIDs";
+import { DuplicateItems } from "../../shared/duplicates/duplicateItems";
+import { merge } from "../../shared/duplicates/mergeItems";
+import { getPref, MasterItem } from "../../shared/prefs";
+import { truncateString } from "../../shared/utils";
 
-export class BulkDuplicates {
-  public static get instance(): BulkDuplicates {
-    if (!BulkDuplicates._instance) {
-      BulkDuplicates._instance = new BulkDuplicates();
-    }
-    return BulkDuplicates._instance;
-  }
-
-  private constructor() {}
-
+export class BulkMergeController {
   public static readonly bulkMergeButtonID = BULK_MERGE_BUTTON_ID;
   public static readonly innerButtonID = BULK_MERGE_INNER_BUTTON_ID;
   public static readonly externalButtonID = BULK_MERGE_EXTERNAL_BUTTON_ID;
-  private win: Window | undefined;
-  private static _instance: BulkDuplicates;
+
+  private activeWindow: Window | undefined;
   private _isRunning = false;
+
   public get isRunning(): boolean {
     return this._isRunning;
-  }
-
-  private set isRunning(value: boolean) {
-    this._isRunning = value;
-    const imageName = value ? "pause" : "merge";
-    const label = value ? "bulk-merge-suspend" : "bulk-merge-title";
-    this.getBulkMergeButtons(this.win!).forEach((button) => {
-      button?.setAttribute("image", `chrome://${config.addonRef}/content/icons/${imageName}.svg`);
-      button?.setAttribute("label", getString(label));
-    });
-    if (!value) {
-      markDuplicateSearchDirty(Zotero.getActiveZoteroPane().getSelectedLibraryID());
-      // Force refresh the duplicate item tree
-      refreshItemTree();
-    }
-  }
-
-  private getBulkMergeButtons(win: Window) {
-    return [
-      win.document.getElementById(BulkDuplicates.innerButtonID),
-      win.document.getElementById(BulkDuplicates.externalButtonID),
-    ];
   }
 
   public createBulkMergeButton(win: Window, id: string, showing = true): TagElementProps {
     return {
       tag: "button",
-      id: id,
+      id,
       attributes: {
         label: getString("bulk-merge-title"),
         image: `chrome://${config.addonRef}/content/icons/merge.svg`,
@@ -74,7 +49,9 @@ export class BulkDuplicates {
             if ((e.target as HTMLInputElement).disabled) return;
 
             if (this._isRunning) {
-              this.isRunning = false;
+              if (this.activeWindow === win) {
+                this.setRunning(win, false);
+              }
               return;
             }
 
@@ -83,21 +60,20 @@ export class BulkDuplicates {
             const text = `${getString("bulk-merge-message")}\n\n${getString("bulk-merge-sub-message", {
               args: { masterItem },
             })}\n${getString("bulk-merge-sub-message-2")}`;
-            // https://github.com/zotero/zotero/blob/main/chrome/content/zotero/xpcom/prompt.js#L60
-            // https://firefox-source-docs.mozilla.org/toolkit/components/prompts/prompts/nsIPromptService-reference.html#Prompter.confirmEx
             const result = Zotero.Prompt.confirm({
               window: win,
               title: getString("bulk-merge-title"),
-              text: text,
+              text,
               button0: Zotero.Prompt.BUTTON_TITLE_YES,
               button1: Zotero.Prompt.BUTTON_TITLE_CANCEL,
               checkLabel: "",
               checkbox: {},
             });
             if (result != 0) return;
-            this.isRunning = true;
-            await this.bulkMergeDuplicates();
-            this.isRunning = false;
+
+            this.setRunning(win, true);
+            await this.bulkMergeDuplicates(win);
+            this.setRunning(win, false);
           },
         },
       ],
@@ -105,9 +81,77 @@ export class BulkDuplicates {
     };
   }
 
-  private async bulkMergeDuplicates() {
+  public registerUIElements(
+    win: Window,
+    updateDuplicateButtonsVisibilities: (win: Window) => Promise<void>,
+  ): Disposer {
+    const zoteroPane = getZoteroPane(win);
+
+    const onCollectionSelect = async () => {
+      if (zoteroPane.itemsView && isInDuplicatesPane(win) && this._isRunning) {
+        await zoteroPane.itemsView?.waitForLoad();
+        zoteroPane.itemsView?.selection.clearSelection();
+      }
+    };
+
+    const onItemsRefresh = async () => {
+      ztoolkit.log("refresh");
+      if (isInDuplicatesPane(win) && zoteroPane.itemsView && this._isRunning) {
+        zoteroPane.itemsView?.selection.clearSelection();
+      }
+      await updateDuplicateButtonsVisibilities(win);
+    };
+
+    const onItemsSelect = async () => {
+      ztoolkit.log("itemsView.onSelect", zoteroPane.getSelectedItems(true));
+      await updateDuplicateButtonsVisibilities(win);
+    };
+
+    const collectionsView = zoteroPane.collectionsView as any;
+    const itemsView = zoteroPane.itemsView as any;
+
+    collectionsView?.onSelect.addListener(onCollectionSelect);
+    itemsView?.onRefresh.addListener(onItemsRefresh);
+    itemsView?.onSelect.addListener(onItemsSelect);
+
+    return () => {
+      collectionsView?.onSelect.removeListener(onCollectionSelect);
+      itemsView?.onRefresh.removeListener(onItemsRefresh);
+      itemsView?.onSelect.removeListener(onItemsSelect);
+    };
+  }
+
+  private setRunning(win: Window, value: boolean) {
+    this._isRunning = value;
+    this.activeWindow = value ? win : this.activeWindow;
+
+    const imageName = value ? "pause" : "merge";
+    const label = value ? "bulk-merge-suspend" : "bulk-merge-title";
+    this.getBulkMergeButtons(win).forEach((button) => {
+      button?.setAttribute("image", `chrome://${config.addonRef}/content/icons/${imageName}.svg`);
+      button?.setAttribute("label", getString(label));
+    });
+
+    if (!value) {
+      markDuplicateSearchDirty(getSelectedLibraryID(win));
+      refreshItemTree(win);
+      this.activeWindow = undefined;
+    }
+  }
+
+  private getBulkMergeButtons(win: Window) {
+    return [
+      win.document.getElementById(BulkMergeController.innerButtonID),
+      win.document.getElementById(BulkMergeController.externalButtonID),
+    ];
+  }
+
+  private async bulkMergeDuplicates(win: Window) {
     const masterItemPref = getPref("bulk.master.item") as MasterItem;
-    const { duplicatesObj, duplicateItems } = await fetchDuplicates();
+    const { duplicatesObj, duplicateItems } = await fetchDuplicates({
+      libraryID: getSelectedLibraryID(win),
+      refresh: false,
+    });
     const processedItems: Set<number> = new Set();
     const popWin = new ztoolkit.ProgressWindow(getString("du-progress-text"), {
       closeOnClick: false,
@@ -126,18 +170,17 @@ export class BulkDuplicates {
     for (let i = 0; i < duplicateItems.length; i++) {
       if (!this._isRunning) {
         const result = Zotero.Prompt.confirm({
-          window: this.win,
+          window: win,
           title: getString("bulk-merge-suspend-title"),
           text: getString("bulk-merge-suspend-message"),
           button0: getString("bulk-merge-suspend-resume"),
           button1: getString("bulk-merge-suspend-cancel"),
-          // button2: getString("bulk-merge-suspend-restore"),
           checkLabel: getString("bulk-merge-suspend-restore"),
           checkbox: restoreCheckbox,
         });
         if (result == 0) {
           restoreCheckbox.value = false;
-          this.isRunning = true;
+          this.setRunning(win, true);
         } else {
           toCancel = true;
           break;
@@ -186,48 +229,6 @@ export class BulkDuplicates {
     });
     popWin.startCloseTimer(5000);
   }
-
-  registerUIElements(
-    win: Window,
-    updateDuplicateButtonsVisibilities: (win: Window) => Promise<void>,
-  ): Disposer {
-    this.win = win;
-
-    const zoteroPane = (win as any).ZoteroPane;
-
-    const onCollectionSelect = async () => {
-      const inDuplicatePane = isInDuplicatesPane();
-      if (zoteroPane.itemsView && inDuplicatePane && this._isRunning) {
-        await zoteroPane.itemsView?.waitForLoad();
-        zoteroPane.itemsView?.selection.clearSelection();
-      }
-    };
-
-    const onItemsRefresh = async () => {
-      ztoolkit.log("refresh");
-      const precondition = isInDuplicatesPane();
-      if (precondition && zoteroPane.itemsView && this._isRunning) {
-        zoteroPane.itemsView?.selection.clearSelection();
-      }
-      await updateDuplicateButtonsVisibilities(win);
-    };
-
-    const onItemsSelect = async () => {
-      ztoolkit.log("itemsView.onSelect", zoteroPane.getSelectedItems(true));
-      await updateDuplicateButtonsVisibilities(win);
-    };
-
-    const collectionsView = zoteroPane.collectionsView;
-    const itemsView = zoteroPane.itemsView;
-
-    collectionsView?.onSelect.addListener(onCollectionSelect);
-    itemsView?.onRefresh.addListener(onItemsRefresh);
-    itemsView?.onSelect.addListener(onItemsSelect);
-
-    return () => {
-      collectionsView?.onSelect.removeListener(onCollectionSelect);
-      itemsView?.onRefresh.removeListener(onItemsRefresh);
-      itemsView?.onSelect.removeListener(onItemsSelect);
-    };
-  }
 }
+
+export const bulkMergeController = new BulkMergeController();

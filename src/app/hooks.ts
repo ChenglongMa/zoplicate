@@ -1,86 +1,83 @@
 import { config } from "../../package.json";
-import { initLocale } from "../shared/locale";
-import { registerPreferencesGlobal, registerPrefsScripts } from "../features/preferences";
-import { registerNotifier, notifyDispatcher } from "../integrations/zotero/notifier";
-import { registerStyleSheets } from "../shared/window";
-import { BulkDuplicates } from "../features/bulk-merge";
+import { NonDuplicatesDB } from "../db/nonDuplicates";
+import { bulkMergeController, registerBulkMergeWindow } from "../features/bulkMerge";
 import {
+  createDuplicatesNotifyHandler,
   registerDuplicatesGlobal,
   registerDuplicatesWindow,
-  refreshDuplicateStats,
   updateDuplicateButtonsVisibilities,
 } from "../features/duplicates";
 import {
+  refreshDuplicateStats,
+  registerDuplicateStatsGlobal,
+  registerDuplicateStatsWindow,
+} from "../features/duplicateStats";
+import {
   createNonDuplicateButton,
+  createNonDuplicatesNotifyHandler,
+  NonDuplicates,
   registerNonDuplicatesGlobal,
   registerNonDuplicatesWindow,
-} from "../features/non-duplicates";
-import { registerMenus, unregisterMenus } from "../integrations/zotero/menuManager";
-import {
-  patchFindDuplicates,
-  patchGetSearchObject,
-  patchItemSaveData,
-} from "../integrations/zotero/patches";
-import { debug } from "../shared/zotero";
-import { NonDuplicatesDB } from "../db/nonDuplicates";
+} from "../features/nonDuplicates";
+import { registerPreferencesGlobal, registerPrefsScripts } from "../features/preferences";
 import { createMenuCacheNotifyHandler } from "../integrations/zotero/menuCache";
-import {
-  getEnv,
-  setAlive,
-  closeDialogWindow,
-} from "./state";
+import { notifyDispatcher, registerNotifier } from "../integrations/zotero/notifier";
+import { registerStyleSheets } from "../integrations/zotero/windowChrome";
+import { initLocale } from "../shared/locale";
+import { debug } from "../shared/debug";
 import { DisposerRegistry } from "./lifecycle";
-import { NonDuplicates } from "../features/non-duplicates";
-
-// ---------------------------------------------------------------------------
-// Disposer registries
-// ---------------------------------------------------------------------------
+import { closeDialogWindow, getEnv, setAlive } from "./state";
 
 const globalDisposers = new DisposerRegistry();
 const windowDisposers = new WeakMap<Window, DisposerRegistry>();
 const loadedWindows = new Set<Window>();
-
-// ---------------------------------------------------------------------------
-// Lifecycle hooks
-// ---------------------------------------------------------------------------
+let shutdownComplete = false;
 
 async function onStartup() {
+  shutdownComplete = false;
   await Promise.all([Zotero.initializationPromise, Zotero.unlockPromise, Zotero.uiReadyPromise]);
   initLocale();
   ztoolkit.log("addon onStartup");
 
-  // Preferences (global)
-  registerPreferencesGlobal();
+  globalDisposers.add(await registerPreferencesGlobal());
 
-  globalDisposers.add(notifyDispatcher.registerHandler(createMenuCacheNotifyHandler()));
-  globalDisposers.add(registerNotifier((event, type, ids, extraData) => notifyDispatcher.dispatch(event, type, ids, extraData)));
-
-  // init database
   const nonDuplicatesDB = NonDuplicatesDB.instance;
   await nonDuplicatesDB.init();
-
-  // Patches -- each returns a disposer
-  globalDisposers.add(patchFindDuplicates(nonDuplicatesDB, () => NonDuplicates.getInstance()));
-  globalDisposers.add(patchGetSearchObject(refreshDuplicateStats));
-  globalDisposers.add(patchItemSaveData());
-
-  await Promise.all(
-    Zotero.getMainWindows().map((win) => onMainWindowLoad(win)),
+  globalDisposers.add(
+    await registerDuplicatesGlobal({
+      nonDuplicatesDB,
+      getNonDuplicatesState: () => NonDuplicates.getInstance(),
+      refreshDuplicateStats,
+    }),
   );
 
-  // Register menus at startup level (MenuManager handles multi-window internally).
-  // FTL is loaded in onMainWindowLoad before this point.
-  const menuIDs = registerMenus([
-    registerNonDuplicatesGlobal(),
-    registerDuplicatesGlobal(),
-  ]);
-  globalDisposers.add(() => {
-    unregisterMenus(menuIDs);
-  });
+  globalDisposers.add(notifyDispatcher.registerHandler(createMenuCacheNotifyHandler()));
+  globalDisposers.add(notifyDispatcher.registerHandler(createNonDuplicatesNotifyHandler()));
+  globalDisposers.add(
+    notifyDispatcher.registerHandler(
+      createDuplicatesNotifyHandler(
+        () => bulkMergeController.isRunning,
+        () => [...loadedWindows],
+      ),
+    ),
+  );
+  globalDisposers.add(
+    registerNotifier(
+      (event, type, ids, extraData) => notifyDispatcher.dispatch(event, type, ids, extraData),
+      { pluginID: config.addonID },
+    ),
+  );
+
+  await Promise.all(Zotero.getMainWindows().map((win) => onMainWindowLoad(win)));
+
+  globalDisposers.add(await registerNonDuplicatesGlobal());
+  globalDisposers.add(await registerDuplicateStatsGlobal());
 }
 
 async function onMainWindowLoad(win: Window): Promise<void> {
   ztoolkit.log("addon onMainWindowLoad");
+  await disposeWindow(win);
+
   win.MozXULElement.insertFTLIfNeeded(`${config.addonRef}-itemSection.ftl`);
   win.MozXULElement.insertFTLIfNeeded(`${config.addonRef}-addon.ftl`);
   registerStyleSheets(win);
@@ -88,29 +85,21 @@ async function onMainWindowLoad(win: Window): Promise<void> {
   const winRegistry = new DisposerRegistry();
   windowDisposers.set(win, winRegistry);
 
-  // Duplicates feature (window-level)
-  const duplicatesResult = await registerDuplicatesWindow(
-    win,
-    (w, id) => BulkDuplicates.instance.createBulkMergeButton(w, id),
-    (id, showing) => createNonDuplicateButton(id, showing),
-    () => BulkDuplicates.instance.isRunning,
+  winRegistry.add(
+    await registerDuplicatesWindow(
+      win,
+      (w, id) => bulkMergeController.createBulkMergeButton(w, id),
+      (w, id, showing) => createNonDuplicateButton(w, id, showing),
+    ),
   );
-  winRegistry.add(duplicatesResult.disposer);
-
-  // Bulk-merge feature (window-level)
-  const { registerBulkMergeWindow } = await import("../features/bulk-merge");
-  const bulkDisposer = registerBulkMergeWindow(win, updateDuplicateButtonsVisibilities);
-  winRegistry.add(bulkDisposer);
-
-  // Non-duplicates feature (window-level)
-  const nonDuplicatesResult = await registerNonDuplicatesWindow(win);
-  winRegistry.add(nonDuplicatesResult.disposer);
-  winRegistry.add(notifyDispatcher.registerHandler(nonDuplicatesResult.notifyHandler));
-  winRegistry.add(notifyDispatcher.registerHandler(duplicatesResult.notifyHandler));
+  winRegistry.add(await registerDuplicateStatsWindow(win));
+  winRegistry.add(registerBulkMergeWindow(win, bulkMergeController, updateDuplicateButtonsVisibilities));
+  winRegistry.add(await registerNonDuplicatesWindow(win));
 
   if (getEnv() === "development") {
     await registerDevColumn();
   }
+
   loadedWindows.add(win);
   winRegistry.add(async () => {
     loadedWindows.delete(win);
@@ -125,35 +114,43 @@ async function onMainWindowLoad(win: Window): Promise<void> {
   }, 500);
 }
 
+async function disposeWindow(win: Window): Promise<void> {
+  const winRegistry = windowDisposers.get(win);
+  if (!winRegistry) {
+    loadedWindows.delete(win);
+    return;
+  }
+  await winRegistry.disposeAll();
+  windowDisposers.delete(win);
+}
+
+async function disposeAllWindows(): Promise<void> {
+  await Promise.all([...loadedWindows].map((win) => disposeWindow(win)));
+}
+
 async function onMainWindowUnload(win: Window): Promise<void> {
   debug("addon onMainWindowUnload");
   closeDialogWindow();
-
-  const winRegistry = windowDisposers.get(win);
-  if (winRegistry) {
-    await winRegistry.disposeAll();
-    windowDisposers.delete(win);
-  }
-
-  await NonDuplicatesDB.instance.close();
+  await disposeWindow(win);
 }
 
 async function onShutdown() {
+  if (shutdownComplete) {
+    return;
+  }
+  shutdownComplete = true;
   debug("addon onShutdown");
+  await disposeAllWindows();
   await globalDisposers.disposeAll();
   notifyDispatcher.reset();
-  ztoolkit.unregisterAll();
   closeDialogWindow();
   await NonDuplicatesDB.instance.close();
-  // Remove addon object
+  ztoolkit.unregisterAll();
   setAlive(false);
   // @ts-ignore - Plugin instance is not typed
   delete Zotero[config.addonInstance];
 }
 
-/**
- * Register a custom column for development purpose.
- */
 async function registerDevColumn() {
   const field = "Item ID";
   await Zotero.ItemTreeManager.registerColumns({
@@ -166,9 +163,6 @@ async function registerDevColumn() {
   });
 }
 
-/**
- * Dispatcher for Preference UI events.
- */
 async function onPrefsEvent(type: string, data: { [key: string]: any }) {
   switch (type) {
     case "load":

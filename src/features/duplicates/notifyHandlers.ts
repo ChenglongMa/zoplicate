@@ -1,5 +1,6 @@
-import { containsRegularItem, isInDuplicatesPane, refreshItemTree } from "../../shared/zotero";
-import { fetchDuplicates } from "../../shared/duplicateQueries";
+import { fetchDuplicates } from "../../integrations/zotero/duplicateSearch";
+import { isInDuplicatesPane, refreshItemTree } from "../../integrations/zotero/windows";
+import { containsRegularItem } from "../../shared/items";
 import { Duplicates } from "./duplicates";
 
 /**
@@ -8,7 +9,10 @@ import { Duplicates } from "./duplicates";
  *
  * @param isBulkRunning - callback to check if bulk merge is in progress
  */
-export function createDuplicatesNotifyHandler(isBulkRunning: () => boolean) {
+export function createDuplicatesNotifyHandler(
+  isBulkRunning: () => boolean,
+  getMainWindows: () => Window[] = () => Zotero.getMainWindows(),
+) {
   return async function handleDuplicatesNotify(
     event: string,
     type: string,
@@ -21,12 +25,14 @@ export function createDuplicatesNotifyHandler(isBulkRunning: () => boolean) {
       return;
     }
 
-    if (type == "item" && event == "removeDuplicatesMaster" && isInDuplicatesPane()) {
-      refreshItemTree();
+    if (type == "item" && event == "removeDuplicatesMaster") {
+      for (const win of getMainWindows()) {
+        if (isInDuplicatesPane(win)) {
+          refreshItemTree(win);
+        }
+      }
       return;
     }
-
-    let libraryIDs = [Zotero.getActiveZoteroPane().getSelectedLibraryID()];
 
     const toRefresh =
       // subset of "modify" event (modification on item data and authors) on regular items
@@ -39,11 +45,15 @@ export function createDuplicatesNotifyHandler(isBulkRunning: () => boolean) {
     ztoolkit.log("refreshDuplicates", toRefresh);
 
     if (toRefresh) {
+      let libraryIDs: number[] = [];
       if (type == "item") {
         libraryIDs = ids.map((id) => Zotero.Items.get(id).libraryID);
       }
       if (type == "trash") {
         libraryIDs = ids as number[];
+      }
+      if (libraryIDs.length === 0) {
+        return;
       }
       const libraryID = libraryIDs[0]; // normally only one libraryID
       const { duplicatesObj } = await fetchDuplicates({ libraryID, refresh: true });

@@ -1,8 +1,8 @@
 import { config } from "../../../package.json";
-import { debug } from "../../shared/zotero";
+import { debug } from "../../shared/debug";
 import { getString } from "../../shared/locale";
 import { NonDuplicatesDB } from "../../db/nonDuplicates";
-import { areDuplicates } from "../../shared/duplicateQueries";
+import { areDuplicates } from "../../integrations/zotero/duplicateSearch";
 import { getNonDuplicateSectionID, setNonDuplicateSectionID } from "../../app/state";
 import { toggleNonDuplicates } from "./nonDuplicateActions";
 
@@ -65,7 +65,7 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
             message = "add-not-duplicates-alert-error-diff-library";
           } else if (await db.existsNonDuplicates(itemIDs)) {
             message = "add-not-duplicates-alert-error-exist";
-          } else if (!(await areDuplicates(itemIDs))) {
+          } else if (!(await areDuplicates(itemIDs, item.libraryID))) {
             message = "add-not-duplicates-alert-error-duplicates";
           }
 
@@ -74,7 +74,7 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
             return;
           }
 
-          await toggleNonDuplicates("mark", itemIDs);
+          await toggleNonDuplicates("mark", itemIDs, item.libraryID, { win: body.ownerDocument.defaultView! });
           // End of OnClick
         },
       },
@@ -159,7 +159,7 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
         label.append(otherItem.getDisplayTitle());
 
         let box = doc.createElement("div");
-        box.addEventListener("click", () => Zotero.getActiveZoteroPane().selectItem(otherItemID));
+        box.addEventListener("click", () => (body.ownerDocument.defaultView as any).ZoteroPane.selectItem(otherItemID));
         box.setAttribute("tabindex", "0");
         box.setAttribute("role", "button");
         box.setAttribute("aria-label", label.textContent ?? "");
@@ -173,7 +173,7 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
           let remove = doc.createXULElement("toolbarbutton");
           remove.addEventListener("command", () => {
             const itemIDs = [item.id, otherItemID];
-            toggleNonDuplicates("unmark", itemIDs);
+            toggleNonDuplicates("unmark", itemIDs, item.libraryID, { win: body.ownerDocument.defaultView! });
           });
           remove.className = "zotero-clicky zotero-clicky-minus";
           remove.setAttribute("data-l10n-id", "section-button-remove");

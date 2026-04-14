@@ -1,6 +1,6 @@
 import { config } from "../../../package.json";
 import { showingDuplicateStats } from "../../shared/prefs";
-import { fetchAllDuplicates } from "../../shared/duplicateQueries";
+import { fetchAllDuplicates } from "../../integrations/zotero/duplicateSearch";
 import { getString } from "../../shared/locale";
 import type { MenuConfig } from "../../integrations/zotero/menuManager";
 import { menuCache } from "../../integrations/zotero/menuCache";

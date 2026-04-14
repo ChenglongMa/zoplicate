@@ -3,7 +3,7 @@ import { showingDuplicateStats } from "../../shared/prefs";
 import { getString } from "../../shared/locale";
 import { removeSiblings } from "../../shared/view";
 import CollectionTreeRow = Zotero.CollectionTreeRow;
-import { fetchAllDuplicates } from "../../shared/duplicateQueries";
+import { fetchAllDuplicates } from "../../integrations/zotero/duplicateSearch";
 import { getDuplicateCounts, setDuplicateCounts } from "../../app/state";
 import { patchMethod, type Disposer } from "../../app/lifecycle";
 

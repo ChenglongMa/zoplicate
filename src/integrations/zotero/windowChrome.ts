@@ -1,4 +1,4 @@
-import { config } from "../../package.json";
+import { config } from "../../../package.json";
 
 /**
  * Check if the window is alive.
