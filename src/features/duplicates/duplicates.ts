@@ -3,7 +3,7 @@ import { getString } from "../../shared/locale";
 import type { DialogHelper } from "zotero-plugin-toolkit";
 import { Action, getPref, MasterItem, setPref } from "../../shared/prefs";
 import { merge } from "../../shared/duplicates/mergeItems";
-import { goToDuplicatesPane } from "../../integrations/zotero/windows";
+import { getFirstLiveWindow, getZoteroPane, goToDuplicatesPane, isWindowAlive } from "../../integrations/zotero/windows";
 import { DuplicateItems } from "../../shared/duplicates/duplicateItems";
 import { bringToFront } from "../../integrations/zotero/windowChrome";
 import { showHintWithLink } from "../../shared/utils";
@@ -19,6 +19,12 @@ import {
   type DuplicateDialogState,
   type DuplicateDialogStrings,
 } from "./duplicatesDialog";
+
+interface DuplicateWindowOptions {
+  win?: Window;
+}
+
+type LoadedWindowsProvider = () => Window[];
 
 function normalizeItemIDs(itemIDs: number[]): number[] {
   return [...new Set(itemIDs)].sort((a, b) => a - b);
@@ -106,13 +112,26 @@ export class Duplicates {
 
   private duplicateDialogRenderer?: DuplicateDialogRenderer;
   private duplicateDialogVersion = 0;
+  private getLoadedWindows: LoadedWindowsProvider = () => [];
+  private sourceWindow?: Window;
+
+  setLoadedWindowsProvider(getLoadedWindows: LoadedWindowsProvider) {
+    this.getLoadedWindows = getLoadedWindows;
+  }
+
+  clearWindowReferences() {
+    this.getLoadedWindows = () => [];
+    this.sourceWindow = undefined;
+  }
 
   async whenItemsAdded(
     duplicatesObj: {
       getSetItemsByItemID(itemID: number): number[];
     },
     ids: Array<number>,
+    options: DuplicateWindowOptions = {},
   ) {
+    this.rememberSourceWindow(options.win);
     const defaultAction = getPref("duplicate.default.action") as Action;
     if (defaultAction === Action.CANCEL || ids.length === 0) {
       return;
@@ -123,13 +142,14 @@ export class Duplicates {
     if (duplicateMaps.size === 0) return;
 
     if (defaultAction === Action.ASK) {
-      await this.showDuplicates(duplicateMaps);
+      await this.showDuplicates(duplicateMaps, options);
       return;
     }
-    this.processDuplicates(duplicateMaps).then((r) => {}); // DONT WAIT
+    this.processDuplicates(duplicateMaps, options).then((r) => {}); // DONT WAIT
   }
 
-  async processDuplicates(duplicateMaps: DuplicateGroupMap) {
+  async processDuplicates(duplicateMaps: DuplicateGroupMap, options: DuplicateWindowOptions = {}) {
+    this.rememberSourceWindow(options.win);
     if (duplicateMaps.size === 0) return;
 
     const popWin = new ztoolkit.ProgressWindow(getString("du-dialog-title"), {
@@ -183,7 +203,12 @@ export class Duplicates {
       progress: 80,
     });
 
-    Zotero.getActiveZoteroPane().selectItems(selectedItemIDs);
+    const win = this.resolveLiveWindow(options.win);
+    if (win && selectedItemIDs.length > 0) {
+      getZoteroPane(win).selectItems(selectedItemIDs);
+    } else if (selectedItemIDs.length > 0) {
+      ztoolkit.log("Duplicate processing finished without a live window for item selection.", selectedItemIDs);
+    }
 
     popWin.changeLine({
       text: getString("du-progress-done"),
@@ -192,12 +217,13 @@ export class Duplicates {
     });
   }
 
-  async showDuplicates(duplicateMaps: DuplicateGroupMap) {
+  async showDuplicates(duplicateMaps: DuplicateGroupMap, options: DuplicateWindowOptions = {}) {
+    this.rememberSourceWindow(options.win);
     this.updateDuplicateMaps(duplicateMaps);
 
     if (!this.document?.hasFocus()) {
       await showHintWithLink(config.addonName, getString("du-dialog-title"), getString("du-dialog-hint"), async () => {
-        bringToFront(this.dialogWindow);
+        bringToFront(this.dialogWindow ?? this.resolveLiveWindow(options.win));
       });
     }
 
@@ -244,7 +270,17 @@ export class Duplicates {
   }
 
   private get document(): Document | undefined {
-    return this.dialogWindow?.document;
+    return isWindowAlive(this.dialogWindow) ? this.dialogWindow.document : undefined;
+  }
+
+  private rememberSourceWindow(win?: Window) {
+    if (isWindowAlive(win)) {
+      this.sourceWindow = win;
+    }
+  }
+
+  private resolveLiveWindow(preferred?: Window): Window | undefined {
+    return getFirstLiveWindow([preferred, this.sourceWindow, ...this.getLoadedWindows()]);
   }
 
   private updateDuplicateMaps(newDuplicateMaps: DuplicateGroupMap) {
@@ -383,17 +419,22 @@ export class Duplicates {
 
   private scheduleDialogResize() {
     const win = this.dialogWindow as (Window & { sizeToContent?: () => void }) | undefined;
-    if (!win?.sizeToContent) return;
+    if (!isWindowAlive(win) || !win.sizeToContent) return;
     setTimeout(() => win.sizeToContent?.(), 50);
     setTimeout(() => win.sizeToContent?.(), 350);
   }
 
   private getZoteroRequire(win?: Window): ((module: string) => unknown) | undefined {
-    const dialogRequire = (win as (Window & { require?: (module: string) => unknown }) | undefined)?.require;
-    if (dialogRequire) return dialogRequire;
-
-    const mainWindowRequire = (Zotero.getMainWindow() as Window & { require?: (module: string) => unknown })?.require;
-    if (mainWindowRequire) return mainWindowRequire;
+    const candidates = [win, this.dialogWindow, this.resolveLiveWindow()];
+    for (const candidate of candidates) {
+      if (!isWindowAlive(candidate)) {
+        continue;
+      }
+      const require = (candidate as Window & { require?: (module: string) => unknown }).require;
+      if (require) {
+        return require;
+      }
+    }
 
     try {
       return ztoolkit.getGlobal("require") as (module: string) => unknown;
@@ -406,7 +447,7 @@ export class Duplicates {
   private async renderDuplicateDialog() {
     const win = this.dialogWindow;
     const root = this.document?.getElementById("zoplicate-duplicates-dialog-root") as HTMLElement | null | undefined;
-    if (!win || !root) return;
+    if (!isWindowAlive(win) || !root) return;
 
     this.injectDialogStyles();
 
@@ -469,13 +510,18 @@ export class Duplicates {
       })
       .addButton(getString("du-dialog-button-apply"), "btn_process", {
         callback: (e) => {
-          this.processDuplicates(this.duplicateMaps!);
+          this.processDuplicates(this.duplicateMaps!, { win: this.resolveLiveWindow() });
         },
       })
       .addButton(getString("du-dialog-button-go-duplicates"), "btn_go_duplicate", {
         callback: (e) => {
-          const win = Zotero.getMainWindow();
+          const win = this.resolveLiveWindow();
+          if (!win) {
+            ztoolkit.log("Cannot go to duplicates pane because no live Zotero window is available.");
+            return;
+          }
           goToDuplicatesPane(win);
+          bringToFront(win);
         },
       })
       .addButton(getString("general-cancel"), "btn_cancel");

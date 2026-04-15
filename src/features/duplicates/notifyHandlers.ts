@@ -1,5 +1,5 @@
 import { fetchDuplicates } from "../../integrations/zotero/duplicateSearch";
-import { isInDuplicatesPane, refreshItemTree } from "../../integrations/zotero/windows";
+import { getFirstLiveWindow, isInDuplicatesPane, isWindowAlive, refreshItemTree } from "../../integrations/zotero/windows";
 import { containsRegularItem } from "../../shared/items";
 import { Duplicates } from "./duplicates";
 
@@ -11,7 +11,7 @@ import { Duplicates } from "./duplicates";
  */
 export function createDuplicatesNotifyHandler(
   isBulkRunning: () => boolean,
-  getMainWindows: () => Window[] = () => Zotero.getMainWindows(),
+  getLoadedWindows: () => Window[],
 ) {
   return async function handleDuplicatesNotify(
     event: string,
@@ -26,7 +26,10 @@ export function createDuplicatesNotifyHandler(
     }
 
     if (type == "item" && event == "removeDuplicatesMaster") {
-      for (const win of getMainWindows()) {
+      for (const win of getLoadedWindows()) {
+        if (!isWindowAlive(win)) {
+          continue;
+        }
         if (isInDuplicatesPane(win)) {
           refreshItemTree(win);
         }
@@ -58,7 +61,9 @@ export function createDuplicatesNotifyHandler(
       const libraryID = libraryIDs[0]; // normally only one libraryID
       const { duplicatesObj } = await fetchDuplicates({ libraryID, refresh: true });
       if (type == "item" && event == "add") {
-        await Duplicates.instance.whenItemsAdded(duplicatesObj, ids as number[]);
+        await Duplicates.instance.whenItemsAdded(duplicatesObj, ids as number[], {
+          win: getFirstLiveWindow(getLoadedWindows()),
+        });
       }
     }
   };

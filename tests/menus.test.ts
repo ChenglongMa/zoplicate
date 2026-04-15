@@ -118,10 +118,22 @@ describe("registerMenus", () => {
     expect(firstCall.target).toBe("main/library/item");
   });
 
+  test("item menu uses a stable menuID", () => {
+    registerMenus([itemMenuConfig(), collectionMenuConfig()]);
+    const firstCall = registerMenuMock.mock.calls[0][0] as Zotero.MenuOptions;
+    expect(firstCall.menuID).toBe("zoplicate-non-duplicates-item-menu");
+  });
+
   test("collection menu uses target main/library/collection", () => {
     registerMenus([itemMenuConfig(), collectionMenuConfig()]);
     const secondCall = registerMenuMock.mock.calls[1][0] as Zotero.MenuOptions;
     expect(secondCall.target).toBe("main/library/collection");
+  });
+
+  test("collection menu uses a stable menuID", () => {
+    registerMenus([itemMenuConfig(), collectionMenuConfig()]);
+    const secondCall = registerMenuMock.mock.calls[1][0] as Zotero.MenuOptions;
+    expect(secondCall.menuID).toBe("zoplicate-duplicate-stats-collection-menu");
   });
 
   test("item menu has submenu with two children (mark and unmark)", () => {
@@ -436,6 +448,32 @@ describe("item menu onCommand callbacks", () => {
     onCommand({} as Event, ctx);
 
     expect(toggleNonDuplicatesMock).toHaveBeenCalledWith("unmark", mockItems, 42, { win: undefined });
+  });
+
+  test("unmark child uses the menu element window when available", () => {
+    registerMenus([itemMenuConfig(), collectionMenuConfig()]);
+    const itemOptions = registerMenuMock.mock.calls[0][0] as Zotero.MenuOptions;
+    const submenu = itemOptions.menus[0];
+    const unmarkChild = submenu.menus![0];
+    const onCommand = unmarkChild.onCommand!;
+    const win = { closed: false } as Window;
+
+    const mockItems = [
+      { id: 10, libraryID: 42 },
+      { id: 20, libraryID: 42 },
+    ];
+    const ctx: any = {
+      menuElem: { ownerDocument: { defaultView: win } },
+      items: mockItems,
+      setVisible: jest.fn(),
+      setEnabled: jest.fn(),
+      setL10nArgs: jest.fn(),
+      setIcon: jest.fn(),
+    };
+
+    onCommand({} as Event, ctx);
+
+    expect(toggleNonDuplicatesMock).toHaveBeenCalledWith("unmark", mockItems, 42, { win });
   });
 
   test("mark child calls toggleNonDuplicates with 'mark' and libraryID", () => {
