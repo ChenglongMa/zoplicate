@@ -240,8 +240,8 @@ export class DuplicateFinder {
                      AND libraryID = ?
                      AND itemTypeID = ?
                      AND fieldID IN (${dateFields.map(() => "?").join(", ")})
-                     AND SUBSTR(value, 1, 4) >= '?'
-                     AND SUBSTR(value, 1, 4) <= '?'
+                     AND SUBSTR(value, 1, 4) >= ?
+                     AND SUBSTR(value, 1, 4) <= ?
                        ${candidateAndClause};`;
     const params = [this.item.libraryID, this.itemTypeID, ...dateFields, minYear, maxYear, ...this.candidateItemIDs];
     const rows = (await Zotero.DB.queryAsync(query, params)) as { itemID: number }[] | undefined;

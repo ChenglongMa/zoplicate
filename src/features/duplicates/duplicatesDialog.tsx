@@ -141,7 +141,7 @@ export function createDuplicatesDialogRenderer(
       const nextAction = getNextAction(row.action, direction);
       selectRowAction(row.groupID, nextAction);
 
-      const group = event.currentTarget.parentElement;
+      const group = event.currentTarget.closest("tr");
       setTimeout(() => {
         group?.querySelector<HTMLButtonElement>(`[data-action="${nextAction}"]`)?.focus();
       });
