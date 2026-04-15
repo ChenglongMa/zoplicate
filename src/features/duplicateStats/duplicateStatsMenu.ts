@@ -12,6 +12,7 @@ export function collectionMenuConfig(): MenuConfig {
   return {
     register(): string | false {
       return Zotero.MenuManager.registerMenu({
+        menuID: `${config.addonRef}-duplicate-stats-collection-menu`,
         pluginID: config.addonID,
         target: "main/library/collection",
         menus: [

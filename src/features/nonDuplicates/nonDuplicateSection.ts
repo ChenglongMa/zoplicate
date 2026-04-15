@@ -3,6 +3,7 @@ import { debug } from "../../shared/debug";
 import { getString } from "../../shared/locale";
 import { NonDuplicatesDB } from "../../db/nonDuplicates";
 import { areDuplicates } from "../../integrations/zotero/duplicateSearch";
+import { isWindowAlive } from "../../integrations/zotero/windows";
 import { getNonDuplicateSectionID, setNonDuplicateSectionID } from "../../app/state";
 import { toggleNonDuplicates } from "./nonDuplicateActions";
 
@@ -51,7 +52,10 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
           onClick: async ({ body, item }) => {
             ztoolkit.log("add non duplicate");
             const win = body.ownerDocument.defaultView;
-            if (!win) return;
+            if (!isWindowAlive(win)) {
+              ztoolkit.log("add non duplicate skipped because the section window is unavailable.");
+              return;
+            }
 
             const io: {
               dataIn: null | number[];
@@ -96,11 +100,15 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
             }
 
             if (message !== "") {
-              Zotero.alert(win, config.addonName, getString(message));
+              if (isWindowAlive(win)) {
+                Zotero.alert(win, config.addonName, getString(message));
+              } else {
+                ztoolkit.log("add non duplicate could not show alert because the section window is unavailable.");
+              }
               return;
             }
 
-            await toggleNonDuplicates("mark", itemIDs, item.libraryID, { win });
+            await toggleNonDuplicates("mark", itemIDs, item.libraryID, isWindowAlive(win) ? { win } : {});
             // End of OnClick
           },
         },
@@ -185,9 +193,12 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
           label.append(otherItem.getDisplayTitle());
 
           const box = doc.createElement("div");
-          box.addEventListener("click", () =>
-            (body.ownerDocument.defaultView as any).ZoteroPane.selectItem(otherItemID),
-          );
+          box.addEventListener("click", () => {
+            const win = body.ownerDocument.defaultView;
+            if (isWindowAlive(win)) {
+              (win as any).ZoteroPane.selectItem(otherItemID);
+            }
+          });
           box.setAttribute("tabindex", "0");
           box.setAttribute("role", "button");
           box.setAttribute("aria-label", label.textContent ?? "");
@@ -201,7 +212,8 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
             const remove = doc.createXULElement("toolbarbutton");
             remove.addEventListener("command", () => {
               const itemIDs = [item.id, otherItemID];
-              toggleNonDuplicates("unmark", itemIDs, item.libraryID, { win: body.ownerDocument.defaultView! });
+              const win = body.ownerDocument.defaultView;
+              toggleNonDuplicates("unmark", itemIDs, item.libraryID, isWindowAlive(win) ? { win } : {});
             });
             remove.className = "zotero-clicky zotero-clicky-minus";
             remove.setAttribute("data-l10n-id", "section-button-remove");

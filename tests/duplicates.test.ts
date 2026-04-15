@@ -29,6 +29,9 @@ jest.mock("../src/shared/wait", () => ({
 
 jest.mock("../src/integrations/zotero/windows", () => ({
   goToDuplicatesPane: jest.fn(),
+  getFirstLiveWindow: jest.fn((windows: Array<Window | undefined>) => windows.find((win) => win && !win.closed)),
+  getZoteroPane: jest.fn((win: any) => win.ZoteroPane),
+  isWindowAlive: jest.fn((win?: Window) => Boolean(win && !win.closed)),
 }));
 
 jest.mock("../src/integrations/zotero/windowChrome", () => ({
@@ -54,6 +57,15 @@ function makeProgressWindow() {
     show: jest.fn(() => progressWindow),
   };
   return progressWindow;
+}
+
+function makeWindow(selectItems = jest.fn()) {
+  return {
+    closed: false,
+    ZoteroPane: {
+      selectItems,
+    },
+  } as any;
 }
 
 function setItems(items: any[]) {

@@ -29,6 +29,9 @@ jest.mock("../src/shared/wait", () => ({
 
 jest.mock("../src/integrations/zotero/windows", () => ({
   goToDuplicatesPane: jest.fn(),
+  getFirstLiveWindow: jest.fn((windows: Array<Window | undefined>) => windows.find((win) => win && !win.closed)),
+  getZoteroPane: jest.fn((win: any) => win.ZoteroPane),
+  isWindowAlive: jest.fn((win?: Window) => Boolean(win && !win.closed)),
 }));
 
 jest.mock("../src/integrations/zotero/windowChrome", () => ({
@@ -54,6 +57,15 @@ function makeProgressWindow() {
     show: jest.fn(() => progressWindow),
   };
   return progressWindow;
+}
+
+function makeWindow(selectItems = jest.fn()) {
+  return {
+    closed: false,
+    ZoteroPane: {
+      selectItems,
+    },
+  } as any;
 }
 
 function setItems(items: any[]) {
@@ -82,8 +94,8 @@ describe("Duplicates.processDuplicates merge decisions", () => {
     const firstNewItem = createMockItem({ id: 2, dateAdded: "2024-01-01 00:00:00", displayTitle: "New 1" });
     const newestNewItem = createMockItem({ id: 3, dateAdded: "2024-01-02 00:00:00", displayTitle: "New 2" });
     const selectItems = jest.fn();
+    const win = makeWindow(selectItems);
     setItems([oldItem, firstNewItem, newestNewItem]);
-    _Zotero.getActiveZoteroPane = jest.fn(() => ({ selectItems }));
 
     const duplicateMaps: DuplicateGroupMap = new Map([
       [
@@ -96,11 +108,35 @@ describe("Duplicates.processDuplicates merge decisions", () => {
       ],
     ]);
 
-    await Duplicates.instance.processDuplicates(duplicateMaps);
+    await Duplicates.instance.processDuplicates(duplicateMaps, { win });
 
     expect(mockMerge).toHaveBeenCalledTimes(1);
     expect(mockMerge).toHaveBeenCalledWith(newestNewItem, [oldItem, firstNewItem]);
     expect(selectItems).toHaveBeenCalledWith([3]);
+  });
+
+  test("does not use the active pane when no source window is available", async () => {
+    const oldItem = createMockItem({ id: 1, dateAdded: "2020-01-01 00:00:00", displayTitle: "Old" });
+    const newItem = createMockItem({ id: 2, dateAdded: "2024-01-01 00:00:00", displayTitle: "New" });
+    const selectItems = jest.fn();
+    setItems([oldItem, newItem]);
+    _Zotero.getActiveZoteroPane = jest.fn(() => ({ selectItems }));
+
+    const duplicateMaps: DuplicateGroupMap = new Map([
+      [
+        1,
+        {
+          itemIDs: [1, 2],
+          newItemIDs: [2],
+          action: Action.DISCARD,
+        },
+      ],
+    ]);
+
+    await Duplicates.instance.processDuplicates(duplicateMaps);
+
+    expect(mockMerge).toHaveBeenCalledTimes(1);
+    expect(selectItems).not.toHaveBeenCalled();
   });
 
   test("skips groups that have fewer than two active unique items", async () => {

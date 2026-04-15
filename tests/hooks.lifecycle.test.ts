@@ -28,7 +28,7 @@ jest.mock("../src/features/bulkMerge", () => ({
   registerBulkMergeWindow: registerBulkMergeWindowMock,
 }));
 
-const registerDuplicatesGlobalMock = jest.fn(async () => {
+const registerDuplicatesGlobalMock = jest.fn<(...args: any[]) => Promise<() => void>>(async () => {
   registrationOrder.push("global:duplicates");
   return makeDisposer("global:duplicates");
 });
@@ -36,8 +36,9 @@ const registerDuplicatesWindowMock = jest.fn(async (win: any) => {
   registrationOrder.push(`window:${win.name}:duplicates`);
   return makeDisposer(`window:${win.name}:duplicates`);
 });
+const createDuplicatesNotifyHandlerMock = jest.fn<(...args: any[]) => (...handlerArgs: any[]) => void>(() => jest.fn());
 jest.mock("../src/features/duplicates", () => ({
-  createDuplicatesNotifyHandler: jest.fn(() => jest.fn()),
+  createDuplicatesNotifyHandler: createDuplicatesNotifyHandlerMock,
   registerDuplicatesGlobal: registerDuplicatesGlobalMock,
   registerDuplicatesWindow: registerDuplicatesWindowMock,
   updateDuplicateButtonsVisibilities: jest.fn(),
@@ -159,6 +160,13 @@ describe("app hooks lifecycle disposal", () => {
 
     expect(initDbMock).toHaveBeenCalledTimes(1);
     expect(registerNonDuplicatesGlobalMock).toHaveBeenCalledWith(nonDuplicatesDBInstance);
+    expect(registerDuplicatesGlobalMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        getLoadedWindows: expect.any(Function),
+      }),
+    );
+    expect(registerDuplicatesGlobalMock.mock.calls[0][0].getLoadedWindows()).toEqual([win1, win2]);
+    expect(createDuplicatesNotifyHandlerMock).toHaveBeenCalledWith(expect.any(Function), expect.any(Function));
     expect(registerDevelopmentItemIDColumnMock).toHaveBeenCalledWith("production");
 
     const firstWindowRegistration = registrationOrder.findIndex((entry) => entry.startsWith("window:"));

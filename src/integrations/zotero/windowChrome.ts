@@ -1,19 +1,12 @@
 import { config } from "../../../package.json";
+import { isWindowAlive } from "./windows";
 
-/**
- * Check if the window is alive.
- * Useful to prevent opening duplicate windows.
- * @param win
- */
-function isWindowAlive(win?: Window) {
-  return win && !Components.utils.isDeadWrapper(win) && !win.closed;
-}
-
-function registerStyleSheets(win?: Window) {
+function registerStyleSheets(win: Window) {
   const hrefs = ["zoplicate", "itemSection"];
 
-  if (!win) {
-    win = Zotero.getMainWindow();
+  if (!isWindowAlive(win)) {
+    ztoolkit.log("registerStyleSheets skipped because the target window is unavailable.");
+    return;
   }
   for (const href of hrefs) {
     const styles = ztoolkit.UI.createElement(win.document, "link", {
@@ -28,11 +21,11 @@ function registerStyleSheets(win?: Window) {
 }
 
 function bringToFront(win?: Window) {
-  if (!win) {
-    win = Zotero.getMainWindow();
+  if (!isWindowAlive(win)) {
+    return;
   }
-  win.focus();
-  win.document.documentElement.scrollIntoView();
+  win.focus?.();
+  win.document?.documentElement?.scrollIntoView?.();
 }
 
-export { isWindowAlive, registerStyleSheets, bringToFront };
+export { registerStyleSheets, bringToFront };

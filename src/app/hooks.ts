@@ -49,6 +49,7 @@ async function onStartup() {
   globalDisposers.add(
     await registerDuplicatesGlobal({
       nonDuplicatesDB,
+      getLoadedWindows: () => [...loadedWindows],
       getNonDuplicatesState: () => NonDuplicates.getInstance(),
       refreshDuplicateStats,
     }),

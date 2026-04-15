@@ -14,6 +14,7 @@ export { createDuplicatesNotifyHandler } from "./notifyHandlers";
 
 export async function registerDuplicatesGlobal(options: {
   nonDuplicatesDB: NonDuplicatesDB;
+  getLoadedWindows: () => Window[];
   getNonDuplicatesState: () => { allNonDuplicates: Set<string> };
   refreshDuplicateStats: (
     libraryID: number,
@@ -22,6 +23,8 @@ export async function registerDuplicatesGlobal(options: {
   ) => Promise<void>;
 }): Promise<Disposer> {
   const registry = new DisposerRegistry();
+  Duplicates.instance.setLoadedWindowsProvider(options.getLoadedWindows);
+  registry.add(() => Duplicates.instance.clearWindowReferences());
   registry.add(patchFindDuplicates(options.nonDuplicatesDB, options.getNonDuplicatesState));
   registry.add(patchGetSearchObject(options.refreshDuplicateStats));
   registry.add(patchItemSaveData());
