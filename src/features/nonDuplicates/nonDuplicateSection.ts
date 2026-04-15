@@ -6,6 +6,28 @@ import { areDuplicates } from "../../integrations/zotero/duplicateSearch";
 import { getNonDuplicateSectionID, setNonDuplicateSectionID } from "../../app/state";
 import { toggleNonDuplicates } from "./nonDuplicateActions";
 
+interface DeferredPromise {
+  promise: Promise<void>;
+  resolve(): void;
+  reject(reason?: unknown): void;
+}
+
+export function createDeferred(): DeferredPromise {
+  let resolvePromise!: () => void;
+  let rejectPromise!: (reason?: unknown) => void;
+
+  const promise = new Promise<void>((resolve, reject) => {
+    resolvePromise = resolve;
+    rejectPromise = reject;
+  });
+
+  return {
+    promise,
+    resolve: resolvePromise,
+    reject: rejectPromise,
+  };
+}
+
 export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
   unregisterNonDuplicatesSection();
   setNonDuplicateSectionID(Zotero.ItemPaneManager.registerSection({
@@ -30,13 +52,13 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
           let io: {
             dataIn: null | number[];
             dataOut: null | number[];
-            deferred: any;
+            deferred: DeferredPromise;
             itemTreeID: string;
             filterLibraryIDs: number[];
           } = {
             dataIn: null,
             dataOut: null,
-            deferred: Zotero.Promise.defer(),
+            deferred: createDeferred(),
             itemTreeID: "non-duplicate-box-select-item-dialog",
             filterLibraryIDs: [item.libraryID],
           };

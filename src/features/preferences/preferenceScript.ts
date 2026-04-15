@@ -33,7 +33,7 @@ function bindPrefEvents() {
   getPrefs()
     ?.window.document.querySelector(`#zotero-prefpane-${config.addonRef}-view-duplicate-stats-enable`)
     ?.addEventListener("command", async (e) => {
-      if ((e.target as XUL.Checkbox).checked) {
+      if ((e.currentTarget as XULCheckboxElement).checked) {
         await fetchAllDuplicates();
       }
       // refreshCollectionView(); // Not respond to mouse click event

@@ -9,7 +9,7 @@ export async function registerDevelopmentItemIDColumn(
   }
 
   const field = "Item ID";
-  await Zotero.ItemTreeManager.registerColumns({
+  const registeredDataKey = await Zotero.ItemTreeManager.registerColumn({
     pluginID: config.addonID,
     dataKey: field,
     label: field,
@@ -18,5 +18,11 @@ export async function registerDevelopmentItemIDColumn(
     },
   });
 
-  return () => {};
+  if (!registeredDataKey) {
+    return () => {};
+  }
+
+  return async () => {
+    await Zotero.ItemTreeManager.unregisterColumn(registeredDataKey);
+  };
 }
