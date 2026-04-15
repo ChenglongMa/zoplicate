@@ -56,14 +56,14 @@ export async function showHintWithLink(
 
   try {
     await waitUntilAsync(() =>
-      // @ts-ignore
+      // @ts-ignore - ProgressWindow internals are not exposed by zotero-plugin-toolkit types.
       Boolean(progress.lines && progress.lines[0]._itemText),
     );
   } catch (e) {
     // Do nothing
   }
 
-  // @ts-ignore
+  // @ts-ignore - ProgressWindow internals are not exposed by zotero-plugin-toolkit types.
   progress.lines[0]._hbox.ownerDocument
     .querySelector("label[href]")
     .addEventListener("click", async (ev: MouseEvent) => {
@@ -112,9 +112,13 @@ export function cleanDOI(item: Zotero.Item): string[] {
   const doiStrs = new Set<string>();
   for (const field of possibleDOIFields) {
     let cleanedDOI = Zotero.Utilities.cleanDOI("" + item.getField(field));
-    cleanedDOI && doiStrs.add(cleanedDOI.trim().toUpperCase());
+    if (cleanedDOI) {
+      doiStrs.add(cleanedDOI.trim().toUpperCase());
+    }
     cleanedDOI = Zotero.Utilities.cleanDOI("" + item.getExtraField(field));
-    cleanedDOI && doiStrs.add(cleanedDOI.trim().toUpperCase());
+    if (cleanedDOI) {
+      doiStrs.add(cleanedDOI.trim().toUpperCase());
+    }
   }
   return Array.from(doiStrs);
 }

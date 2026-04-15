@@ -3,8 +3,6 @@
  * Loaded via jest.config.ts setupFiles before every test suite.
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { jest } from "@jest/globals";
 
 // ---------------------------------------------------------------------------

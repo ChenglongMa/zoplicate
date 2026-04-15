@@ -1,7 +1,5 @@
 import { describe, expect, test, beforeEach, jest } from "@jest/globals";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 // ---------------------------------------------------------------------------
 // Mocks - must be declared before imports
 // ---------------------------------------------------------------------------
@@ -128,10 +126,7 @@ describe("registerButtonsInDuplicatePane", () => {
     const win = makeWin({ hasMergeButton: true });
     await registerButtonsInDuplicatePane(win, bulkFactory, nonDupFactory);
 
-    expect(bulkFactory).toHaveBeenCalledWith(
-      expect.anything(),
-      BULK_MERGE_INNER_BUTTON_ID,
-    );
+    expect(bulkFactory).toHaveBeenCalledWith(expect.anything(), BULK_MERGE_INNER_BUTTON_ID);
     expect(nonDupFactory).toHaveBeenCalledWith(win, NON_DUPLICATE_INNER_BUTTON_ID);
   });
 
@@ -139,10 +134,7 @@ describe("registerButtonsInDuplicatePane", () => {
     const win = makeWin({ hasCustomHead: true });
     await registerButtonsInDuplicatePane(win, bulkFactory, nonDupFactory);
 
-    expect(bulkFactory).toHaveBeenCalledWith(
-      expect.anything(),
-      BULK_MERGE_EXTERNAL_BUTTON_ID,
-    );
+    expect(bulkFactory).toHaveBeenCalledWith(expect.anything(), BULK_MERGE_EXTERNAL_BUTTON_ID);
     expect(nonDupFactory).toHaveBeenCalledWith(win, NON_DUPLICATE_EXTERNAL_BUTTON_ID);
   });
 
