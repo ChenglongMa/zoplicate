@@ -33,7 +33,7 @@ export class Duplicates {
       return;
     }
 
-    let duplicateItemMap = new Map<number, DuplicateItems>();
+    const duplicateItemMap = new Map<number, DuplicateItems>();
     for (const id of ids) {
       const items = duplicatesObj.getSetItemsByItemID(id);
       if (items.length < 2) {
@@ -376,7 +376,7 @@ export class Duplicates {
       })
       .addButton(getString("du-dialog-button-go-duplicates"), "btn_go_duplicate", {
         callback: (e) => {
-          const win = this.dialogWindow ?? Zotero.getMainWindow();
+          const win = Zotero.getMainWindow();
           goToDuplicatesPane(win);
         },
       })
