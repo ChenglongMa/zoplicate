@@ -3,10 +3,10 @@ import { BulkMergeController, bulkMergeController } from "./bulkMergeService";
 
 export { BulkMergeController, bulkMergeController } from "./bulkMergeService";
 
-export function registerBulkMergeWindow(
+export async function registerBulkMergeWindow(
   win: Window,
   controller: BulkMergeController,
   updateVisibilities: (win: Window) => Promise<void>,
-): Disposer {
+): Promise<Disposer> {
   return controller.registerUIElements(win, updateVisibilities);
 }
