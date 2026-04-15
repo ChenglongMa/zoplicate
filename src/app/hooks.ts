@@ -20,6 +20,7 @@ import {
   registerNonDuplicatesWindow,
 } from "../features/nonDuplicates";
 import { registerPreferencesGlobal, registerPrefsScripts } from "../features/preferences";
+import { registerDevelopmentItemIDColumn } from "../integrations/zotero/devColumn";
 import { createMenuCacheNotifyHandler } from "../integrations/zotero/menuCache";
 import { notifyDispatcher, registerNotifier } from "../integrations/zotero/notifier";
 import { registerStyleSheets } from "../integrations/zotero/windowChrome";
@@ -43,6 +44,8 @@ async function onStartup() {
 
   const nonDuplicatesDB = NonDuplicatesDB.instance;
   await nonDuplicatesDB.init();
+  globalDisposers.add(await registerNonDuplicatesGlobal(nonDuplicatesDB));
+  globalDisposers.add(await registerDuplicateStatsGlobal());
   globalDisposers.add(
     await registerDuplicatesGlobal({
       nonDuplicatesDB,
@@ -67,11 +70,9 @@ async function onStartup() {
       { pluginID: config.addonID },
     ),
   );
+  globalDisposers.add(await registerDevelopmentItemIDColumn(getEnv()));
 
   await Promise.all(Zotero.getMainWindows().map((win) => onMainWindowLoad(win)));
-
-  globalDisposers.add(await registerNonDuplicatesGlobal());
-  globalDisposers.add(await registerDuplicateStatsGlobal());
 }
 
 async function onMainWindowLoad(win: Window): Promise<void> {
@@ -93,12 +94,8 @@ async function onMainWindowLoad(win: Window): Promise<void> {
     ),
   );
   winRegistry.add(await registerDuplicateStatsWindow(win));
-  winRegistry.add(registerBulkMergeWindow(win, bulkMergeController, updateDuplicateButtonsVisibilities));
+  winRegistry.add(await registerBulkMergeWindow(win, bulkMergeController, updateDuplicateButtonsVisibilities));
   winRegistry.add(await registerNonDuplicatesWindow(win));
-
-  if (getEnv() === "development") {
-    await registerDevColumn();
-  }
 
   loadedWindows.add(win);
   winRegistry.add(async () => {
@@ -149,18 +146,6 @@ async function onShutdown() {
   setAlive(false);
   // @ts-ignore - Plugin instance is not typed
   delete Zotero[config.addonInstance];
-}
-
-async function registerDevColumn() {
-  const field = "Item ID";
-  await Zotero.ItemTreeManager.registerColumns({
-    pluginID: config.addonID,
-    dataKey: field,
-    label: "Item ID",
-    dataProvider: (item: Zotero.Item, dataKey: string) => {
-      return String(item.id) + " " + item.key;
-    },
-  });
 }
 
 async function onPrefsEvent(type: string, data: { [key: string]: any }) {

@@ -1,18 +1,25 @@
 import { describe, expect, test, jest } from "@jest/globals";
 
 const order: string[] = [];
+const registrationOrder: string[] = [];
 
 const makeDisposer = (label: string) => () => {
   order.push(label);
 };
 
-const registerPreferencesGlobalMock = jest.fn(async () => makeDisposer("global:preferences"));
+const registerPreferencesGlobalMock = jest.fn(async () => {
+  registrationOrder.push("global:preferences");
+  return makeDisposer("global:preferences");
+});
 jest.mock("../src/features/preferences", () => ({
   registerPreferencesGlobal: registerPreferencesGlobalMock,
   registerPrefsScripts: jest.fn(),
 }));
 
-const registerBulkMergeWindowMock = jest.fn((win: any) => makeDisposer(`window:${win.name}:bulk`));
+const registerBulkMergeWindowMock = jest.fn(async (win: any) => {
+  registrationOrder.push(`window:${win.name}:bulk`);
+  return makeDisposer(`window:${win.name}:bulk`);
+});
 jest.mock("../src/features/bulkMerge", () => ({
   bulkMergeController: {
     isRunning: false,
@@ -21,8 +28,14 @@ jest.mock("../src/features/bulkMerge", () => ({
   registerBulkMergeWindow: registerBulkMergeWindowMock,
 }));
 
-const registerDuplicatesGlobalMock = jest.fn(async () => makeDisposer("global:duplicates"));
-const registerDuplicatesWindowMock = jest.fn(async (win: any) => makeDisposer(`window:${win.name}:duplicates`));
+const registerDuplicatesGlobalMock = jest.fn(async () => {
+  registrationOrder.push("global:duplicates");
+  return makeDisposer("global:duplicates");
+});
+const registerDuplicatesWindowMock = jest.fn(async (win: any) => {
+  registrationOrder.push(`window:${win.name}:duplicates`);
+  return makeDisposer(`window:${win.name}:duplicates`);
+});
 jest.mock("../src/features/duplicates", () => ({
   createDuplicatesNotifyHandler: jest.fn(() => jest.fn()),
   registerDuplicatesGlobal: registerDuplicatesGlobalMock,
@@ -30,16 +43,28 @@ jest.mock("../src/features/duplicates", () => ({
   updateDuplicateButtonsVisibilities: jest.fn(),
 }));
 
-const registerDuplicateStatsGlobalMock = jest.fn(async () => makeDisposer("global:duplicateStats"));
-const registerDuplicateStatsWindowMock = jest.fn(async (win: any) => makeDisposer(`window:${win.name}:duplicateStats`));
+const registerDuplicateStatsGlobalMock = jest.fn(async () => {
+  registrationOrder.push("global:duplicateStats");
+  return makeDisposer("global:duplicateStats");
+});
+const registerDuplicateStatsWindowMock = jest.fn(async (win: any) => {
+  registrationOrder.push(`window:${win.name}:duplicateStats`);
+  return makeDisposer(`window:${win.name}:duplicateStats`);
+});
 jest.mock("../src/features/duplicateStats", () => ({
   refreshDuplicateStats: jest.fn(),
   registerDuplicateStatsGlobal: registerDuplicateStatsGlobalMock,
   registerDuplicateStatsWindow: registerDuplicateStatsWindowMock,
 }));
 
-const registerNonDuplicatesGlobalMock = jest.fn(async () => makeDisposer("global:nonDuplicates"));
-const registerNonDuplicatesWindowMock = jest.fn(async (win: any) => makeDisposer(`window:${win.name}:nonDuplicates`));
+const registerNonDuplicatesGlobalMock = jest.fn(async (_db?: any) => {
+  registrationOrder.push("global:nonDuplicates");
+  return makeDisposer("global:nonDuplicates");
+});
+const registerNonDuplicatesWindowMock = jest.fn(async (win: any) => {
+  registrationOrder.push(`window:${win.name}:nonDuplicates`);
+  return makeDisposer(`window:${win.name}:nonDuplicates`);
+});
 jest.mock("../src/features/nonDuplicates", () => ({
   createNonDuplicateButton: jest.fn((_win: Window, id: string) => ({ tag: "button", id })),
   createNonDuplicatesNotifyHandler: jest.fn(() => jest.fn()),
@@ -48,9 +73,15 @@ jest.mock("../src/features/nonDuplicates", () => ({
   registerNonDuplicatesWindow: registerNonDuplicatesWindowMock,
 }));
 
-const registerNotifierMock = jest.fn(() => makeDisposer("global:notifier"));
+const registerNotifierMock = jest.fn(() => {
+  registrationOrder.push("global:notifier");
+  return makeDisposer("global:notifier");
+});
 const notifyDispatcherMock = {
-  registerHandler: jest.fn(() => makeDisposer("global:handler")),
+  registerHandler: jest.fn(() => {
+    registrationOrder.push("global:handler");
+    return makeDisposer("global:handler");
+  }),
   dispatch: jest.fn(),
   setReady: jest.fn(async () => undefined),
   reset: jest.fn(() => order.push("dispatcher:reset")),
@@ -62,6 +93,14 @@ jest.mock("../src/integrations/zotero/notifier", () => ({
 
 jest.mock("../src/integrations/zotero/menuCache", () => ({
   createMenuCacheNotifyHandler: jest.fn(() => jest.fn()),
+}));
+
+const registerDevelopmentItemIDColumnMock = jest.fn(async (_env?: string) => {
+  registrationOrder.push("global:devColumn");
+  return makeDisposer("global:devColumn");
+});
+jest.mock("../src/integrations/zotero/devColumn", () => ({
+  registerDevelopmentItemIDColumn: registerDevelopmentItemIDColumnMock,
 }));
 
 jest.mock("../src/integrations/zotero/windowChrome", () => ({
@@ -76,13 +115,15 @@ jest.mock("../src/shared/debug", () => ({
   debug: jest.fn(),
 }));
 
+const initDbMock = jest.fn(async () => undefined);
 const closeDbMock = jest.fn(async () => order.push("db:close"));
+const nonDuplicatesDBInstance = {
+  init: initDbMock,
+  close: closeDbMock,
+};
 jest.mock("../src/db/nonDuplicates", () => ({
   NonDuplicatesDB: {
-    instance: {
-      init: jest.fn(async () => undefined),
-      close: closeDbMock,
-    },
+    instance: nonDuplicatesDBInstance,
   },
 }));
 
@@ -99,6 +140,7 @@ describe("app hooks lifecycle disposal", () => {
   test("onShutdown disposes all window resources before global resources and is double-dispose safe", async () => {
     jest.useFakeTimers();
     order.length = 0;
+    registrationOrder.length = 0;
     jest.clearAllMocks();
     (globalThis as any).addon.data.env = "production";
 
@@ -114,6 +156,17 @@ describe("app hooks lifecycle disposal", () => {
     const hooks = (await import("../src/app/hooks")).default;
 
     await hooks.onStartup();
+
+    expect(initDbMock).toHaveBeenCalledTimes(1);
+    expect(registerNonDuplicatesGlobalMock).toHaveBeenCalledWith(nonDuplicatesDBInstance);
+    expect(registerDevelopmentItemIDColumnMock).toHaveBeenCalledWith("production");
+
+    const firstWindowRegistration = registrationOrder.findIndex((entry) => entry.startsWith("window:"));
+    const lastGlobalRegistration = Math.max(
+      ...registrationOrder.map((entry, index) => (entry.startsWith("global:") ? index : -1)),
+    );
+    expect(firstWindowRegistration).toBeGreaterThan(lastGlobalRegistration);
+
     await hooks.onShutdown();
     await hooks.onShutdown();
 
