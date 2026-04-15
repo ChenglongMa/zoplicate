@@ -9,6 +9,11 @@ export default tseslint.config(
   },
   {
     extends: [eslint.configs.recommended, ...tseslint.configs.recommended],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
     rules: {
       "no-restricted-globals": [
         "error",
