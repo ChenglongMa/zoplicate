@@ -23,6 +23,8 @@ interface MockItemOverrides {
   json?: Record<string, unknown>;
   fields?: Record<string, string>;
   extraFields?: Record<string, string>;
+  deleted?: boolean;
+  numAttachments?: number;
 }
 
 /**
@@ -39,18 +41,22 @@ export function createMockItem(overrides: MockItemOverrides = {}): any {
   const json = overrides.json ?? {};
   const fields = overrides.fields ?? {};
   const extraFields = overrides.extraFields ?? {};
+  const deleted = overrides.deleted ?? false;
+  const numAttachments = overrides.numAttachments ?? 1;
 
   const item: any = {
     id,
     dateAdded,
     dateModified,
     itemTypeID,
+    deleted,
     getUsedFields: jest.fn((_asNames?: boolean) => usedFields),
     getDisplayTitle: jest.fn(() => displayTitle),
     toJSON: jest.fn(() => ({ ...json })),
     fromJSON: jest.fn((_obj: any) => {}),
     getField: jest.fn((field: string) => fields[field] ?? ""),
     getExtraField: jest.fn((field: string) => extraFields[field] ?? ""),
+    numAttachments: jest.fn(() => numAttachments),
   };
 
   return item;
@@ -68,6 +74,7 @@ export function createMockItem(overrides: MockItemOverrides = {}): any {
       }
       return createMockItem({ id: input });
     }),
+    getAsync: jest.fn(async (id: number) => createMockItem({ id })),
     merge: jest.fn(async () => undefined),
   },
   CollectionTreeCache: {
@@ -93,6 +100,7 @@ export function createMockItem(overrides: MockItemOverrides = {}): any {
     addObserver: jest.fn(),
     removeObserver: jest.fn(),
   },
+  getActiveZoteroPane: jest.fn(() => ({ selectItems: jest.fn() })),
 };
 
 // ---------------------------------------------------------------------------

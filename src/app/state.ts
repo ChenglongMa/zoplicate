@@ -27,8 +27,16 @@ export interface PrefsWindowState {
 
 export interface DialogState {
   dialog?: DialogHelper;
-  duplicateMaps?: Map<number, { existingItemIDs: number[]; action: Action }>;
+  duplicateMaps?: DuplicateGroupMap;
 }
+
+export interface DuplicateGroupEntry {
+  itemIDs: number[];
+  newItemIDs: number[];
+  action: Action;
+}
+
+export type DuplicateGroupMap = Map<number, DuplicateGroupEntry>;
 
 export interface DuplicateCache {
   needResetDuplicateSearch: { [libraryID: number]: boolean };

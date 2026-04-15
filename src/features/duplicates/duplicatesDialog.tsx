@@ -6,9 +6,8 @@ export const duplicateDialogActions = [Action.KEEP, Action.DISCARD, Action.CANCE
 export type DuplicateDialogAction = (typeof duplicateDialogActions)[number];
 
 export interface DuplicateDialogRow {
-  newItemID: number;
+  groupID: number;
   title: string;
-  existingItemIDs: number[];
   action: DuplicateDialogAction;
 }
 
@@ -114,8 +113,8 @@ export function createDuplicatesDialogRenderer(
 
     const uniformAction = getUniformAction(rows);
 
-    const selectRowAction = (newItemID: number, action: DuplicateDialogAction) => {
-      commitState(rows.map((row) => (row.newItemID === newItemID ? { ...row, action } : row)));
+    const selectRowAction = (groupID: number, action: DuplicateDialogAction) => {
+      commitState(rows.map((row) => (row.groupID === groupID ? { ...row, action } : row)));
     };
 
     const selectAllAction = (action: DuplicateDialogAction) => {
@@ -140,7 +139,7 @@ export function createDuplicatesDialogRenderer(
       event.preventDefault();
       const direction = event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1;
       const nextAction = getNextAction(row.action, direction);
-      selectRowAction(row.newItemID, nextAction);
+      selectRowAction(row.groupID, nextAction);
 
       const group = event.currentTarget.parentElement;
       setTimeout(() => {
@@ -181,7 +180,7 @@ export function createDuplicatesDialogRenderer(
               </thead>
               <tbody>
                 {rows.map((row) => (
-                  <tr key={row.newItemID}>
+                  <tr key={row.groupID}>
                     <td className="du-title-cell" title={row.title}>
                       {row.title}
                     </td>
@@ -197,7 +196,7 @@ export function createDuplicatesDialogRenderer(
                             aria-label={props.strings.actions[action]}
                             data-action={action}
                             tabIndex={selected ? 0 : -1}
-                            onClick={() => selectRowAction(row.newItemID, action)}
+                            onClick={() => selectRowAction(row.groupID, action)}
                             onKeyDown={(event) => handleChoiceKeyDown(event, row)}
                           >
                             <span className="du-choice-marker" aria-hidden="true" />
