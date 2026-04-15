@@ -8,7 +8,7 @@ import { DuplicateItems } from "../../shared/duplicates/duplicateItems";
 import { bringToFront } from "../../integrations/zotero/windowChrome";
 import { showHintWithLink } from "../../shared/utils";
 import { waitUntilAsync } from "../../shared/wait";
-import { getDialogs, setProcessing } from "../../app/state";
+import { getDialogs, setProcessing, type DuplicateGroupEntry, type DuplicateGroupMap } from "../../app/state";
 import {
   createDuplicatesDialogRenderer,
   type DuplicateDialogAction,
@@ -19,6 +19,78 @@ import {
   type DuplicateDialogState,
   type DuplicateDialogStrings,
 } from "./duplicatesDialog";
+
+function normalizeItemIDs(itemIDs: number[]): number[] {
+  return [...new Set(itemIDs)].sort((a, b) => a - b);
+}
+
+function getDuplicateGroupID(itemIDs: number[]): number {
+  return Math.min(...itemIDs);
+}
+
+function findOverlappingGroupIDs(duplicateMaps: DuplicateGroupMap, groupID: number, itemIDs: number[]) {
+  const incomingItemIDs = new Set(itemIDs);
+  const overlappingGroupIDs: number[] = [];
+  for (const [existingGroupID, value] of duplicateMaps) {
+    if (existingGroupID === groupID || value.itemIDs.some((itemID) => incomingItemIDs.has(itemID))) {
+      overlappingGroupIDs.push(existingGroupID);
+    }
+  }
+  return overlappingGroupIDs;
+}
+
+function upsertDuplicateGroup(
+  duplicateMaps: DuplicateGroupMap,
+  groupID: number,
+  incomingEntry: DuplicateGroupEntry,
+  normalizeAction: (action: Action) => Action = (action) => action,
+) {
+  const existingGroupIDs = findOverlappingGroupIDs(duplicateMaps, groupID, incomingEntry.itemIDs);
+  const existingEntries = existingGroupIDs
+    .map((existingGroupID) => duplicateMaps.get(existingGroupID))
+    .filter((entry): entry is DuplicateGroupEntry => Boolean(entry));
+  const itemIDs = normalizeItemIDs([
+    ...existingEntries.flatMap((entry) => entry.itemIDs),
+    ...incomingEntry.itemIDs,
+  ]);
+  const newItemIDs = normalizeItemIDs([
+    ...existingEntries.flatMap((entry) => entry.newItemIDs),
+    ...incomingEntry.newItemIDs,
+  ]);
+  const nextGroupID = getDuplicateGroupID(itemIDs);
+
+  existingGroupIDs.forEach((existingGroupID) => duplicateMaps.delete(existingGroupID));
+
+  duplicateMaps.set(nextGroupID, {
+    itemIDs,
+    newItemIDs,
+    action: normalizeAction(existingEntries[0]?.action ?? incomingEntry.action),
+  });
+}
+
+export function buildDuplicateGroupMap(
+  duplicatesObj: {
+    getSetItemsByItemID(itemID: number): number[];
+  },
+  ids: number[],
+  action: Action,
+): DuplicateGroupMap {
+  const duplicateMaps: DuplicateGroupMap = new Map();
+  for (const id of ids) {
+    const itemIDs = normalizeItemIDs([...duplicatesObj.getSetItemsByItemID(id), id]);
+    if (itemIDs.length < 2) {
+      continue;
+    }
+
+    const groupID = getDuplicateGroupID(itemIDs);
+    upsertDuplicateGroup(duplicateMaps, groupID, {
+      itemIDs,
+      newItemIDs: [id],
+      action,
+    });
+  }
+  return duplicateMaps;
+}
 
 export class Duplicates {
   private static _instance: Duplicates;
@@ -46,23 +118,7 @@ export class Duplicates {
       return;
     }
 
-    const duplicateItemMap = new Map<number, DuplicateItems>();
-    for (const id of ids) {
-      const items = duplicatesObj.getSetItemsByItemID(id);
-      if (items.length < 2) {
-        continue;
-      }
-      const duplicateItems = new DuplicateItems(items, getPref("bulk.master.item") as MasterItem);
-      duplicateItemMap.set(duplicateItems.key, duplicateItems);
-    }
-
-    const duplicateMaps = ids.reduce((acc, id) => {
-      const existingItemIDs: number[] = duplicatesObj.getSetItemsByItemID(id).filter((i: number) => i !== id);
-      if (existingItemIDs.length > 0) {
-        acc.set(id, { existingItemIDs, action: defaultAction });
-      }
-      return acc;
-    }, new Map<number, { existingItemIDs: number[]; action: Action }>());
+    const duplicateMaps = buildDuplicateGroupMap(duplicatesObj, ids, defaultAction);
 
     if (duplicateMaps.size === 0) return;
 
@@ -73,8 +129,7 @@ export class Duplicates {
     this.processDuplicates(duplicateMaps).then((r) => {}); // DONT WAIT
   }
 
-  async processDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
-    const items: { masterItem: Zotero.Item; otherItems: Zotero.Item[] }[] = [];
+  async processDuplicates(duplicateMaps: DuplicateGroupMap) {
     if (duplicateMaps.size === 0) return;
 
     const popWin = new ztoolkit.ProgressWindow(getString("du-dialog-title"), {
@@ -87,49 +142,40 @@ export class Duplicates {
       })
       .show();
     setProcessing(true);
-    const masterItemPref = getPref("bulk.master.item") as MasterItem;
-    for (const [newItemID, { existingItemIDs, action }] of duplicateMaps) {
-      ztoolkit.log("Processing duplicate: ", newItemID);
+    const selectedItemIDs: number[] = [];
 
-      // TODO: Further check if the block is necessary
-      try {
-        // Wait for potential attachments to be downloaded
-        await waitUntilAsync(() => Zotero.Items.get(newItemID).numAttachments() > 0, 1000, 5000);
-      } catch (e) {
-        ztoolkit.log(e);
-      }
+    try {
+      const masterItemPref = getPref("bulk.master.item") as MasterItem;
+      const processedItemIDs = new Set<number>();
 
-      const newItem = Zotero.Items.get(newItemID);
-      if (action === Action.KEEP) {
-        items.push({
-          masterItem: newItem,
-          otherItems: existingItemIDs.map((id) => Zotero.Items.get(id)),
-        });
-      } else if (action === Action.DISCARD) {
-        if (existingItemIDs.length < 1) {
+      for (const [groupID, duplicateGroup] of duplicateMaps) {
+        ztoolkit.log("Processing duplicate group: ", groupID, duplicateGroup);
+
+        const activeItems = this.getActiveUniqueItems(duplicateGroup.itemIDs);
+        if (activeItems.length < 2) {
           continue;
         }
-        const duplicateItems = new DuplicateItems(existingItemIDs, masterItemPref);
-        const masterItem = duplicateItems.masterItem;
-        const otherItems = duplicateItems.otherItems;
-        items.push({
-          masterItem: masterItem,
-          otherItems: [...otherItems, newItem],
-        });
-      }
-    }
-    popWin.changeLine({
-      text: getString("du-progress-text"),
-      type: "default",
-      progress: 30,
-    });
 
-    const selectedItemIDs = [];
-    for (const { masterItem, otherItems } of items) {
-      selectedItemIDs.push(masterItem.id);
-      await merge(masterItem, otherItems);
+        const activeItemIDs = activeItems.map((item) => item.id);
+        if (activeItemIDs.some((itemID) => processedItemIDs.has(itemID))) {
+          ztoolkit.log("Skipping duplicate group already processed: ", groupID, duplicateGroup);
+          continue;
+        }
+
+        await this.waitForNewItemAttachments(duplicateGroup.newItemIDs, activeItemIDs);
+
+        const mergePlan = this.createMergePlan(duplicateGroup, activeItems, masterItemPref);
+        if (!mergePlan) {
+          continue;
+        }
+
+        selectedItemIDs.push(mergePlan.masterItem.id);
+        await merge(mergePlan.masterItem, mergePlan.otherItems);
+        activeItemIDs.forEach((itemID) => processedItemIDs.add(itemID));
+      }
+    } finally {
+      setProcessing(false);
     }
-    setProcessing(false);
 
     popWin.changeLine({
       text: getString("du-progress-text"),
@@ -146,7 +192,7 @@ export class Duplicates {
     });
   }
 
-  async showDuplicates(duplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
+  async showDuplicates(duplicateMaps: DuplicateGroupMap) {
     this.updateDuplicateMaps(duplicateMaps);
 
     if (!this.document?.hasFocus()) {
@@ -185,11 +231,11 @@ export class Duplicates {
     getDialogs().dialog = value;
   }
 
-  private get duplicateMaps(): Map<number, { existingItemIDs: number[]; action: Action }> | undefined {
+  private get duplicateMaps(): DuplicateGroupMap | undefined {
     return getDialogs().duplicateMaps;
   }
 
-  private set duplicateMaps(value: Map<number, { existingItemIDs: number[]; action: Action }> | undefined) {
+  private set duplicateMaps(value: DuplicateGroupMap | undefined) {
     getDialogs().duplicateMaps = value;
   }
 
@@ -201,18 +247,14 @@ export class Duplicates {
     return this.dialogWindow?.document;
   }
 
-  private updateDuplicateMaps(newDuplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
+  private updateDuplicateMaps(newDuplicateMaps: DuplicateGroupMap) {
     const mergedMaps = new Map(this.duplicateMaps ?? []);
     ztoolkit.log("Update duplicate maps - old", this.duplicateMaps);
     ztoolkit.log("Update duplicate maps - new", newDuplicateMaps);
 
-    newDuplicateMaps.forEach((value, key) => {
-      if (value.existingItemIDs.length === 0) return;
-      const previousAction = mergedMaps.get(key)?.action;
-      mergedMaps.set(key, {
-        existingItemIDs: value.existingItemIDs,
-        action: this.normalizeDialogAction(previousAction ?? value.action),
-      });
+    newDuplicateMaps.forEach((value, groupID) => {
+      if (value.itemIDs.length < 2) return;
+      upsertDuplicateGroup(mergedMaps, groupID, value, (action) => this.normalizeDialogAction(action));
     });
 
     this.duplicateMaps = mergedMaps;
@@ -222,14 +264,80 @@ export class Duplicates {
     return action === Action.ASK ? Action.CANCEL : (action as DuplicateDialogAction);
   }
 
+  private getActiveUniqueItems(itemIDs: number[]): Zotero.Item[] {
+    const seenItemIDs = new Set<number>();
+    const items: Zotero.Item[] = [];
+
+    for (const itemID of itemIDs) {
+      if (seenItemIDs.has(itemID)) continue;
+      seenItemIDs.add(itemID);
+
+      const item = Zotero.Items.get(itemID) as Zotero.Item | false | undefined;
+      if (!item || item.deleted) continue;
+      items.push(item);
+    }
+    return items;
+  }
+
+  private selectMasterItem(items: Zotero.Item[], masterItemPref: MasterItem): Zotero.Item | undefined {
+    if (items.length === 0) return undefined;
+    return new DuplicateItems(items, masterItemPref).masterItem;
+  }
+
+  private createMergePlan(
+    duplicateGroup: DuplicateGroupEntry,
+    activeItems: Zotero.Item[],
+    masterItemPref: MasterItem,
+  ): { masterItem: Zotero.Item; otherItems: Zotero.Item[] } | undefined {
+    const activeItemByID = new Map(activeItems.map((item) => [item.id, item]));
+    const activeNewItems = duplicateGroup.newItemIDs
+      .map((itemID) => activeItemByID.get(itemID))
+      .filter((item): item is Zotero.Item => Boolean(item));
+
+    let masterItem: Zotero.Item | undefined;
+    if (duplicateGroup.action === Action.KEEP) {
+      masterItem = this.selectMasterItem(activeNewItems.length > 0 ? activeNewItems : activeItems, MasterItem.NEWEST);
+    } else if (duplicateGroup.action === Action.DISCARD) {
+      const newItemIDs = new Set(duplicateGroup.newItemIDs);
+      const oldItems = activeItems.filter((item) => !newItemIDs.has(item.id));
+      masterItem = this.selectMasterItem(
+        oldItems.length > 0 ? oldItems : activeItems,
+        oldItems.length > 0 ? masterItemPref : MasterItem.OLDEST,
+      );
+    } else {
+      return undefined;
+    }
+
+    if (!masterItem) return undefined;
+
+    const otherItems = activeItems.filter((item) => item.id !== masterItem.id);
+    if (otherItems.length === 0) return undefined;
+
+    return { masterItem, otherItems };
+  }
+
+  private async waitForNewItemAttachments(newItemIDs: number[], activeItemIDs: number[]) {
+    const activeItemIDSet = new Set(activeItemIDs);
+    for (const newItemID of newItemIDs) {
+      if (!activeItemIDSet.has(newItemID)) continue;
+
+      // TODO: Further check if the block is necessary
+      try {
+        // Wait for potential attachments to be downloaded
+        await waitUntilAsync(() => Zotero.Items.get(newItemID).numAttachments() > 0, 1000, 5000);
+      } catch (e) {
+        ztoolkit.log(e);
+      }
+    }
+  }
+
   private async createDialogRows(): Promise<DuplicateDialogRow[]> {
     const rows: DuplicateDialogRow[] = [];
-    for (const [newItemID, { existingItemIDs, action }] of this.duplicateMaps || []) {
-      if (existingItemIDs.length === 0) continue;
-      const item = await Zotero.Items.getAsync(newItemID);
+    for (const [groupID, { itemIDs, action }] of this.duplicateMaps || []) {
+      if (itemIDs.length < 2) continue;
+      const item = await Zotero.Items.getAsync(groupID);
       rows.push({
-        newItemID,
-        existingItemIDs,
+        groupID,
         title: item.getDisplayTitle(),
         action: this.normalizeDialogAction(action),
       });
@@ -252,7 +360,7 @@ export class Duplicates {
 
   private syncDuplicateDialogState(state: DuplicateDialogState) {
     state.rows.forEach((row) => {
-      this.updateAction(row.newItemID, row.action);
+      this.updateAction(row.groupID, row.action);
     });
 
     if (this.dialog?.dialogData) {
@@ -373,11 +481,11 @@ export class Duplicates {
       .addButton(getString("general-cancel"), "btn_cancel");
   }
 
-  private updateAction(newItemID: number, action: Action) {
-    const value = this.duplicateMaps?.get(newItemID);
+  private updateAction(groupID: number, action: Action) {
+    const value = this.duplicateMaps?.get(groupID);
     if (value) {
       value.action = action;
-      this.duplicateMaps?.set(newItemID, value);
+      this.duplicateMaps?.set(groupID, value);
     }
   }
 }
