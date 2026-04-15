@@ -10,6 +10,11 @@ set -euo pipefail
 #   ./run_multi.sh M001
 #   ./run_multi.sh M001 manual M002 auto
 #
+# Environment variables:
+#   COOLDOWN_SECONDS -- Delay between milestones (default: 60)
+#   AUTO_COMMIT -- Forwarded to run.sh; commits after each verified milestone
+#                  by default (set AUTO_COMMIT=false to disable).
+#
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$SCRIPT_DIR"
@@ -30,6 +35,8 @@ usage() {
   echo "Usage: ./run_multi.sh <MILESTONE_ID_1> [approval_mode_1] <MILESTONE_ID_2> [approval_mode_2] ..."
   echo "  MILESTONE_ID   e.g. M001"
   echo "  approval_mode  manual|auto (default: auto)"
+  echo "  COOLDOWN_SECONDS  delay between milestones in seconds (default: 60)"
+  echo "  AUTO_COMMIT    true|false env var forwarded to run.sh (default: true)"
 }
 
 if [[ $# -lt 1 ]]; then
@@ -42,6 +49,7 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
   exit 0
 fi
 
+COOLDOWN_SECONDS="${COOLDOWN_SECONDS:-60}"
 MILESTONES=()
 APPROVALS=()
 while [[ $# -gt 0 ]]; do
@@ -94,6 +102,8 @@ log "=== Multi-milestone run started ==="
 log "Project: ${PROJECT_DIR}"
 log "Snapshot: ${SNAPSHOT_FILE}"
 log "Count: ${#MILESTONES[@]}"
+log "Cooldown: ${COOLDOWN_SECONDS}s"
+log "Auto-commit: ${AUTO_COMMIT:-true} (handled by run.sh after each verified milestone)"
 log ""
 
 for i in "${!MILESTONES[@]}"; do
@@ -113,7 +123,17 @@ for i in "${!MILESTONES[@]}"; do
     exit "$EXIT_CODE"
   fi
 
-  log "PASS: ${MILESTONE} completed and verified."
+  if [[ "${AUTO_COMMIT:-true}" == "true" ]]; then
+    log "PASS: ${MILESTONE} completed and verified (auto-commit handled by run.sh)."
+  else
+    log "PASS: ${MILESTONE} completed and verified."
+  fi
+
+  if [[ $i -lt $((${#MILESTONES[@]} - 1)) ]]; then
+    log "Cooldown: sleeping ${COOLDOWN_SECONDS}s before next milestone..."
+    sleep "$COOLDOWN_SECONDS"
+  fi
+
   log ""
 done
 

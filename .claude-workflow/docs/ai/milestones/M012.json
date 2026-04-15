@@ -1,0 +1,31 @@
+{
+  "id": "M012",
+  "title": "Sync conflict resolution and cleanup",
+  "phase": "Data Integrity - Sync Safety",
+  "status": "planned",
+  "depends_on": ["M011"],
+  "goal": "Register onSyncDownload listener for non-duplicate pairs with union-merge conflict resolution, and add key-based cleanup for merged/deleted items in SyncedSettings.",
+  "in_scope": [
+    "Implement unionMergePairs() pure function",
+    "Register onSyncDownload listener for zoplicate-nonDuplicates setting",
+    "Implement refreshLocalFromSync(libraryID, payload) with key-to-itemID resolution, diff, apply",
+    "Extend whenItemsDeleted to also clean SyncedSettings pairs",
+    "Flag-based listener disposal (no removeListener API available)",
+    "Tests: union merge, conflict flag handling, orphan cleanup, refreshLocalFromSync with key resolution"
+  ],
+  "out_of_scope": [
+    "Wiring into startup flow (M013)",
+    "Wiring into mark/unmark flow (M013)",
+    "Timestamp-based merge (union is sufficient for v1)"
+  ],
+  "acceptance": [
+    "unionMergePairs([[A,B]], [[B,C]]) returns [[A,B],[B,C]] (union, deduplicated, sorted)",
+    "When conflict=false, refreshLocalFromSync is called with the new remote value",
+    "When conflict=true, listener writes back union-merged result then refreshes local",
+    "Deleting item with key K removes all pairs containing K from SyncedSettings",
+    "refreshLocalFromSync correctly resolves keys to itemIDs and updates local DB",
+    "Keys that cannot be resolved are skipped gracefully",
+    "npm test passes, tsc --noEmit passes",
+    "At least 10 new test cases"
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "id": "M013",
+  "title": "Wire non-duplicate sync into runtime workflow",
+  "phase": "Data Integrity - Runtime Integration",
+  "status": "planned",
+  "depends_on": ["M012"],
+  "goal": "Wire SyncedSettings sync store into runtime: startup hydration, dual-write on mark/unmark, sync listener registration, end-to-end integration tests, and documentation.",
+  "in_scope": [
+    "Startup hydration: read SyncedSettings, diff with local DB, bidirectional sync",
+    "Dual-write in toggleNonDuplicates (mark and unmark)",
+    "Inject NonDuplicateSyncStore into mark/unmark flow and notify handlers",
+    "Register sync listener at startup (wire M012 registerSyncListener)",
+    "Bidirectional first-sync bootstrap (local pairs -> SyncedSettings on first upgrade)",
+    "Per-library hydration for all non-feed libraries",
+    "End-to-end integration test: mark -> local DB + SyncedSettings -> simulate sync -> hydrate",
+    "Documentation: CLAUDE.md open risks, code comments"
+  ],
+  "out_of_scope": [
+    "Changing patchFindDuplicates runtime format",
+    "UI changes",
+    "Performance optimization for very large pair sets (deferred to backlog)",
+    "Manual import/export UI"
+  ],
+  "acceptance": [
+    "On startup, existing local non-duplicate pairs are written to SyncedSettings (first-upgrade bootstrap)",
+    "On startup, SyncedSettings pairs not in local DB are imported (sync-from-remote hydration)",
+    "toggleNonDuplicates mark writes to both local DB and SyncedSettings",
+    "toggleNonDuplicates unmark removes from both local DB and SyncedSettings",
+    "Deleting an item cleans up both local DB and SyncedSettings",
+    "onSyncDownload listener is registered at startup and properly wired",
+    "Hydration runs for all non-feed libraries",
+    "End-to-end test passes: mark locally, read SyncedSettings, verify pair exists",
+    "SyncedSettings write failure does not block local mark/unmark",
+    "npm test passes, tsc --noEmit passes",
+    "At least 10 new test cases",
+    "MANUAL: mark non-duplicate in Zotero 9 -> trigger sync -> verify setting in sync log"
+  ]
+}

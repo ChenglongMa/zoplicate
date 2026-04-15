@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "latest_accepted_milestone": "M009",
-  "current_target_milestone": "",
-  "current_status": "idle",
-  "last_updated_utc": "2026-04-13T13:20:00Z",
+  "current_target_milestone": "M010",
+  "current_status": "planned",
+  "last_updated_utc": "2026-04-16T00:00:00Z",
   "open_risks_summary": [
     "Zotero UI/import flows cannot be fully verified with Jest alone.",
     "FTL .label attribute rendering requires manual Zotero 9 runtime verification.",

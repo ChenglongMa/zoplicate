@@ -1,8 +1,24 @@
 import { SQLiteDB } from "./db";
 
+export interface NonDuplicateRow {
+  itemID: number;
+  itemID2: number;
+  libraryID: number;
+  itemKey: string | null;
+  itemKey2: string | null;
+}
+
+export interface NonDuplicateKeyPair {
+  key1: string;
+  key2: string;
+}
+
 export class NonDuplicatesDB extends SQLiteDB {
   private static _instance: NonDuplicatesDB;
   private readonly batchSize = 100; // Define a batch size to avoid too many parameters
+
+  /** Current target schema version. Increment when adding new migrations. */
+  static readonly SCHEMA_VERSION = 1;
 
   private constructor() {
     super();
@@ -17,6 +33,7 @@ export class NonDuplicatesDB extends SQLiteDB {
 
   async init() {
     await this.createNonDuplicateTable();
+    await this.migrateSchema();
   }
 
   private async createNonDuplicateTable() {
@@ -31,8 +48,123 @@ export class NonDuplicatesDB extends SQLiteDB {
     );
   }
 
-  private buildRow(itemID: number, itemID2: number, libraryID: number) {
-    return itemID > itemID2 ? [itemID2, itemID, libraryID] : [itemID, itemID2, libraryID];
+  /**
+   * Run schema migrations sequentially from current version to SCHEMA_VERSION.
+   */
+  private async migrateSchema() {
+    const currentVersion = await this.getSchemaVersion();
+
+    if (currentVersion >= NonDuplicatesDB.SCHEMA_VERSION) {
+      return;
+    }
+
+    await this.executeTransaction(async () => {
+      if (currentVersion < 1) {
+        await this.migrateToV1();
+      }
+      // Future migrations: if (currentVersion < 2) { await this.migrateToV2(); }
+
+      await this.setSchemaVersion(NonDuplicatesDB.SCHEMA_VERSION);
+    });
+
+    // Backfill keys outside the migration transaction (may touch Zotero APIs)
+    if (currentVersion < 1) {
+      await this.backfillKeys();
+    }
+  }
+
+  /**
+   * Migration v0 → v1: Add itemKey/itemKey2 columns and libraryID index.
+   */
+  private async migrateToV1() {
+    // Check if columns already exist (idempotent for interrupted migrations)
+    const tableInfo = (await this._db.queryAsync(
+      `PRAGMA table_info(${this.tables.nonDuplicates})`,
+    )) as { name: string }[];
+    const columnNames = new Set(tableInfo.map((col) => col.name));
+
+    if (!columnNames.has("itemKey")) {
+      await this._db.queryAsync(
+        `ALTER TABLE ${this.tables.nonDuplicates} ADD COLUMN itemKey TEXT`,
+      );
+    }
+    if (!columnNames.has("itemKey2")) {
+      await this._db.queryAsync(
+        `ALTER TABLE ${this.tables.nonDuplicates} ADD COLUMN itemKey2 TEXT`,
+      );
+    }
+
+    await this._db.queryAsync(
+      `CREATE INDEX IF NOT EXISTS idx_nonDuplicates_libraryID ON ${this.tables.nonDuplicates} (libraryID)`,
+    );
+  }
+
+  /**
+   * Backfill itemKey/itemKey2 for rows that have NULL keys.
+   * Resolves keys via Zotero.Items.get(). Deletes rows where items no longer exist.
+   */
+  async backfillKeys() {
+    const rows = (await this._db.queryAsync(
+      `SELECT itemID, itemID2, libraryID FROM ${this.tables.nonDuplicates}
+       WHERE itemKey IS NULL OR itemKey2 IS NULL`,
+    )) as { itemID: number; itemID2: number; libraryID: number }[];
+
+    if (rows.length === 0) {
+      return;
+    }
+
+    const toUpdate: { itemID: number; itemID2: number; key1: string; key2: string }[] = [];
+    const toDelete: { itemID: number; itemID2: number }[] = [];
+
+    for (const row of rows) {
+      const item1 = Zotero.Items.get(row.itemID);
+      const item2 = Zotero.Items.get(row.itemID2);
+      if (!item1?.key || !item2?.key) {
+        toDelete.push({ itemID: row.itemID, itemID2: row.itemID2 });
+      } else {
+        toUpdate.push({ itemID: row.itemID, itemID2: row.itemID2, key1: item1.key, key2: item2.key });
+      }
+    }
+
+    await this.executeTransaction(async () => {
+      // Delete orphan rows
+      for (let i = 0; i < toDelete.length; i += this.batchSize) {
+        const batch = toDelete.slice(i, i + this.batchSize);
+        const placeholders = batch.map(() => "(?, ?)").join(",");
+        const values = batch.flatMap(({ itemID, itemID2 }) => [itemID, itemID2]);
+        await this._db.queryAsync(
+          `DELETE FROM ${this.tables.nonDuplicates}
+           WHERE (itemID, itemID2) IN (${placeholders})`,
+          values,
+        );
+      }
+
+      // Update rows with resolved keys
+      for (const row of toUpdate) {
+        await this._db.queryAsync(
+          `UPDATE ${this.tables.nonDuplicates}
+           SET itemKey = ?, itemKey2 = ?
+           WHERE itemID = ? AND itemID2 = ?`,
+          [row.key1, row.key2, row.itemID, row.itemID2],
+        );
+      }
+    });
+  }
+
+  private buildRow(itemID: number, itemID2: number, libraryID: number, key1?: string, key2?: string) {
+    if (itemID > itemID2) {
+      return [itemID2, itemID, libraryID, key2 ?? null, key1 ?? null];
+    }
+    return [itemID, itemID2, libraryID, key1 ?? null, key2 ?? null];
+  }
+
+  private resolveKey(itemID: number): string | null {
+    try {
+      const item = Zotero.Items.get(itemID);
+      return item?.key ?? null;
+    } catch {
+      return null;
+    }
   }
 
   async insertNonDuplicatePair(itemID: number, itemID2: number, libraryID?: number) {
@@ -40,10 +172,12 @@ export class NonDuplicatesDB extends SQLiteDB {
       return;
     }
     libraryID = libraryID ?? Zotero.Items.get(itemID).libraryID;
-    const row = this.buildRow(itemID, itemID2, libraryID);
+    const key1 = this.resolveKey(itemID);
+    const key2 = this.resolveKey(itemID2);
+    const row = this.buildRow(itemID, itemID2, libraryID, key1 ?? undefined, key2 ?? undefined);
     await this._db.queryAsync(
-      `INSERT OR IGNORE INTO ${this.tables.nonDuplicates} (itemID, itemID2, libraryID)
-       VALUES (?, ?, ?);`,
+      `INSERT OR IGNORE INTO ${this.tables.nonDuplicates} (itemID, itemID2, libraryID, itemKey, itemKey2)
+       VALUES (?, ?, ?, ?, ?);`,
       row,
     );
   }
@@ -57,10 +191,14 @@ export class NonDuplicatesDB extends SQLiteDB {
 
     for (let i = 0; i < rows.length; i += this.batchSize) {
       const batch = rows.slice(i, i + this.batchSize);
-      const placeholders = batch.map(() => "(?, ?, ?)").join(",");
-      const values = batch.flatMap(({ itemID, itemID2 }) => this.buildRow(itemID, itemID2, libraryID));
+      const placeholders = batch.map(() => "(?, ?, ?, ?, ?)").join(",");
+      const values = batch.flatMap(({ itemID, itemID2 }) => {
+        const key1 = this.resolveKey(itemID);
+        const key2 = this.resolveKey(itemID2);
+        return this.buildRow(itemID, itemID2, libraryID, key1 ?? undefined, key2 ?? undefined);
+      });
       await this._db.queryAsync(
-        `INSERT OR IGNORE INTO ${this.tables.nonDuplicates} (itemID, itemID2, libraryID)
+        `INSERT OR IGNORE INTO ${this.tables.nonDuplicates} (itemID, itemID2, libraryID, itemKey, itemKey2)
          VALUES ${placeholders};`,
         values,
       );
@@ -147,19 +285,38 @@ export class NonDuplicatesDB extends SQLiteDB {
 
   async getNonDuplicates({ itemID, libraryID }: { itemID?: number; libraryID?: number }) {
     const params: number[] = [];
+    const conditions: string[] = [];
     let query = `SELECT itemID, itemID2
                  FROM ${this.tables.nonDuplicates}`;
 
     if (itemID !== undefined && itemID !== null) {
-      query += ` WHERE itemID = ? OR itemID2 = ?`;
+      conditions.push(`(itemID = ? OR itemID2 = ?)`);
       params.push(itemID, itemID);
     }
 
     if (libraryID !== undefined && libraryID !== null) {
-      query += ` WHERE libraryID = ?`;
+      conditions.push(`libraryID = ?`);
       params.push(libraryID);
     }
 
+    if (conditions.length > 0) {
+      query += ` WHERE ${conditions.join(" AND ")}`;
+    }
+
     return (await this._db.queryAsync(query, params)) as { itemID: number; itemID2: number }[];
+  }
+
+  /**
+   * Get non-duplicate pairs as stable item key pairs for a library.
+   * Only returns rows where both keys are non-null.
+   */
+  async getNonDuplicateKeys({ libraryID }: { libraryID: number }): Promise<NonDuplicateKeyPair[]> {
+    const rows = (await this._db.queryAsync(
+      `SELECT itemKey, itemKey2 FROM ${this.tables.nonDuplicates}
+       WHERE libraryID = ? AND itemKey IS NOT NULL AND itemKey2 IS NOT NULL`,
+      [libraryID],
+    )) as { itemKey: string; itemKey2: string }[];
+
+    return rows.map((row) => ({ key1: row.itemKey, key2: row.itemKey2 }));
   }
 }
