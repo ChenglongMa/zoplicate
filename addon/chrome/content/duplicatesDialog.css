@@ -1,0 +1,228 @@
+html {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  color: CanvasText;
+  background: Canvas;
+  font: message-box;
+  letter-spacing: 0;
+}
+
+:root {
+  --du-border: color-mix(in srgb, CanvasText 18%, transparent);
+  --du-border-strong: color-mix(in srgb, CanvasText 32%, transparent);
+  --du-muted: color-mix(in srgb, CanvasText 68%, transparent);
+  --du-row-hover: color-mix(in srgb, AccentColor 10%, Canvas);
+  --du-heading-bg: color-mix(in srgb, CanvasText 6%, Canvas);
+  --du-control-bg: color-mix(in srgb, CanvasText 4%, Canvas);
+  --du-control-hover: color-mix(in srgb, AccentColor 12%, Canvas);
+  --du-focus: AccentColor;
+}
+
+#zoplicate-duplicates-dialog-root {
+  min-width: 760px;
+}
+
+.zoplicate-duplicates-dialog {
+  box-sizing: border-box;
+  width: 820px;
+  max-width: calc(100vw - 32px);
+  padding: 18px 20px 4px;
+}
+
+.du-dialog-title {
+  margin: 0 0 14px;
+  color: CanvasText;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.du-table-shell {
+  overflow: hidden;
+  border: 1px solid var(--du-border);
+  border-radius: 8px;
+  background: Canvas;
+}
+
+.du-table-scroll {
+  max-height: 500px;
+  overflow: auto;
+}
+
+.du-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+.du-table th,
+.du-table td {
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--du-border);
+}
+
+.du-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.du-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 42px;
+  background: var(--du-heading-bg);
+  color: CanvasText;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.du-title-heading {
+  width: 58%;
+  padding: 0 12px;
+  text-align: left;
+}
+
+.du-action-heading {
+  width: 14%;
+  min-width: 112px;
+  padding: 0;
+  text-align: center;
+}
+
+.du-title-cell {
+  max-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  overflow: hidden;
+  color: CanvasText;
+  font-size: 13px;
+  line-height: 40px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.du-action-cell {
+  height: 40px;
+  padding: 0;
+  text-align: center;
+}
+
+.du-table tbody tr:hover {
+  background: var(--du-row-hover);
+}
+
+.du-select-all,
+.du-choice {
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: CanvasText;
+  font: inherit;
+  letter-spacing: 0;
+}
+
+.du-select-all {
+  display: inline-flex;
+  width: calc(100% - 12px);
+  min-height: 30px;
+  margin: 0 6px;
+  padding: 4px 6px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--du-muted);
+  cursor: pointer;
+}
+
+.du-select-all:hover,
+.du-choice:hover {
+  border-color: var(--du-border);
+  background: var(--du-control-hover);
+  color: CanvasText;
+}
+
+.du-select-all[aria-pressed="true"] {
+  color: CanvasText;
+}
+
+.du-choice {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.du-choice:focus-visible,
+.du-select-all:focus-visible,
+.du-default-option input:focus-visible {
+  outline: 2px solid var(--du-focus);
+  outline-offset: 2px;
+}
+
+.du-choice-marker {
+  box-sizing: border-box;
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--du-border-strong);
+  border-radius: 50%;
+  background: Canvas;
+}
+
+.du-choice[aria-checked="true"] .du-choice-marker,
+.du-select-all[aria-pressed="true"] .du-choice-marker {
+  border: 4px solid AccentColor;
+  background: AccentColorText;
+}
+
+.du-default-option {
+  display: inline-flex;
+  min-height: 32px;
+  margin-top: 12px;
+  align-items: center;
+  gap: 8px;
+  color: CanvasText;
+  font-size: 13px;
+}
+
+.du-default-option[hidden] {
+  display: none;
+}
+
+.du-default-option input {
+  margin: 0;
+}
+
+#btn_process,
+#btn_go_duplicate,
+#btn_cancel {
+  min-height: 28px;
+  padding: 4px 12px;
+  border: 1px solid var(--du-border-strong);
+  border-radius: 6px;
+  background: var(--du-control-bg);
+  color: CanvasText;
+  font: message-box;
+  letter-spacing: 0;
+}
+
+#btn_process {
+  border-color: AccentColor;
+  background: AccentColor;
+  color: AccentColorText;
+}
+
+#btn_process:hover,
+#btn_go_duplicate:hover,
+#btn_cancel:hover {
+  filter: brightness(1.06);
+}

@@ -1,6 +1,6 @@
 import { config } from "../../../package.json";
 import { getString } from "../../shared/locale";
-import type { DialogHelper, TagElementProps } from "zotero-plugin-toolkit";
+import type { DialogHelper } from "zotero-plugin-toolkit";
 import { Action, getPref, MasterItem, setPref } from "../../shared/prefs";
 import { merge } from "../../shared/duplicates/mergeItems";
 import { goToDuplicatesPane } from "../../integrations/zotero/windows";
@@ -9,6 +9,16 @@ import { bringToFront } from "../../integrations/zotero/windowChrome";
 import { showHintWithLink } from "../../shared/utils";
 import { waitUntilAsync } from "../../shared/wait";
 import { getDialogs, setProcessing } from "../../app/state";
+import {
+  createDuplicatesDialogRenderer,
+  type DuplicateDialogAction,
+  type DuplicateDialogProps,
+  type DuplicateDialogReactDOM,
+  type DuplicateDialogRenderer,
+  type DuplicateDialogRow,
+  type DuplicateDialogState,
+  type DuplicateDialogStrings,
+} from "./duplicatesDialog";
 
 export class Duplicates {
   private static _instance: Duplicates;
@@ -21,6 +31,9 @@ export class Duplicates {
   }
 
   private constructor() {}
+
+  private duplicateDialogRenderer?: DuplicateDialogRenderer;
+  private duplicateDialogVersion = 0;
 
   async whenItemsAdded(
     duplicatesObj: {
@@ -143,21 +156,7 @@ export class Duplicates {
     }
 
     if (this.dialog) {
-      // const prevScrollWidth = this.document?.body.scrollWidth || 0;
-      // const prevScrollHeight = this.document?.body.scrollHeight || 0;
-      // If dialog is already opened, update table
-      const tableBody = await this.updateTable();
-      const prevTableBody = this.document?.getElementById("table_body") as Element;
-      ztoolkit.UI.replaceElement(tableBody, prevTableBody);
-
-      this.resumeRadioCheckStatus();
-
-      // const scrollWidth = this.document?.body.scrollWidth || 0;
-      // const scrollHeight = this.document?.body.scrollHeight || 0;
-      // this.dialogWindow?.resizeBy(scrollWidth - prevScrollWidth, scrollHeight - prevScrollHeight);
-      // Temporary solution: enlarge dialog size and then resize to content
-      this.dialogWindow?.resizeBy(100, 100);
-      (this.dialogWindow as any).sizeToContent();
+      await this.renderDuplicateDialog();
     } else {
       // If dialog is not opened, create dialog
       this.dialog = await this.createDialog();
@@ -202,84 +201,149 @@ export class Duplicates {
     return this.dialogWindow?.document;
   }
 
-  private get newItemIDs(): number[] {
-    return Array.from(this.duplicateMaps?.keys() || []);
-  }
-
   private updateDuplicateMaps(newDuplicateMaps: Map<number, { existingItemIDs: number[]; action: Action }>) {
-    if (this.duplicateMaps) {
-      ztoolkit.log("Update duplicate maps - old", this.duplicateMaps);
-      ztoolkit.log("Update duplicate maps - new", newDuplicateMaps);
-      newDuplicateMaps.forEach((value, key) => {
-        value.action = this.duplicateMaps?.get(key)?.action || value.action;
-        value.action = value.action === Action.ASK ? Action.CANCEL : value.action;
-        // this.duplicateMaps?.set(key, value);
-      });
-    } else {
-      this.duplicateMaps = newDuplicateMaps;
-    }
-  }
+    const mergedMaps = new Map(this.duplicateMaps ?? []);
+    ztoolkit.log("Update duplicate maps - old", this.duplicateMaps);
+    ztoolkit.log("Update duplicate maps - new", newDuplicateMaps);
 
-  private resumeRadioCheckStatus() {
-    const actionSet = new Set<Action>();
-    this.duplicateMaps?.forEach((value, newItemID) => {
-      const action = value.action;
-      const id = `act_${action}_${newItemID}`;
-      const radio = this.document?.getElementById(id) as HTMLInputElement;
-      radio.checked = true;
-      actionSet.add(action);
+    newDuplicateMaps.forEach((value, key) => {
+      if (value.existingItemIDs.length === 0) return;
+      const previousAction = mergedMaps.get(key)?.action;
+      mergedMaps.set(key, {
+        existingItemIDs: value.existingItemIDs,
+        action: this.normalizeDialogAction(previousAction ?? value.action),
+      });
     });
 
-    const selectAll = actionSet.size === 1;
-    const [defaultAction] = actionSet;
-    this.checkDefaultRadio(selectAll, defaultAction);
+    this.duplicateMaps = mergedMaps;
   }
 
-  private checkDefaultRadio(selectAll: boolean, defaultAction: Action) {
-    // Set disabled status of "as default" checkbox
-    const asDefaultDiv = this.document?.getElementById("act_as_default_div") as HTMLElement;
-    asDefaultDiv && (asDefaultDiv.style.visibility = selectAll ? "visible" : "hidden");
+  private normalizeDialogAction(action: Action): DuplicateDialogAction {
+    return action === Action.ASK ? Action.CANCEL : (action as DuplicateDialogAction);
+  }
 
-    if (selectAll) {
-      // Update default action
-      this.dialog?.dialogData && (this.dialog.dialogData.defaultAction = defaultAction);
-
-      // Set radio of Column Header to checked
-      const id = `act_${defaultAction}`;
-      const radio = this.document?.getElementById(id) as HTMLInputElement;
-      radio.checked = true;
-    } else {
-      // Set radio of Column Header to unchecked
-      const asDefaultCheckbox = this.document?.getElementById("act_as_default") as HTMLInputElement;
-      asDefaultCheckbox.checked = false;
-      const allRadios = this.document?.getElementsByName("default_action") as NodeListOf<HTMLInputElement>;
-      allRadios &&
-        allRadios.forEach((radio) => {
-          radio.checked = false;
-        });
+  private async createDialogRows(): Promise<DuplicateDialogRow[]> {
+    const rows: DuplicateDialogRow[] = [];
+    for (const [newItemID, { existingItemIDs, action }] of this.duplicateMaps || []) {
+      if (existingItemIDs.length === 0) continue;
+      const item = await Zotero.Items.getAsync(newItemID);
+      rows.push({
+        newItemID,
+        existingItemIDs,
+        title: item.getDisplayTitle(),
+        action: this.normalizeDialogAction(action),
+      });
     }
+    return rows;
+  }
+
+  private getDialogStrings(): DuplicateDialogStrings {
+    return {
+      header: getString("du-dialog-header"),
+      titleColumn: getString("du-dialog-table-title"),
+      asDefault: getString("du-dialog-as-default"),
+      actions: {
+        [Action.KEEP]: getString("du-dialog-table-keep"),
+        [Action.DISCARD]: getString("du-dialog-table-discard"),
+        [Action.CANCEL]: getString("du-dialog-table-cancel"),
+      },
+    };
+  }
+
+  private syncDuplicateDialogState(state: DuplicateDialogState) {
+    state.rows.forEach((row) => {
+      this.updateAction(row.newItemID, row.action);
+    });
+
+    if (this.dialog?.dialogData) {
+      this.dialog.dialogData.savePreference = state.savePreference;
+      this.dialog.dialogData.defaultAction = state.defaultAction;
+    }
+  }
+
+  private injectDialogStyles() {
+    const doc = this.document;
+    if (!doc || doc.getElementById("zoplicate-duplicates-dialog-stylesheet")) return;
+
+    const stylesheet = doc.createElement("link");
+    stylesheet.id = "zoplicate-duplicates-dialog-stylesheet";
+    stylesheet.rel = "stylesheet";
+    stylesheet.type = "text/css";
+    stylesheet.href = `chrome://${config.addonRef}/content/duplicatesDialog.css`;
+    doc.head.appendChild(stylesheet);
+  }
+
+  private scheduleDialogResize() {
+    const win = this.dialogWindow as (Window & { sizeToContent?: () => void }) | undefined;
+    if (!win?.sizeToContent) return;
+    setTimeout(() => win.sizeToContent?.(), 50);
+    setTimeout(() => win.sizeToContent?.(), 350);
+  }
+
+  private getZoteroRequire(win?: Window): ((module: string) => unknown) | undefined {
+    const dialogRequire = (win as (Window & { require?: (module: string) => unknown }) | undefined)?.require;
+    if (dialogRequire) return dialogRequire;
+
+    const mainWindowRequire = (Zotero.getMainWindow() as Window & { require?: (module: string) => unknown })?.require;
+    if (mainWindowRequire) return mainWindowRequire;
+
+    try {
+      return ztoolkit.getGlobal("require") as (module: string) => unknown;
+    } catch (error) {
+      ztoolkit.log("Dialog: failed to resolve Zotero module loader.", error);
+      return undefined;
+    }
+  }
+
+  private async renderDuplicateDialog() {
+    const win = this.dialogWindow;
+    const root = this.document?.getElementById("zoplicate-duplicates-dialog-root") as HTMLElement | null | undefined;
+    if (!win || !root) return;
+
+    this.injectDialogStyles();
+
+    const rows = await this.createDialogRows();
+    const props: DuplicateDialogProps = {
+      rows,
+      version: ++this.duplicateDialogVersion,
+      strings: this.getDialogStrings(),
+      savePreference: Boolean(this.dialog?.dialogData?.savePreference),
+      defaultAction: this.normalizeDialogAction(this.dialog?.dialogData?.defaultAction ?? Action.CANCEL),
+      onStateChange: (state) => this.syncDuplicateDialogState(state),
+    };
+
+    if (this.duplicateDialogRenderer) {
+      this.duplicateDialogRenderer.render(props);
+    } else {
+      const require = this.getZoteroRequire(win);
+      if (!require) {
+        ztoolkit.log("Dialog: Zotero React runtime is unavailable.");
+        return;
+      }
+      try {
+        const React = require("react") as typeof import("react");
+        const ReactDOM = require("react-dom") as DuplicateDialogReactDOM;
+        this.duplicateDialogRenderer = createDuplicatesDialogRenderer(React, ReactDOM, root, props);
+      } catch (error) {
+        ztoolkit.log("Dialog: failed to render duplicate dialog.", error);
+        return;
+      }
+    }
+
+    this.scheduleDialogResize();
   }
 
   private async createDialog() {
-    const tableBody = await this.updateTable();
     const dialogData = {
       savePreference: false,
       defaultAction: Action.CANCEL,
       loadCallback: () => {
-        const defaultActionOptions = this.document?.getElementById(
-          `act_${this.dialog?.dialogData.defaultAction}`,
-        ) as HTMLInputElement;
-        defaultActionOptions?.click();
-        setTimeout(() => {
-          const currentHeight = this.document?.getElementById("table_container")?.clientHeight || 0;
-          if (currentHeight > 500) {
-            (this.document?.getElementById("table_container") as HTMLElement).style.height = "500px";
-            (this.dialogWindow as any).sizeToContent();
-            this.dialogWindow?.resizeBy(20, 0); // Add 20px to width for scrollbar
-          }
-        }, 500);
+        void this.renderDuplicateDialog();
       },
       unloadCallback: () => {
+        this.duplicateDialogRenderer?.unmount();
+        this.duplicateDialogRenderer = undefined;
+        this.duplicateDialogVersion = 0;
         if (this.dialog?.dialogData.savePreference) {
           setPref("duplicate.default.action", this.dialog?.dialogData.defaultAction);
         }
@@ -288,86 +352,12 @@ export class Duplicates {
         this.duplicateMaps = undefined;
       },
     };
-    return new ztoolkit.Dialog(3, 1)
+    return new ztoolkit.Dialog(1, 1)
       .setDialogData(dialogData)
       .addCell(0, 0, {
-        tag: "h2",
-        properties: { innerHTML: getString("du-dialog-header") },
-      })
-      .addCell(1, 0, {
         tag: "div",
-        id: "table_container",
+        id: "zoplicate-duplicates-dialog-root",
         namespace: "html",
-        styles: {
-          maxHeight: "500px",
-          overflowY: "auto",
-        },
-        children: [
-          {
-            tag: "table",
-            id: "data_table",
-            namespace: "html",
-            attributes: { border: "1" },
-            styles: {
-              borderCollapse: "collapse",
-              textAlign: "center",
-              whiteSpace: "nowrap",
-            },
-            children: [
-              {
-                tag: "thead",
-                namespace: "html",
-                children: [
-                  {
-                    tag: "tr",
-                    namespace: "html",
-                    children: [
-                      {
-                        tag: "th",
-                        namespace: "html",
-                        properties: {
-                          innerHTML: getString("du-dialog-table-title"),
-                        },
-                      },
-                      this.createTh(Action.KEEP),
-                      this.createTh(Action.DISCARD),
-                      this.createTh(Action.CANCEL),
-                    ],
-                  },
-                ],
-              },
-              tableBody,
-            ],
-          },
-        ],
-      })
-      .addCell(2, 0, {
-        tag: "div",
-        namespace: "html",
-        id: "act_as_default_div",
-        styles: {
-          padding: "5px",
-        },
-        children: [
-          {
-            tag: "input",
-            namespace: "html",
-            id: "act_as_default",
-            attributes: {
-              "data-bind": "savePreference",
-              "data-prop": "checked",
-              type: "checkbox",
-            },
-          },
-          {
-            tag: "label",
-            namespace: "html",
-            attributes: {
-              for: "act_as_default",
-            },
-            properties: { innerHTML: getString("du-dialog-as-default") },
-          },
-        ],
       })
       .addButton(getString("du-dialog-button-apply"), "btn_process", {
         callback: (e) => {
@@ -383,138 +373,11 @@ export class Duplicates {
       .addButton(getString("general-cancel"), "btn_cancel");
   }
 
-  private async updateTable(): Promise<TagElementProps> {
-    const tableRows = [];
-    for (const [newItemID, { existingItemIDs }] of this.duplicateMaps || []) {
-      if (existingItemIDs.length === 0) continue;
-      const item = await Zotero.Items.getAsync(newItemID);
-      const title = item.getDisplayTitle();
-
-      tableRows.push({
-        tag: "tr",
-        namespace: "html",
-        children: [
-          {
-            tag: "td",
-            namespace: "html",
-            styles: {
-              maxWidth: "800px",
-              minWidth: "500px",
-              padding: "5px",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              textAlign: "left",
-            },
-            properties: {
-              innerHTML: title,
-            },
-          },
-          this.createRadioTd(newItemID, Action.KEEP),
-          this.createRadioTd(newItemID, Action.DISCARD),
-          this.createRadioTd(newItemID, Action.CANCEL),
-        ],
-      });
-    }
-    return {
-      tag: "tbody",
-      id: "table_body",
-      namespace: "html",
-      children: tableRows,
-    };
-  }
-
   private updateAction(newItemID: number, action: Action) {
     const value = this.duplicateMaps?.get(newItemID);
     if (value) {
       value.action = action;
       this.duplicateMaps?.set(newItemID, value);
     }
-  }
-
-  private createRadioTd(newItemID: number, action: Action): TagElementProps {
-    return {
-      tag: "td",
-      namespace: "html",
-      styles: {
-        padding: "5px",
-      },
-      children: [
-        {
-          tag: "input",
-          namespace: "html",
-          id: `act_${action}_${newItemID}`,
-          attributes: {
-            type: "radio",
-            name: `action_${newItemID}`,
-          },
-          listeners: [
-            {
-              type: "click",
-              listener: () => {
-                this.updateAction(newItemID, action);
-                const selectAll = Array.from(this.duplicateMaps?.values() || []).every((i) => i.action === action);
-                this.checkDefaultRadio(selectAll, action);
-              },
-            },
-          ],
-        },
-      ],
-      listeners: [
-        {
-          type: "click",
-          listener: () => {
-            // Click the cell to select the radio
-            const id = `act_${action}_${newItemID}`;
-            const radio = this.document?.getElementById(id) as HTMLInputElement;
-            radio.click();
-          },
-        },
-      ],
-    };
-  }
-
-  private createTh(action: Action): TagElementProps {
-    return {
-      tag: "th",
-      namespace: "html",
-      styles: {
-        padding: "5px",
-        textAlign: "left",
-        whiteSpace: "nowrap",
-      },
-      children: [
-        {
-          tag: "input",
-          namespace: "html",
-          id: `act_${action}`,
-          attributes: {
-            type: "radio",
-            name: "default_action",
-            value: action,
-          },
-          listeners: [
-            {
-              type: "click",
-              listener: () => {
-                // Set all radio of this action to checked
-                this.newItemIDs.forEach((newItemID) => {
-                  const id = `act_${action}_${newItemID}`;
-                  const radio = this.document?.getElementById(id) as HTMLInputElement;
-                  !radio.checked && radio.click();
-                });
-              },
-            },
-          ],
-        },
-        {
-          tag: "label",
-          namespace: "html",
-          attributes: {
-            for: `act_${action}`,
-          },
-          properties: { innerHTML: getString(`du-dialog-table-${action}`) },
-        },
-      ],
-    };
   }
 }
