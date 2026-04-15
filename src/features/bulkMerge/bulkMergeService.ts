@@ -81,10 +81,7 @@ export class BulkMergeController {
     };
   }
 
-  public registerUIElements(
-    win: Window,
-    updateDuplicateButtonsVisibilities: (win: Window) => Promise<void>,
-  ): Disposer {
+  public registerUIElements(win: Window, updateDuplicateButtonsVisibilities: (win: Window) => Promise<void>): Disposer {
     const zoteroPane = getZoteroPane(win);
 
     const onCollectionSelect = async () => {
@@ -128,8 +125,9 @@ export class BulkMergeController {
     const imageName = value ? "pause" : "merge";
     const label = value ? "bulk-merge-suspend" : "bulk-merge-title";
     this.getBulkMergeButtons(win).forEach((button) => {
-      button?.setAttribute("image", `chrome://${config.addonRef}/content/icons/${imageName}.svg`);
-      button?.setAttribute("label", getString(label));
+      if (!button) return;
+      button.setAttribute("image", `chrome://${config.addonRef}/content/icons/${imageName}.svg`);
+      (button as HTMLElement & { label: string }).label = getString(label);
     });
 
     if (!value) {
@@ -166,7 +164,7 @@ export class BulkMergeController {
 
     let toCancel = false;
     const deletedItems: Zotero.Item[] = [];
-    let restoreCheckbox: { value: boolean } = { value: false };
+    const restoreCheckbox: { value: boolean } = { value: false };
     for (let i = 0; i < duplicateItems.length; i++) {
       if (!this._isRunning) {
         const result = Zotero.Prompt.confirm({

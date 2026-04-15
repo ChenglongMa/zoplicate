@@ -16,7 +16,7 @@ declare namespace Zotero {
       button1?: string | number;
       button2?: string | number;
       checkLabel?: string;
-      checkbox?: {};
+      checkbox?: { value?: boolean };
       defaultButton?: number;
       buttonDelay?: boolean;
       delayButtons?: boolean;

@@ -1,11 +1,23 @@
 // @ts-check Let TS check this config file
 
 import eslint from "@eslint/js";
+import eslintConfigPrettier from "eslint-config-prettier/flat";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: ["build/**", "dist/**", "node_modules/**", "scripts/", ".references/**"],
+    ignores: [
+      "build/**",
+      "coverage/**",
+      "dist/**",
+      "logs/**",
+      "node_modules/**",
+      "scripts/**",
+      ".references/**",
+      ".scaffold/**",
+      "**/*.js",
+      "**/*.bak",
+    ],
   },
   {
     extends: [eslint.configs.recommended, ...tseslint.configs.recommended],
@@ -15,20 +27,6 @@ export default tseslint.config(
       },
     },
     rules: {
-      "no-restricted-globals": [
-        "error",
-        { message: "Use `Zotero.getMainWindow()` instead.", name: "window" },
-        {
-          message: "Use `Zotero.getMainWindow().document` instead.",
-          name: "document",
-        },
-        {
-          message: "Use `Zotero.getActiveZoteroPane()` instead.",
-          name: "ZoteroPane",
-        },
-        "Zotero_Tabs",
-      ],
-
       "@typescript-eslint/ban-ts-comment": [
         "warn",
         {
@@ -48,4 +46,23 @@ export default tseslint.config(
       "@typescript-eslint/no-non-null-assertion": "off",
     },
   },
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-globals": [
+        "error",
+        { message: "Use `Zotero.getMainWindow()` instead.", name: "window" },
+        {
+          message: "Use `Zotero.getMainWindow().document` instead.",
+          name: "document",
+        },
+        {
+          message: "Use `Zotero.getActiveZoteroPane()` instead.",
+          name: "ZoteroPane",
+        },
+        "Zotero_Tabs",
+      ],
+    },
+  },
+  eslintConfigPrettier,
 );

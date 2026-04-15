@@ -1,7 +1,5 @@
 import { describe, expect, test, beforeEach, jest } from "@jest/globals";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
@@ -13,10 +11,8 @@ const menuCacheSetMock = jest.fn();
 const warmCacheMock = jest.fn<(...args: any[]) => Promise<void>>(async (itemIDs: number[], libraryID?: number) => {
   if (itemIDs.length < 2) return;
   const key = menuCacheBuildKeyMock(itemIDs);
-  const { NonDuplicatesDB } = require("../src/db/nonDuplicates");
-  const isNonDuplicate = await NonDuplicatesDB.instance.existsNonDuplicates(itemIDs);
-  const { fetchDuplicates } = require("../src/integrations/zotero/duplicateSearch");
-  const { duplicatesObj } = await fetchDuplicates({ libraryID, refresh: false });
+  const isNonDuplicate = await existsNonDuplicatesMock(itemIDs);
+  const { duplicatesObj } = await fetchDuplicatesMock({ libraryID, refresh: false });
   const duplicateSet = new Set(duplicatesObj.getSetItemsByItemID(itemIDs[0]));
   const isDuplicateSet = itemIDs.every((id: number) => duplicateSet.has(id));
   menuCacheSetMock(key, { isNonDuplicate, isDuplicateSet });
@@ -105,17 +101,13 @@ describe("registerMenus", () => {
   });
 
   test("returns array of menu IDs from registerMenu calls", () => {
-    registerMenuMock
-      .mockReturnValueOnce("item-menu-id")
-      .mockReturnValueOnce("collection-menu-id");
+    registerMenuMock.mockReturnValueOnce("item-menu-id").mockReturnValueOnce("collection-menu-id");
     const ids = registerMenus([itemMenuConfig(), collectionMenuConfig()]);
     expect(ids).toEqual(["item-menu-id", "collection-menu-id"]);
   });
 
   test("filters out false returns from registerMenu", () => {
-    registerMenuMock
-      .mockReturnValueOnce("item-menu-id")
-      .mockReturnValueOnce(false);
+    registerMenuMock.mockReturnValueOnce("item-menu-id").mockReturnValueOnce(false);
     const ids = registerMenus([itemMenuConfig(), collectionMenuConfig()]);
     expect(ids).toEqual(["item-menu-id"]);
   });
@@ -443,12 +435,7 @@ describe("item menu onCommand callbacks", () => {
 
     onCommand({} as Event, ctx);
 
-    expect(toggleNonDuplicatesMock).toHaveBeenCalledWith(
-      "unmark",
-      mockItems,
-      42,
-      { win: undefined },
-    );
+    expect(toggleNonDuplicatesMock).toHaveBeenCalledWith("unmark", mockItems, 42, { win: undefined });
   });
 
   test("mark child calls toggleNonDuplicates with 'mark' and libraryID", () => {
@@ -473,11 +460,6 @@ describe("item menu onCommand callbacks", () => {
 
     onCommand({} as Event, ctx);
 
-    expect(toggleNonDuplicatesMock).toHaveBeenCalledWith(
-      "mark",
-      mockItems,
-      7,
-      { win: undefined },
-    );
+    expect(toggleNonDuplicatesMock).toHaveBeenCalledWith("mark", mockItems, 7, { win: undefined });
   });
 });

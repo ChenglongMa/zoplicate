@@ -4,7 +4,12 @@ import { getString } from "../../shared/locale";
 import { NonDuplicatesDB } from "../../db/nonDuplicates";
 import { fetchDuplicates } from "../../integrations/zotero/duplicateSearch";
 import { menuCache } from "../../integrations/zotero/menuCache";
-import { getSelectedItems, getSelectedLibraryID, isInDuplicatesPane, refreshItemTree } from "../../integrations/zotero/windows";
+import {
+  getSelectedItems,
+  getSelectedLibraryID,
+  isInDuplicatesPane,
+  refreshItemTree,
+} from "../../integrations/zotero/windows";
 import {
   NON_DUPLICATE_BUTTON_ID,
   NON_DUPLICATE_INNER_BUTTON_ID,
@@ -40,7 +45,7 @@ export async function toggleNonDuplicates(
     refreshItemTree(options.win);
   }
   await Zotero.Notifier.trigger(
-    // @ts-ignore
+    // @ts-ignore - Zoplicate dispatches this custom notifier event.
     "refreshNonDuplicate",
     "item",
     itemIDs,
@@ -64,12 +69,12 @@ export function createNonDuplicateButton(win: Window, id: string, showing = true
     },
     namespace: "xul",
     listeners: [
-        {
-          type: "click",
-          listener: async (e) => {
-            await toggleSelectedNonDuplicates("mark", win);
-          },
+      {
+        type: "click",
+        listener: async (e) => {
+          await toggleSelectedNonDuplicates("mark", win);
         },
+      },
     ],
     ignoreIfExists: true,
   };

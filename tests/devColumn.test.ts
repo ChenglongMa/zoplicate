@@ -2,8 +2,6 @@ import { describe, expect, test, beforeEach, jest } from "@jest/globals";
 import { config } from "../package.json";
 import { registerDevelopmentItemIDColumn } from "../src/integrations/zotero/devColumn";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 const _Zotero = (globalThis as any).Zotero;
 
 describe("registerDevelopmentItemIDColumn", () => {

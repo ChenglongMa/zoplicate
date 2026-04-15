@@ -2,7 +2,6 @@ import { describe, expect, test, beforeEach, jest } from "@jest/globals";
 import { merge } from "../src/shared/duplicates/mergeItems";
 import { createMockItem } from "./__setup__/globals";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 const _Zotero = (globalThis as any).Zotero;
 const _ChromeUtils = (globalThis as any).ChromeUtils;
 const _mergeItemsMock = (globalThis as any)._mergeItemsMock;
@@ -27,9 +26,7 @@ describe("merge - ChromeUtils.importESModule call path", () => {
 
     await merge(master, [other]);
 
-    expect(_ChromeUtils.importESModule).toHaveBeenCalledWith(
-      "chrome://zotero/content/mergeItems.mjs",
-    );
+    expect(_ChromeUtils.importESModule).toHaveBeenCalledWith("chrome://zotero/content/mergeItems.mjs");
   });
 
   test("calls mergeItems with (masterItem, otherItems)", async () => {

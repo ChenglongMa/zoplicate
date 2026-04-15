@@ -1,7 +1,5 @@
 import { describe, expect, test, beforeEach, jest } from "@jest/globals";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 // ---------------------------------------------------------------------------
 // Mocks - must be declared before imports
 // ---------------------------------------------------------------------------
