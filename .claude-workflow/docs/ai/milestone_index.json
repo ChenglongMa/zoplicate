@@ -99,6 +99,50 @@
       "in_scope": ["Move src/modules/ + src/utils/ into features/integrations/app/shared", "two-level registerXxxGlobal() + registerXxxWindow(win)", "extract onNotify handlers into features; notifier.ts receives handlers via params (no feature imports)", "split menus.ts", "shared DuplicateItems/mergeItems"],
       "out_of_scope": ["Behavior changes", "DI container"],
       "acceptance": ["src/modules/ and src/utils/ directories do not exist", "two-level feature registration", "hooks.ts is pure composition root with no onNotify logic", "integrations/zotero/notifier.ts does not import feature modules directly", "no cross-feature circular imports", "Public addon.hooks contract compatible with bootstrap.js and preferences.xhtml", "typings/global.d.ts Addon and ZToolkit import paths updated"]
+    },
+    {
+      "id": "M010",
+      "title": "Local DB bug fix + key columns + schema versioning",
+      "phase": "Data Integrity - Local Foundation",
+      "status": "next",
+      "depends_on": ["M009"],
+      "goal": "Fix getNonDuplicates WHERE clause bug, introduce schema versioning and migration infrastructure, add itemKey/itemKey2 columns for stable Zotero item key storage.",
+      "in_scope": ["Fix getNonDuplicates WHERE bug", "Schema versioning infrastructure", "Migration v0->v1 with key columns and libraryID index", "Extend insert methods to store item keys", "backfillKeys() and getNonDuplicateKeys()", "Transaction wrapping"],
+      "out_of_scope": ["SyncedSettings integration", "Runtime format changes", "Toggle flow changes"],
+      "acceptance": ["WHERE bug regression test passes", "Fresh install creates schema v1", "v0->v1 upgrade preserves data", "Insert stores both itemIDs and keys", "npm test passes", "tsc --noEmit passes", ">= 8 new tests"]
+    },
+    {
+      "id": "M011",
+      "title": "SyncedSettings store with read-write capability",
+      "phase": "Data Integrity - Sync Store",
+      "status": "planned",
+      "depends_on": ["M010"],
+      "goal": "Create SyncedSettings-backed abstraction for non-duplicate pairs with round-trip read/write capability.",
+      "in_scope": ["NonDuplicateSyncStore class", "Payload type definition", "read/write/addPair/removePair/clear", "Zotero.SyncedSettings type declarations and mocks"],
+      "out_of_scope": ["onSyncDownload listener", "Mark/unmark wiring", "Startup hydration"],
+      "acceptance": ["Round-trip write-read test", "Pair normalization and dedup", "Unknown version handling", "npm test passes", ">= 8 new tests"]
+    },
+    {
+      "id": "M012",
+      "title": "Sync conflict resolution and cleanup",
+      "phase": "Data Integrity - Sync Safety",
+      "status": "planned",
+      "depends_on": ["M011"],
+      "goal": "Register onSyncDownload listener with union-merge conflict resolution and key-based cleanup for deleted items.",
+      "in_scope": ["unionMergePairs()", "onSyncDownload listener", "refreshLocalFromSync()", "SyncedSettings cleanup on item delete", "Flag-based disposal"],
+      "out_of_scope": ["Startup wiring", "Mark/unmark wiring"],
+      "acceptance": ["Union merge correctness", "Conflict handling", "Orphan cleanup", "Key resolution with graceful skip", "npm test passes", ">= 10 new tests"]
+    },
+    {
+      "id": "M013",
+      "title": "Wire non-duplicate sync into runtime workflow",
+      "phase": "Data Integrity - Runtime Integration",
+      "status": "planned",
+      "depends_on": ["M012"],
+      "goal": "Wire SyncedSettings into runtime: startup hydration, dual-write mark/unmark, sync listener registration, end-to-end tests.",
+      "in_scope": ["Startup hydration", "Dual-write toggleNonDuplicates", "Dependency injection", "First-sync bootstrap", "End-to-end tests", "Documentation"],
+      "out_of_scope": ["patchFindDuplicates format change", "UI changes", "Manual import/export"],
+      "acceptance": ["Bidirectional hydration", "Dual-write mark/unmark", "Sync listener registered", "SyncedSettings failure doesn't block local ops", "npm test passes", ">= 10 new tests", "MANUAL: two-profile sync test"]
     }
   ],
   "deviation_policy": {
@@ -115,6 +159,8 @@
   },
   "backlog": [
     "Adopt Zotero 9 advanced merge features (PDF hash matching, annotation preservation)",
-    "Increase test coverage for Zotero-dependent integration paths"
+    "Increase test coverage for Zotero-dependent integration paths",
+    "Non-duplicate pair set size cap with LRU eviction for SyncedSettings scalability",
+    "Manual non-duplicate import/export UI"
   ]
 }

@@ -1,0 +1,34 @@
+{
+  "id": "M010",
+  "title": "Local DB bug fix + key columns + schema versioning",
+  "phase": "Data Integrity - Local Foundation",
+  "status": "next",
+  "depends_on": ["M009"],
+  "goal": "Fix getNonDuplicates WHERE clause bug, introduce schema versioning and migration infrastructure, add itemKey/itemKey2 columns for stable Zotero item key storage.",
+  "in_scope": [
+    "Fix getNonDuplicates WHERE clause composition bug (regression test first)",
+    "Add schemaVersion table and migration infrastructure to SQLiteDB base class",
+    "Define migration v0->v1: add itemKey/itemKey2 TEXT columns (nullable), add libraryID index",
+    "Extend buildRow() to include key",
+    "Extend insertNonDuplicatePair/insertNonDuplicatePairs to resolve and store item keys at write time",
+    "Add backfillKeys() method for migrating existing data",
+    "Add getNonDuplicateKeys({ libraryID }) method returning { key1, key2 }[]",
+    "Wrap migration and backfill operations in executeTransaction",
+    "Tests: regression test for WHERE bug, migration tests, key resolution tests, backfill tests"
+  ],
+  "out_of_scope": [
+    "SyncedSettings integration",
+    "Changing runtime allNonDuplicates Set format (still uses itemID pairs)",
+    "Changing toggle/mark/unmark flow"
+  ],
+  "acceptance": [
+    "getNonDuplicates({ itemID: 5, libraryID: 1 }) produces WHERE (itemID = ? OR itemID2 = ?) AND libraryID = ? (regression test)",
+    "Fresh install creates schema version 1 with key columns",
+    "Upgrade from version 0 adds key columns and libraryID index without data loss",
+    "insertNonDuplicatePair(10, 20, 1) stores both itemIDs and item keys",
+    "backfillKeys() resolves keys for existing rows, deletes rows with missing items",
+    "Migration and backfill are wrapped in transactions",
+    "npm test passes, tsc --noEmit passes",
+    "At least 8 new test cases"
+  ]
+}

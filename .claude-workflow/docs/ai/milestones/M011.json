@@ -1,0 +1,34 @@
+{
+  "id": "M011",
+  "title": "SyncedSettings store with read-write capability",
+  "phase": "Data Integrity - Sync Store",
+  "status": "planned",
+  "depends_on": ["M010"],
+  "goal": "Create an abstraction layer over Zotero.SyncedSettings for non-duplicate pairs with both read and write capability. Uses item keys for cross-device portability.",
+  "in_scope": [
+    "Create src/integrations/zotero/syncedSettingsStore.ts with NonDuplicateSyncStore class",
+    "Define NonDuplicateSyncPayload type: { v: 1, pairs: [[key1, key2], ...] }",
+    "Implement read/write/addPair/removePair/clear methods",
+    "Key normalization helper normalizePair()",
+    "Validate v field on read (unknown version = empty array + warning log)",
+    "Add Zotero.SyncedSettings type declarations in typings/global.d.ts",
+    "Add Zotero.SyncedSettings mock in tests/__setup__/globals.ts",
+    "Tests: round-trip write-then-read, pair normalization, deduplication, unknown version handling, clear"
+  ],
+  "out_of_scope": [
+    "onSyncDownload listener and conflict resolution (M012)",
+    "Wiring into toggleNonDuplicates mark/unmark flow (M013)",
+    "Startup hydration (M013)"
+  ],
+  "acceptance": [
+    "write() followed by read() returns the same pairs (round-trip test)",
+    "addPair() adds without duplicating existing pairs",
+    "removePair() removes exactly the specified pair",
+    "Pairs are always stored with keys sorted lexicographically",
+    "Reading a setting with v: 2 (unknown version) returns empty array and logs warning",
+    "Reading a non-existent setting returns empty array",
+    "Zotero.SyncedSettings type declarations compile without errors",
+    "npm test passes, tsc --noEmit passes",
+    "At least 8 new test cases"
+  ]
+}
