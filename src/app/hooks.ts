@@ -20,6 +20,7 @@ import {
   registerNonDuplicatesGlobal,
   registerNonDuplicatesWindow,
 } from "../features/nonDuplicates";
+import { exportToFile, importFromFile } from "../features/nonDuplicates/importExport";
 import { registerPreferencesGlobal, registerPrefsScripts } from "../features/preferences";
 import { registerDevelopmentItemIDColumn } from "../integrations/zotero/devColumn";
 import { createMenuCacheNotifyHandler } from "../integrations/zotero/menuCache";
@@ -157,6 +158,12 @@ async function onPrefsEvent(type: string, data: { [key: string]: any }) {
   switch (type) {
     case "load":
       await registerPrefsScripts(data.window);
+      break;
+    case "exportNonDuplicates":
+      await exportToFile(data.window);
+      break;
+    case "importNonDuplicates":
+      await importFromFile(data.window);
       break;
     default:
       return;

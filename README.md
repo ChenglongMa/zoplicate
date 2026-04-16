@@ -40,6 +40,7 @@ A plugin that does one thing only: **Detect** and **Manage** duplicate items in 
   * Introduced in Version 2.0.0.
 * **Non-duplicates Management**
   * Allows marking items as "Non-duplicates" if mistakenly identified as duplicates by Zotero.
+  * Supports exporting and importing non-duplicate decisions for cross-device transfer.
   * Introduced in Version 3.0.0.
 * **Show Duplicate Statistics**
   * Append the duplicate count on the label of Duplicate Items pane.
@@ -350,6 +351,8 @@ In Zotero, click `Edit` -> `Settings`, go to `Zoplicate` tab, and you will see t
     * `Always Ask` is the default option if you have not changed the settings.
 2. You can select the version of duplicate items to use as the **master item**.
     * `Earliest Added` is the default option if you have not changed the settings.
+3. You can **export** and **import** non-duplicate decisions in the **Data Management** section.
+    * This is useful for transferring non-duplicate records between devices. See [Import/Export Non-Duplicates](#importexport-non-duplicates) for details.
 
 ## Duplicate Detection
 
@@ -461,6 +464,22 @@ There are some ways to mark and unmark items as **Non-duplicates**:
 1. Click the <kbd>-</kbd> button to remove the selected entry from the **Non-duplicates** list.
 2. Selecting two "non duplicates", you can find the `They are duplicates` **menu items** in the context menu.
    * ![menu_not_duplicates](./docs/non_duplicates/menu_duplicates.png)
+
+### Import/Export Non-Duplicates
+
+Non-duplicate decisions are stored locally and do not sync automatically across devices via Zotero sync.
+To transfer your non-duplicate records to another device:
+
+1. Go to `Edit` -> `Settings` -> `Zoplicate` -> **Data Management** section.
+2. Click <kbd>Export Non-Duplicates…</kbd> to save all non-duplicate records to a JSON file.
+3. Copy the exported file to your other device.
+4. On the other device, go to the same settings panel and click <kbd>Import Non-Duplicates…</kbd> to load the records.
+
+> [!NOTE]
+>
+> * The export file uses stable item keys (not local IDs), so it works correctly across different Zotero installations that share the same synced library.
+> * Importing is **additive** — it only adds new records and never removes existing ones. You can safely import the same file multiple times.
+> * If an item referenced in the export file does not exist on the target device (e.g., not yet synced or deleted), that pair will be skipped.
 
 # How to cite
 
