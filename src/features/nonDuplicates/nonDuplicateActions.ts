@@ -3,6 +3,10 @@ import type { TagElementProps } from "zotero-plugin-toolkit";
 import { getString } from "../../shared/locale";
 import { NonDuplicatesDB } from "../../db/nonDuplicates";
 import { fetchDuplicates } from "../../integrations/zotero/duplicateSearch";
+import {
+  nonDuplicateSyncStore,
+  type NonDuplicateSyncStore,
+} from "../../integrations/zotero/syncedSettingsStore";
 import { menuCache } from "../../integrations/zotero/menuCache";
 import {
   getSelectedItems,
@@ -18,6 +22,7 @@ import {
 
 interface ToggleNonDuplicatesOptions {
   win?: Window;
+  syncStore?: NonDuplicateSyncStore;
 }
 
 export async function toggleNonDuplicates(
@@ -39,6 +44,28 @@ export async function toggleNonDuplicates(
   } else if (action === "unmark") {
     await NonDuplicatesDB.instance.deleteNonDuplicates(itemIDs);
   }
+
+  // Dual-write: sync pairs to SyncedSettings (fire-and-forget on failure)
+  const store = options.syncStore ?? nonDuplicateSyncStore;
+  try {
+    // Build all unique pairs from resolved items
+    for (let i = 0; i < resolvedItems.length; i++) {
+      for (let j = i + 1; j < resolvedItems.length; j++) {
+        const keyA = resolvedItems[i]?.key;
+        const keyB = resolvedItems[j]?.key;
+        // Guard undefined and empty-string keys
+        if (!keyA || !keyB) continue;
+        if (action === "mark") {
+          await store.addPair(resolvedLibraryID, keyA, keyB);
+        } else if (action === "unmark") {
+          await store.removePair(resolvedLibraryID, keyA, keyB);
+        }
+      }
+    }
+  } catch (err) {
+    Zotero.debug(`[zoplicate] SyncedSettings dual-write failed: ${err}`);
+  }
+
   await fetchDuplicates({ libraryID: resolvedLibraryID, refresh: true });
   menuCache.invalidateAll();
   if (options.win && isInDuplicatesPane(options.win)) {

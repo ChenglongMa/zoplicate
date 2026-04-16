@@ -127,6 +127,11 @@ export function createMockItem(overrides: MockItemOverrides = {}): any {
       },
     };
   })(),
+  Libraries: {
+    getAll: jest.fn(() => [
+      { libraryID: 1, libraryType: "user" },
+    ]),
+  },
   debug: jest.fn(),
 };
 
