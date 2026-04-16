@@ -32,4 +32,11 @@ pref-view-description = Choose the widget to display in the main window
 pref-view-duplicate-stats =
     .label = Append duplicate counts to the "Duplicate Items" entry, e.g., Duplicate Items 2/6
 
+pref-data-title = Data Management
+pref-data-description = Export or import non-duplicate decisions to transfer between devices.
+pref-data-export =
+    .label = Export Non-Duplicates…
+pref-data-import =
+    .label = Import Non-Duplicates…
+
 pref-help = { $name } Build { $version } { $time }

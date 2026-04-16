@@ -85,3 +85,12 @@ menu-refresh-duplicates =
 add-not-duplicates-alert-error-duplicates = The selected items are not identified as Duplicates.
 add-not-duplicates-alert-error-exist = The selected items already exist.
 add-not-duplicates-alert-error-diff-library = Cannot add items from different libraries.
+
+# Import/Export non-duplicates
+data-export-title = Export Non-Duplicates
+data-export-empty = No non-duplicate records to export.
+data-export-success = Successfully exported { $count } non-duplicate pair(s).
+data-import-title = Import Non-Duplicates
+data-import-no-data = No valid non-duplicate data found in the selected file.
+data-import-success = Imported { $imported } pair(s), skipped { $skipped } pair(s).
+data-import-libraries-not-found = Libraries not found on this device: { $libraries }

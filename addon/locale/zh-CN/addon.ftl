@@ -86,3 +86,12 @@ menu-refresh-duplicates =
 add-not-duplicates-alert-error-duplicates = 所选条目没有被识别为重复条目。
 add-not-duplicates-alert-error-exist = 所选条目已存在。
 add-not-duplicates-alert-error-diff-library = 无法添加不同库中的条目。
+
+# Import/Export non-duplicates
+data-export-title = 导出非重复记录
+data-export-empty = 没有可导出的非重复记录。
+data-export-success = 成功导出 { $count } 对非重复记录。
+data-import-title = 导入非重复记录
+data-import-no-data = 所选文件中未找到有效的非重复记录数据。
+data-import-success = 成功导入 { $imported } 对，跳过 { $skipped } 对。
+data-import-libraries-not-found = 以下文库在此设备上未找到：{ $libraries }

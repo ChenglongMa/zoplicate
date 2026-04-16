@@ -64,6 +64,28 @@
       />
     </groupbox>
   </vbox>
+
+  <vbox class="pref-section">
+    <groupbox>
+      <label>
+        <html:h2 data-l10n-id="pref-data-title"></html:h2>
+      </label>
+
+      <label data-l10n-id="pref-data-description" />
+      <hbox align="center">
+        <button
+          id="zotero-prefpane-__addonRef__-export-non-duplicates"
+          data-l10n-id="pref-data-export"
+          oncommand="Zotero.__addonInstance__.hooks.onPrefsEvent('exportNonDuplicates', { window })"
+        />
+        <button
+          id="zotero-prefpane-__addonRef__-import-non-duplicates"
+          data-l10n-id="pref-data-import"
+          oncommand="Zotero.__addonInstance__.hooks.onPrefsEvent('importNonDuplicates', { window })"
+        />
+      </hbox>
+    </groupbox>
+  </vbox>
 </vbox>
 
 <spacer height="20" flex="1" />

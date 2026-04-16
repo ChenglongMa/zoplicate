@@ -32,4 +32,11 @@ pref-view-description = 选择重复条目的显示方式
 pref-view-duplicate-stats =
     .label = 在"重复条目"标签后显示重复条目数量。如，重复条目 2/6
 
+pref-data-title = 数据管理
+pref-data-description = 导出或导入"非重复"标记记录，用于跨设备迁移。
+pref-data-export =
+    .label = 导出非重复记录…
+pref-data-import =
+    .label = 导入非重复记录…
+
 pref-help = { $name } Build { $version } { $time }
