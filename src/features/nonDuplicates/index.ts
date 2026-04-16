@@ -9,6 +9,8 @@ export { createNonDuplicateButton, NonDuplicates, toggleNonDuplicates } from "./
 export { registerNonDuplicatesSection, unregisterNonDuplicatesSection } from "./nonDuplicateSection";
 export { createNonDuplicatesNotifyHandler, whenItemsDeleted } from "./notifyHandlers";
 export { itemMenuConfig } from "./nonDuplicateMenu";
+export { refreshLocalFromSync } from "./syncRefresh";
+export { registerSyncListener } from "./syncListener";
 
 export async function registerNonDuplicatesGlobal(nonDuplicatesDB: NonDuplicatesDB): Promise<Disposer> {
   const registry = new DisposerRegistry();

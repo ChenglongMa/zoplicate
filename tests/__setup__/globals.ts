@@ -73,6 +73,7 @@ export function createMockItem(overrides: MockItemOverrides = {}): any {
       return createMockItem({ id: input });
     }),
     getAsync: jest.fn(async (id: number) => createMockItem({ id })),
+    getByLibraryAndKeyAsync: jest.fn(async (_libraryID: number, _key: string) => false),
     merge: jest.fn(async () => undefined),
   },
   CollectionTreeCache: {

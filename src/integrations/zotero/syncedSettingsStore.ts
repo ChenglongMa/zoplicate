@@ -48,6 +48,19 @@ export function dedupPairs(pairs: [string, string][]): [string, string][] {
   return result;
 }
 
+/**
+ * Compute the union of two pair arrays, normalizing, deduplicating,
+ * and sorting the result.
+ */
+export function unionMergePairs(
+  localPairs: [string, string][],
+  remotePairs: [string, string][],
+): [string, string][] {
+  const merged = dedupPairs([...localPairs, ...remotePairs]);
+  merged.sort((a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]));
+  return merged;
+}
+
 // ---------------------------------------------------------------------------
 // Store class
 // ---------------------------------------------------------------------------

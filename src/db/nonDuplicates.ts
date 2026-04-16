@@ -307,6 +307,47 @@ export class NonDuplicatesDB extends SQLiteDB {
   }
 
   /**
+   * Get all unique keys (from both itemKey and itemKey2 columns) and their
+   * libraryIDs for a set of itemIDs. Used to clean up SyncedSettings when
+   * items are deleted (the items may already be gone from Zotero, so we
+   * must read keys from the DB).
+   */
+  async getKeysForItems(itemIDs: number[]): Promise<{ key: string; libraryID: number }[]> {
+    if (itemIDs.length === 0) return [];
+
+    const results: { key: string; libraryID: number }[] = [];
+
+    for (let i = 0; i < itemIDs.length; i += this.batchSize) {
+      const batch = itemIDs.slice(i, i + this.batchSize);
+      const placeholders = batch.map(() => "?").join(", ");
+
+      // Query rows where itemID or itemID2 is in the batch
+      const rows = (await this._db.queryAsync(
+        `SELECT DISTINCT itemKey, itemKey2, libraryID
+         FROM ${this.tables.nonDuplicates}
+         WHERE (itemID IN (${placeholders}) OR itemID2 IN (${placeholders}))
+           AND (itemKey IS NOT NULL OR itemKey2 IS NOT NULL)`,
+        [...batch, ...batch],
+      )) as { itemKey: string | null; itemKey2: string | null; libraryID: number }[];
+
+      // Collect all non-null keys
+      for (const row of rows) {
+        if (row.itemKey) results.push({ key: row.itemKey, libraryID: row.libraryID });
+        if (row.itemKey2) results.push({ key: row.itemKey2, libraryID: row.libraryID });
+      }
+    }
+
+    // Deduplicate
+    const seen = new Set<string>();
+    return results.filter((r) => {
+      const k = `${r.libraryID}\0${r.key}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  }
+
+  /**
    * Get non-duplicate pairs as stable item key pairs for a library.
    * Only returns rows where both keys are non-null.
    */
