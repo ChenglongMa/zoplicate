@@ -22,6 +22,7 @@
     "build": "tsc --noEmit && zotero-plugin build",
     "lint": "prettier --write . && eslint . --fix",
     "release": "zotero-plugin release",
+    "publish-release": "bash scripts/release.sh",
     "test": "jest",
     "update-deps": "npm update --save",
     "npm-check-updates": "ncu -u"
