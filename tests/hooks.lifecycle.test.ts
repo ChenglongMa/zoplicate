@@ -66,12 +66,20 @@ const registerNonDuplicatesWindowMock = jest.fn(async (win: any) => {
   registrationOrder.push(`window:${win.name}:nonDuplicates`);
   return makeDisposer(`window:${win.name}:nonDuplicates`);
 });
+const hydrateAllLibrariesMock = jest.fn(async () => undefined);
+const registerSyncListenerMock = jest.fn(() => makeDisposer("global:syncListener"));
 jest.mock("../src/features/nonDuplicates", () => ({
   createNonDuplicateButton: jest.fn((_win: Window, id: string) => ({ tag: "button", id })),
   createNonDuplicatesNotifyHandler: jest.fn(() => jest.fn()),
   NonDuplicates: { getInstance: jest.fn(() => ({ allNonDuplicates: new Set() })) },
   registerNonDuplicatesGlobal: registerNonDuplicatesGlobalMock,
   registerNonDuplicatesWindow: registerNonDuplicatesWindowMock,
+  hydrateAllLibraries: hydrateAllLibrariesMock,
+  registerSyncListener: registerSyncListenerMock,
+}));
+
+jest.mock("../src/integrations/zotero/syncedSettingsStore", () => ({
+  nonDuplicateSyncStore: {},
 }));
 
 const registerNotifierMock = jest.fn(() => {

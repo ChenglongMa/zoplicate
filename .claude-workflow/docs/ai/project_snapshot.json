@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
-  "latest_accepted_milestone": "M012",
+  "latest_accepted_milestone": "M013",
   "current_target_milestone": "M013",
-  "current_status": "planned",
-  "last_updated_utc": "2026-04-16T00:45:00Z",
+  "current_status": "accepted",
+  "last_updated_utc": "2026-04-16T01:30:00Z",
   "open_risks_summary": [
     "Zotero UI/import flows cannot be fully verified with Jest alone.",
     "FTL .label attribute rendering requires manual Zotero 9 runtime verification.",
@@ -24,6 +24,11 @@
     "Factory type signatures in hooks.ts must stay in sync with createBulkMergeButton and createNonDuplicateButton signatures.",
     "onSyncDownload flag-based disposal leaves callback registered in Zotero memory (negligible for single listener per library).",
     "refreshLocalFromSync resolves keys sequentially — could be slow for very large pair sets.",
-    "Pre-migration null keys in local DB will not be cleaned from SyncedSettings on item delete."
+    "Pre-migration null keys in local DB will not be cleaned from SyncedSettings on item delete.",
+    "M013 dual-write in toggleNonDuplicates is fire-and-forget on SyncedSettings failure; pairs may drift until next hydration.",
+    "M013 hydrateAllLibraries runs sequentially per library; could add startup latency for many group libraries.",
+    "M013 unsynced items (no key) are skipped during SyncedSettings dual-write; picked up on next hydration after key assignment.",
+    "M013 Zotero.Libraries.getAll() availability at uiReadyPromise assumed but not independently verified at runtime.",
+    "M013 end-to-end tests use mocks; MANUAL Zotero runtime testing required to validate full sync flow."
   ]
 }

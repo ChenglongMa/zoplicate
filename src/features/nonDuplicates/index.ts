@@ -11,6 +11,7 @@ export { createNonDuplicatesNotifyHandler, whenItemsDeleted } from "./notifyHand
 export { itemMenuConfig } from "./nonDuplicateMenu";
 export { refreshLocalFromSync } from "./syncRefresh";
 export { registerSyncListener } from "./syncListener";
+export { hydrateAllLibraries } from "./hydration";
 
 export async function registerNonDuplicatesGlobal(nonDuplicatesDB: NonDuplicatesDB): Promise<Disposer> {
   const registry = new DisposerRegistry();

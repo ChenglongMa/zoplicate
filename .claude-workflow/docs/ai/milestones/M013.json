@@ -2,7 +2,7 @@
   "id": "M013",
   "title": "Wire non-duplicate sync into runtime workflow",
   "phase": "Data Integrity - Runtime Integration",
-  "status": "planned",
+  "status": "accepted",
   "depends_on": ["M012"],
   "goal": "Wire SyncedSettings sync store into runtime: startup hydration, dual-write on mark/unmark, sync listener registration, end-to-end integration tests, and documentation.",
   "in_scope": [
