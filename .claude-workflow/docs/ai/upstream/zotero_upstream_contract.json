@@ -1,0 +1,543 @@
+{
+  "schema_version": "1.0",
+  "generated_at_utc": "2026-04-16T05:40:37Z",
+  "remote_url": "https://github.com/zotero/zotero.git",
+  "watched_refs": [
+    "9.0",
+    "main"
+  ],
+  "watch_targets_hash": "b90260e81ec53621fb3a5303d0a846ce89e1765a48e84556e6f336f3a6076ffb",
+  "watch_targets": [
+    {
+      "id": "collection-tree-render-item",
+      "upstream_ref_paths": [
+        "chrome/content/zotero/collectionTree.jsx"
+      ],
+      "anchor_kind": "method_assignment",
+      "anchor_pattern": "renderItem",
+      "local_dependency_paths": [
+        "src/features/duplicateStats/duplicateStats.ts"
+      ],
+      "reason": "Duplicate count rendering depends on Zotero's collection row DOM structure.",
+      "risk_level": "medium",
+      "recommended_tests": [
+        "tests/duplicateStats.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "collection-tree-row-duplicates-search-object",
+      "upstream_ref_paths": [
+        "chrome/content/zotero/xpcom/collectionTreeRow.js"
+      ],
+      "anchor_kind": "function_assignment",
+      "anchor_pattern": "Zotero.CollectionTreeRow.prototype.getSearchObject",
+      "local_dependency_paths": [
+        "src/features/duplicateStats/duplicateStats.ts",
+        "src/integrations/zotero/patches/patchGetSearchObject.ts"
+      ],
+      "reason": "Zotero drops duplicate temp tables from the collection-tree row unload lifecycle; Zoplicate caches duplicate searches.",
+      "risk_level": "high",
+      "recommended_tests": [
+        "tests/duplicateSearchRecognition.test.ts",
+        "tests/duplicateStats.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "disjoint-set-find",
+      "upstream_ref_paths": [
+        "chrome/content/zotero/xpcom/duplicates.js"
+      ],
+      "anchor_kind": "function_assignment",
+      "anchor_pattern": "Zotero.DisjointSetForest.prototype.find",
+      "local_dependency_paths": [
+        "src/app/state.ts",
+        "typings/duplicates.d.ts"
+      ],
+      "reason": "The cached duplicate-set type and set traversal assumptions depend on the union-find object shape.",
+      "risk_level": "medium",
+      "recommended_tests": [
+        "tests/patchFindDuplicates.cross.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "disjoint-set-find-all-in-set",
+      "upstream_ref_paths": [
+        "chrome/content/zotero/xpcom/duplicates.js"
+      ],
+      "anchor_kind": "function_assignment",
+      "anchor_pattern": "Zotero.DisjointSetForest.prototype.findAllInSet",
+      "local_dependency_paths": [
+        "src/integrations/zotero/duplicateSearch.ts",
+        "typings/duplicates.d.ts"
+      ],
+      "reason": "Zotero.Duplicates.getSetItemsByItemID() delegates to findAllInSet().",
+      "risk_level": "medium",
+      "recommended_tests": [
+        "tests/duplicateSearchRecognition.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "disjoint-set-union",
+      "upstream_ref_paths": [
+        "chrome/content/zotero/xpcom/duplicates.js"
+      ],
+      "anchor_kind": "function_assignment",
+      "anchor_pattern": "Zotero.DisjointSetForest.prototype.union",
+      "local_dependency_paths": [
+        "src/integrations/zotero/patches/patchFindDuplicates.ts",
+        "typings/duplicates.d.ts"
+      ],
+      "reason": "Zoplicate intercepts union() to exclude user-marked non-duplicate pairs.",
+      "risk_level": "high",
+      "recommended_tests": [
+        "tests/patchFindDuplicates.cross.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "duplicates-find-duplicates",
+      "upstream_ref_paths": [
+        "chrome/content/zotero/xpcom/duplicates.js"
+      ],
+      "anchor_kind": "function_assignment",
+      "anchor_pattern": "Zotero.Duplicates.prototype._findDuplicates",
+      "local_dependency_paths": [
+        "src/integrations/zotero/duplicateSearch.ts",
+        "src/integrations/zotero/patches/patchFindDuplicates.ts",
+        "typings/duplicates.d.ts"
+      ],
+      "reason": "Zoplicate wraps _findDuplicates() and relies on its DisjointSetForest population flow.",
+      "risk_level": "high",
+      "recommended_tests": [
+        "tests/duplicateSearchRecognition.test.ts",
+        "tests/patchFindDuplicates.cross.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "duplicates-get-search-object",
+      "upstream_ref_paths": [
+        "chrome/content/zotero/xpcom/duplicates.js"
+      ],
+      "anchor_kind": "function_assignment",
+      "anchor_pattern": "Zotero.Duplicates.prototype.getSearchObject",
+      "local_dependency_paths": [
+        "src/features/duplicateStats/duplicateStats.ts",
+        "src/integrations/zotero/duplicateSearch.ts",
+        "src/integrations/zotero/patches/patchGetSearchObject.ts"
+      ],
+      "reason": "Zoplicate patches and caches Zotero.Duplicates.getSearchObject() search/temp-table behavior.",
+      "risk_level": "high",
+      "recommended_tests": [
+        "tests/duplicateSearchRecognition.test.ts",
+        "tests/duplicateStats.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "duplicates-get-set-items-by-item-id",
+      "upstream_ref_paths": [
+        "chrome/content/zotero/xpcom/duplicates.js"
+      ],
+      "anchor_kind": "function_assignment",
+      "anchor_pattern": "Zotero.Duplicates.prototype.getSetItemsByItemID",
+      "local_dependency_paths": [
+        "src/features/bulkMerge/bulkMergeService.ts",
+        "src/features/duplicateStats/duplicateStats.ts",
+        "src/features/duplicates/duplicates.ts",
+        "src/integrations/zotero/duplicateSearch.ts"
+      ],
+      "reason": "Duplicate dialogs, bulk merge, stats, and non-duplicate checks all consume Zotero duplicate sets by item ID.",
+      "risk_level": "high",
+      "recommended_tests": [
+        "tests/bulkMerge.test.ts",
+        "tests/duplicateSearchRecognition.test.ts",
+        "tests/duplicateStats.test.ts",
+        "tests/duplicates.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "duplicates-merge-pane-merge",
+      "upstream_ref_paths": [
+        "chrome/content/zotero/elements/duplicatesMergePane.js"
+      ],
+      "anchor_kind": "class_method",
+      "anchor_pattern": "merge",
+      "local_dependency_paths": [
+        "src/shared/duplicates/mergeItems.ts"
+      ],
+      "reason": "Zoplicate's merge wrapper follows Zotero's duplicate-pane merge preparation behavior.",
+      "risk_level": "medium",
+      "recommended_tests": [
+        "tests/merger.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "duplicates-merge-pane-set-items",
+      "upstream_ref_paths": [
+        "chrome/content/zotero/elements/duplicatesMergePane.js"
+      ],
+      "anchor_kind": "class_method",
+      "anchor_pattern": "setItems",
+      "local_dependency_paths": [
+        "src/features/duplicates/duplicatePaneUI.ts"
+      ],
+      "reason": "Zoplicate inserts buttons around Zotero's duplicate merge pane and relies on item-type validation behavior.",
+      "risk_level": "medium",
+      "recommended_tests": [
+        "tests/duplicatePaneUI.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "duplicates-merge-pane-set-master",
+      "upstream_ref_paths": [
+        "chrome/content/zotero/elements/duplicatesMergePane.js"
+      ],
+      "anchor_kind": "class_method",
+      "anchor_pattern": "setMaster",
+      "local_dependency_paths": [
+        "src/features/duplicates/duplicatePaneUI.ts",
+        "src/shared/duplicates/mergeItems.ts"
+      ],
+      "reason": "Zoplicate mirrors Zotero duplicate-pane field-prefill semantics before calling mergeItems().",
+      "risk_level": "medium",
+      "recommended_tests": [
+        "tests/duplicatePaneUI.test.ts",
+        "tests/merger.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "item-save-data",
+      "upstream_ref_paths": [
+        "chrome/content/zotero/xpcom/data/item.js"
+      ],
+      "anchor_kind": "function_assignment",
+      "anchor_pattern": "Zotero.Item.prototype._saveData",
+      "local_dependency_paths": [
+        "src/integrations/zotero/patches/patchItemSaveData.ts"
+      ],
+      "reason": "Zoplicate patches Zotero.Item._saveData() for duplicate-refresh notifier data and child re-parenting after merges.",
+      "risk_level": "high",
+      "recommended_tests": [
+        "tests/duplicatesNotifyHandlers.test.ts",
+        "tests/hooks.lifecycle.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "item-tree-duplicate-selection",
+      "upstream_ref_paths": [
+        "chrome/content/zotero/itemTree.jsx"
+      ],
+      "anchor_kind": "method_assignment",
+      "anchor_pattern": "_handleSelectionChange",
+      "local_dependency_paths": [
+        "src/features/duplicates/duplicatePaneUI.ts",
+        "src/integrations/zotero/duplicateSearch.ts"
+      ],
+      "reason": "Zotero duplicate-pane selection expands one selected item to its duplicate set.",
+      "risk_level": "medium",
+      "recommended_tests": [
+        "tests/duplicatePaneUI.test.ts",
+        "tests/duplicateSearchRecognition.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "merge-items",
+      "upstream_ref_paths": [
+        "chrome/content/zotero/mergeItems.mjs"
+      ],
+      "anchor_kind": "exported_function",
+      "anchor_pattern": "mergeItems",
+      "local_dependency_paths": [
+        "src/shared/duplicates/mergeItems.ts"
+      ],
+      "reason": "Zoplicate delegates all duplicate merge side effects to Zotero mergeItems().",
+      "risk_level": "high",
+      "recommended_tests": [
+        "tests/merger.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "merge-items-move-relations",
+      "upstream_ref_paths": [
+        "chrome/content/zotero/mergeItems.mjs"
+      ],
+      "anchor_kind": "function_declaration",
+      "anchor_pattern": "moveRelations",
+      "local_dependency_paths": [
+        "src/db/duplicateFinder.ts",
+        "src/shared/duplicates/mergeItems.ts"
+      ],
+      "reason": "Zoplicate's retained-duplicate fallback follows Zotero merge-tracking relations created during merge.",
+      "risk_level": "medium",
+      "recommended_tests": [
+        "tests/duplicateFinder.test.ts",
+        "tests/merger.test.ts"
+      ],
+      "needs_manual_mapping": false
+    }
+  ],
+  "snapshots": {
+    "9.0": {
+      "head": "e22e2cd9dd3c322314b7e772564c59d09a30eb2b",
+      "anchors": {
+        "collection-tree-render-item": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/collectionTree.jsx",
+          "anchor_kind": "method_assignment",
+          "anchor_pattern": "renderItem",
+          "sha256": "76c638339b87033b22c11383edbb76172ff6211b8330281dd98e6d1110386fa3",
+          "message": ""
+        },
+        "collection-tree-row-duplicates-search-object": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/xpcom/collectionTreeRow.js",
+          "anchor_kind": "function_assignment",
+          "anchor_pattern": "Zotero.CollectionTreeRow.prototype.getSearchObject",
+          "sha256": "b5db26c1e731402290ad716ba2b6a12669b8e3d76de04062d94c4ad30fd63a4b",
+          "message": ""
+        },
+        "disjoint-set-find": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/xpcom/duplicates.js",
+          "anchor_kind": "function_assignment",
+          "anchor_pattern": "Zotero.DisjointSetForest.prototype.find",
+          "sha256": "89ac7aefa30a8a63f4c8cc4eeebbfab98c18931c085fc2a9a2038e725e6e500f",
+          "message": ""
+        },
+        "disjoint-set-find-all-in-set": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/xpcom/duplicates.js",
+          "anchor_kind": "function_assignment",
+          "anchor_pattern": "Zotero.DisjointSetForest.prototype.findAllInSet",
+          "sha256": "9ce955fed2cd7bf9ccc6273ff436509ccf488d414b52bc3fa4bf44237729eb93",
+          "message": ""
+        },
+        "disjoint-set-union": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/xpcom/duplicates.js",
+          "anchor_kind": "function_assignment",
+          "anchor_pattern": "Zotero.DisjointSetForest.prototype.union",
+          "sha256": "feb5d24890f552f1e07fc839bb16f441de462aa32d3c124052bbeedc71a9ae08",
+          "message": ""
+        },
+        "duplicates-find-duplicates": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/xpcom/duplicates.js",
+          "anchor_kind": "function_assignment",
+          "anchor_pattern": "Zotero.Duplicates.prototype._findDuplicates",
+          "sha256": "331ab1259e7038b8c6e09acd8dedd9c47040ca6762b2d25b8b6739ef2a72f100",
+          "message": ""
+        },
+        "duplicates-get-search-object": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/xpcom/duplicates.js",
+          "anchor_kind": "function_assignment",
+          "anchor_pattern": "Zotero.Duplicates.prototype.getSearchObject",
+          "sha256": "f98bedd889b6f478b4f8cf96f0d540e83752e80925b602db43e7305f535f13ea",
+          "message": ""
+        },
+        "duplicates-get-set-items-by-item-id": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/xpcom/duplicates.js",
+          "anchor_kind": "function_assignment",
+          "anchor_pattern": "Zotero.Duplicates.prototype.getSetItemsByItemID",
+          "sha256": "48897c4b25d94289161ff076e8ff524d97b30061f7aee4bacc0d3fb85b569141",
+          "message": ""
+        },
+        "duplicates-merge-pane-merge": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/elements/duplicatesMergePane.js",
+          "anchor_kind": "class_method",
+          "anchor_pattern": "merge",
+          "sha256": "1909ccefdd7ba6cbd9fa0eadd2a8436451aaa6e32d0b8ce21348a5aeca875426",
+          "message": ""
+        },
+        "duplicates-merge-pane-set-items": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/elements/duplicatesMergePane.js",
+          "anchor_kind": "class_method",
+          "anchor_pattern": "setItems",
+          "sha256": "e3714f202a30b2d877f7f3fa0f51139f263a2651f333bedea58955b1451b95a9",
+          "message": ""
+        },
+        "duplicates-merge-pane-set-master": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/elements/duplicatesMergePane.js",
+          "anchor_kind": "class_method",
+          "anchor_pattern": "setMaster",
+          "sha256": "5ef6d6b8d6940b125d576df97a8c9858ff9e7a471788f2edc06fcec6866763e0",
+          "message": ""
+        },
+        "item-save-data": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/xpcom/data/item.js",
+          "anchor_kind": "function_assignment",
+          "anchor_pattern": "Zotero.Item.prototype._saveData",
+          "sha256": "f84711ed44bcb17c0c5bed2a71512a704e536655c23608aa2b6a4bc5440557e5",
+          "message": ""
+        },
+        "item-tree-duplicate-selection": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/itemTree.jsx",
+          "anchor_kind": "method_assignment",
+          "anchor_pattern": "_handleSelectionChange",
+          "sha256": "4a78905c6d91c855457f9e6c170ea43956518849d6b89021766910c3d39a6165",
+          "message": ""
+        },
+        "merge-items": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/mergeItems.mjs",
+          "anchor_kind": "exported_function",
+          "anchor_pattern": "mergeItems",
+          "sha256": "3b7ab707962a373f42fbf3d5d4a56f367839d6665012bff1f3c223026b5a91f6",
+          "message": ""
+        },
+        "merge-items-move-relations": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/mergeItems.mjs",
+          "anchor_kind": "function_declaration",
+          "anchor_pattern": "moveRelations",
+          "sha256": "72e34263b7ef1febebf6835df8831fad442760a59cd765cd876c4c72fd7b597b",
+          "message": ""
+        }
+      }
+    },
+    "main": {
+      "head": "d2d4451165376e884cb1b05f3d853a7a01deeed2",
+      "anchors": {
+        "collection-tree-render-item": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/collectionTree.jsx",
+          "anchor_kind": "method_assignment",
+          "anchor_pattern": "renderItem",
+          "sha256": "76c638339b87033b22c11383edbb76172ff6211b8330281dd98e6d1110386fa3",
+          "message": ""
+        },
+        "collection-tree-row-duplicates-search-object": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/xpcom/collectionTreeRow.js",
+          "anchor_kind": "function_assignment",
+          "anchor_pattern": "Zotero.CollectionTreeRow.prototype.getSearchObject",
+          "sha256": "b5db26c1e731402290ad716ba2b6a12669b8e3d76de04062d94c4ad30fd63a4b",
+          "message": ""
+        },
+        "disjoint-set-find": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/xpcom/duplicates.js",
+          "anchor_kind": "function_assignment",
+          "anchor_pattern": "Zotero.DisjointSetForest.prototype.find",
+          "sha256": "89ac7aefa30a8a63f4c8cc4eeebbfab98c18931c085fc2a9a2038e725e6e500f",
+          "message": ""
+        },
+        "disjoint-set-find-all-in-set": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/xpcom/duplicates.js",
+          "anchor_kind": "function_assignment",
+          "anchor_pattern": "Zotero.DisjointSetForest.prototype.findAllInSet",
+          "sha256": "9ce955fed2cd7bf9ccc6273ff436509ccf488d414b52bc3fa4bf44237729eb93",
+          "message": ""
+        },
+        "disjoint-set-union": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/xpcom/duplicates.js",
+          "anchor_kind": "function_assignment",
+          "anchor_pattern": "Zotero.DisjointSetForest.prototype.union",
+          "sha256": "feb5d24890f552f1e07fc839bb16f441de462aa32d3c124052bbeedc71a9ae08",
+          "message": ""
+        },
+        "duplicates-find-duplicates": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/xpcom/duplicates.js",
+          "anchor_kind": "function_assignment",
+          "anchor_pattern": "Zotero.Duplicates.prototype._findDuplicates",
+          "sha256": "331ab1259e7038b8c6e09acd8dedd9c47040ca6762b2d25b8b6739ef2a72f100",
+          "message": ""
+        },
+        "duplicates-get-search-object": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/xpcom/duplicates.js",
+          "anchor_kind": "function_assignment",
+          "anchor_pattern": "Zotero.Duplicates.prototype.getSearchObject",
+          "sha256": "f98bedd889b6f478b4f8cf96f0d540e83752e80925b602db43e7305f535f13ea",
+          "message": ""
+        },
+        "duplicates-get-set-items-by-item-id": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/xpcom/duplicates.js",
+          "anchor_kind": "function_assignment",
+          "anchor_pattern": "Zotero.Duplicates.prototype.getSetItemsByItemID",
+          "sha256": "48897c4b25d94289161ff076e8ff524d97b30061f7aee4bacc0d3fb85b569141",
+          "message": ""
+        },
+        "duplicates-merge-pane-merge": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/elements/duplicatesMergePane.js",
+          "anchor_kind": "class_method",
+          "anchor_pattern": "merge",
+          "sha256": "1909ccefdd7ba6cbd9fa0eadd2a8436451aaa6e32d0b8ce21348a5aeca875426",
+          "message": ""
+        },
+        "duplicates-merge-pane-set-items": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/elements/duplicatesMergePane.js",
+          "anchor_kind": "class_method",
+          "anchor_pattern": "setItems",
+          "sha256": "e3714f202a30b2d877f7f3fa0f51139f263a2651f333bedea58955b1451b95a9",
+          "message": ""
+        },
+        "duplicates-merge-pane-set-master": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/elements/duplicatesMergePane.js",
+          "anchor_kind": "class_method",
+          "anchor_pattern": "setMaster",
+          "sha256": "5ef6d6b8d6940b125d576df97a8c9858ff9e7a471788f2edc06fcec6866763e0",
+          "message": ""
+        },
+        "item-save-data": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/xpcom/data/item.js",
+          "anchor_kind": "function_assignment",
+          "anchor_pattern": "Zotero.Item.prototype._saveData",
+          "sha256": "f84711ed44bcb17c0c5bed2a71512a704e536655c23608aa2b6a4bc5440557e5",
+          "message": ""
+        },
+        "item-tree-duplicate-selection": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/itemTree.jsx",
+          "anchor_kind": "method_assignment",
+          "anchor_pattern": "_handleSelectionChange",
+          "sha256": "4a78905c6d91c855457f9e6c170ea43956518849d6b89021766910c3d39a6165",
+          "message": ""
+        },
+        "merge-items": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/mergeItems.mjs",
+          "anchor_kind": "exported_function",
+          "anchor_pattern": "mergeItems",
+          "sha256": "3b7ab707962a373f42fbf3d5d4a56f367839d6665012bff1f3c223026b5a91f6",
+          "message": ""
+        },
+        "merge-items-move-relations": {
+          "status": "ok",
+          "source_path": "chrome/content/zotero/mergeItems.mjs",
+          "anchor_kind": "function_declaration",
+          "anchor_pattern": "moveRelations",
+          "sha256": "72e34263b7ef1febebf6835df8831fad442760a59cd765cd876c4c72fd7b597b",
+          "message": ""
+        }
+      }
+    }
+  }
+}

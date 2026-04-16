@@ -25,6 +25,9 @@ Use these files with distinct roles:
 - `.claude-workflow/docs/ai/project_snapshot.json`: machine-readable project snapshot for automation
 - `.claude-workflow/docs/ai/milestone_index.json`: milestone ordering, status, and backlog
 - `.claude-workflow/docs/ai/milestones/{ID}.json`: per-milestone scope, acceptance, and dependencies
+- `.claude-workflow/docs/ai/upstream/zotero_watch_targets.json`: Zotero upstream watchlist and dependency map
+- `.claude-workflow/docs/ai/upstream/zotero_upstream_contract.json`: generated upstream anchor baseline
+- `.claude-workflow/docs/ai/upstream/zotero_upstream_report.md`: generated upstream drift report
 - `.claude-workflow/docs/ai/prompt_audit_log.md`: compact workflow and prompt governance log
 
 Do not treat large prose docs as the machine source of truth.
@@ -58,11 +61,15 @@ Do not let addon asset changes drift away from the TypeScript behavior they supp
 
 ## Public Claude surface
 
-The only public skill is `/milestone-loop`. Do not suggest legacy skills (`/state-manager` or any archived helper).
+The public skills are `/milestone-loop` and `/upstream-pr-milestone`. Do not suggest legacy skills (`/state-manager` or any archived helper).
+
+Use `/milestone-loop` for product implementation and milestone execution. Use `/upstream-pr-milestone` only to review Zotero upstream watch PRs, synchronize the watchlist, regenerate upstream reports, and prepare draft milestone files.
 
 ## Agent model
 
 Five agents live in `.claude/agents/`; `implementer` is the only write-capable workflow agent. Shared JSON artifacts are written by the orchestrator or workflow scripts, not by read-only agents.
+
+Exception: `/upstream-pr-milestone` may write workflow monitoring metadata under `.claude-workflow/docs/ai/upstream/`, draft milestone files under `.claude-workflow/docs/ai/milestones/`, `.claude-workflow/docs/ai/milestone_index.json`, and `.claude-workflow/docs/ai/project_snapshot.json`. It must not change product logic in `src/`, `addon/`, or `typings/`; product fixes still go through `/milestone-loop` and `implementer`.
 
 ## Runtime layout
 
@@ -86,6 +93,7 @@ Do not load Tier 2 files at session start. Load only when explicitly needed for 
 
 All work is milestone-bounded. If scope expands materially, stop and split the work.
 The step-by-step planning checklist lives in `/milestone-loop` and the `architect-planner` agent.
+Upstream watch PRs may generate draft milestones, but implementing those milestones remains a separate `/milestone-loop` session.
 
 ## Review and verification policy
 
@@ -105,7 +113,7 @@ See `.claude-workflow/docs/ai/claude_operator_guide.md` for session naming conve
 
 Four project-scoped MCP servers are configured in `.mcp.json`: `episodic-memory`, `zoplicate-codebase`, `zoplicate-workflow`, `zotero-reference`. Prefer scoped MCP reads over broad repository scans during planning and review.
 Use `zotero-reference` for upstream Zotero implementation and lifecycle patterns. Treat `.references/zotero/` as a read-only reference clone, not product code.
-Project hooks refresh `.references/zotero/` on Claude session start/resume and when a `/milestone-loop` prompt is submitted. If the reference looks stale, run `uv run python .claude-workflow/scripts/agent/update_zotero_reference.py --force`.
+Project hooks refresh `.references/zotero/` on Claude session start/resume and when a `/milestone-loop` or `/upstream-pr-milestone` prompt is submitted. If the reference looks stale, run `uv run python .claude-workflow/scripts/agent/update_zotero_reference.py --force`.
 
 ## State update policy
 

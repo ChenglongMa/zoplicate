@@ -64,8 +64,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--prompt-prefix",
-        default="/milestone-loop",
-        help="Prompt prefix that should trigger a refresh when --from-user-prompt is used.",
+        action="append",
+        default=None,
+        help=(
+            "Prompt prefix that should trigger a refresh when --from-user-prompt is used. "
+            "May be provided more than once."
+        ),
     )
     return parser.parse_args()
 
@@ -116,13 +120,14 @@ def load_status(status_path: Path) -> dict[str, Any] | None:
         return None
 
 
-def should_handle_user_prompt(stdin_text: str, prompt_prefix: str) -> bool:
+def should_handle_user_prompt(stdin_text: str, prompt_prefix: str | list[str]) -> bool:
     try:
         payload = json.loads(stdin_text or "{}")
     except json.JSONDecodeError:
         return False
     prompt = str(payload.get("prompt", "")).lstrip()
-    return prompt.startswith(prompt_prefix)
+    prefixes = [prompt_prefix] if isinstance(prompt_prefix, str) else prompt_prefix
+    return any(prompt.startswith(prefix) for prefix in prefixes)
 
 
 def is_refresh_due(
@@ -324,7 +329,8 @@ def refresh_reference(
 def main() -> int:
     args = parse_args()
     if args.from_user_prompt:
-        if not should_handle_user_prompt(sys.stdin.read(), args.prompt_prefix):
+        prompt_prefixes = args.prompt_prefix or ["/milestone-loop"]
+        if not should_handle_user_prompt(sys.stdin.read(), prompt_prefixes):
             return 0
 
     payload = refresh_reference(build_config(args))

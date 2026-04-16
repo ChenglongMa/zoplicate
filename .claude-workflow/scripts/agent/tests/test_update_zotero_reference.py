@@ -36,6 +36,14 @@ class UpdateZoteroReferenceTests(unittest.TestCase):
         )
         self.assertFalse(should_handle_user_prompt('{"prompt":"summarize this file"}', "/milestone-loop"))
 
+    def test_should_handle_user_prompt_matches_any_configured_prefix(self) -> None:
+        prefixes = ["/milestone-loop", "/upstream-pr-milestone"]
+
+        self.assertTrue(
+            should_handle_user_prompt('{"prompt":" /upstream-pr-milestone pr=12 mode=review"}', prefixes)
+        )
+        self.assertFalse(should_handle_user_prompt('{"prompt":" /other-skill"}', prefixes))
+
     def test_is_refresh_due_skips_recent_status_when_repo_exists(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             reference_dir = Path(tmp_dir) / ".references" / "zotero"
