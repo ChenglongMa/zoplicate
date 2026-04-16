@@ -26,6 +26,19 @@ declare const ChromeUtils: {
 };
 
 // ---------------------------------------------------------------------------
+// Augment _ZoteroTypes.Items with getByLibraryAndKeyAsync
+// ---------------------------------------------------------------------------
+
+declare namespace _ZoteroTypes {
+  interface Items {
+    getByLibraryAndKeyAsync(
+      libraryID: number,
+      key: string,
+    ): Promise<Zotero.Item | false>;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Zotero.MenuManager types (Zotero 9 pluginAPI)
 // ---------------------------------------------------------------------------
 
@@ -95,11 +108,6 @@ declare namespace Zotero {
         setting: string,
         fn: Function,
         bindTarget?: any,
-      ): void;
-      removeListener(
-        libraryID: number,
-        setting: string,
-        fn: Function,
       ): void;
     };
   };

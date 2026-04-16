@@ -2,7 +2,7 @@
   "id": "M012",
   "title": "Sync conflict resolution and cleanup",
   "phase": "Data Integrity - Sync Safety",
-  "status": "planned",
+  "status": "accepted",
   "depends_on": ["M011"],
   "goal": "Register onSyncDownload listener for non-duplicate pairs with union-merge conflict resolution, and add key-based cleanup for merged/deleted items in SyncedSettings.",
   "in_scope": [
