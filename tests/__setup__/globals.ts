@@ -99,6 +99,34 @@ export function createMockItem(overrides: MockItemOverrides = {}): any {
     removeObserver: jest.fn(),
   },
   getActiveZoteroPane: jest.fn(() => ({ selectItems: jest.fn() })),
+  SyncedSettings: (() => {
+    const store = new Map<string, any>();
+    return {
+      _store: store,
+      get: jest.fn((libraryID: number, setting: string) => {
+        const key = `${libraryID}/${setting}`;
+        if (!store.has(key)) return null;
+        // Return deep clone to match real Zotero behavior (JSON round-trip)
+        return JSON.parse(JSON.stringify(store.get(key)));
+      }),
+      set: jest.fn(async (libraryID: number, setting: string, value: any) => {
+        const key = `${libraryID}/${setting}`;
+        store.set(key, JSON.parse(JSON.stringify(value)));
+        return true;
+      }),
+      clear: jest.fn(async (libraryID: number, setting: string) => {
+        const key = `${libraryID}/${setting}`;
+        store.delete(key);
+        return true;
+      }),
+      loadAll: jest.fn(async () => {}),
+      onSyncDownload: {
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+      },
+    };
+  })(),
+  debug: jest.fn(),
 };
 
 // ---------------------------------------------------------------------------

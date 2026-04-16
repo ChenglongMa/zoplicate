@@ -69,4 +69,38 @@ declare namespace Zotero {
     registerMenu(options: MenuOptions): string | false;
     unregisterMenu(menuID: string): boolean;
   };
+
+  // -------------------------------------------------------------------------
+  // Zotero.SyncedSettings (synced key-value store)
+  // -------------------------------------------------------------------------
+
+  const SyncedSettings: {
+    get(libraryID: number, setting: string): any;
+    set(
+      libraryID: number,
+      setting: string,
+      value: any,
+      version?: number,
+      synced?: boolean,
+    ): Promise<boolean>;
+    clear(
+      libraryID: number,
+      setting: string,
+      options?: { skipDeleteLog?: boolean },
+    ): Promise<boolean>;
+    loadAll(libraryID: number): Promise<void>;
+    onSyncDownload: {
+      addListener(
+        libraryID: number,
+        setting: string,
+        fn: Function,
+        bindTarget?: any,
+      ): void;
+      removeListener(
+        libraryID: number,
+        setting: string,
+        fn: Function,
+      ): void;
+    };
+  };
 }

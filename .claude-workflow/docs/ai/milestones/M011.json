@@ -2,7 +2,7 @@
   "id": "M011",
   "title": "SyncedSettings store with read-write capability",
   "phase": "Data Integrity - Sync Store",
-  "status": "planned",
+  "status": "accepted",
   "depends_on": ["M010"],
   "goal": "Create an abstraction layer over Zotero.SyncedSettings for non-duplicate pairs with both read and write capability. Uses item keys for cross-device portability.",
   "in_scope": [
