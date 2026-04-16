@@ -3,18 +3,22 @@ name: Release
 on:
   push:
     tags:
-      - v**
+      - "v**"
 
 permissions:
   contents: write
   issues: write
   pull-requests: write
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.GitHub_TOKEN }}
+      GITHUB_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,30 +28,34 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
+          cache: npm
 
       - name: Install deps
-        run: npm install
+        run: npm ci
 
-      - name: Build
+      - name: Verify tag matches package version
         run: |
-          npm run build
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          test "$PACKAGE_VERSION" = "$TAG_VERSION" || {
+            echo "Tag v$TAG_VERSION does not match package.json version $PACKAGE_VERSION"
+            exit 1
+          }
+
+      - name: Lint
+        run: npx eslint .
+
+      - name: Test
+        run: npm test -- --runInBand
 
       - name: Release to GitHub
-        run: |
-          npm run release
-          # cp build/update.json update.json
-          # cp build/update-beta.json update-beta.json
-          # git add update.json
-          # git add update-beta.json
-          # git commit -m 'chore(publish): synchronizing `update.json`'
-          # git push
-          sleep 1s
+        run: npm run release -- --yes
 
       - name: Notify release
         uses: apexskier/github-release-commenter@v1
         continue-on-error: true
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           comment-template: |
             :rocket: _This ticket has been resolved in {release_tag}. See {release_link} for release notes._

@@ -1,13 +1,13 @@
 cff-version: 1.2.0
 message: "If you use Zoplicate in your work, please cite it."
 title: "Zoplicate"
-version: "v3.0.8"
+version: "v5.0.0"
 authors:
   - family-names: "Ma"
     given-names: "Chenglong"
     orcid: "https://orcid.org/0000-0002-6745-4029"
     affiliation: "RMIT University"
-date-released: "2025-02-27"
+date-released: "2026-04-16"
 doi: "10.5281/zenodo.16986945"
 url: "https://github.com/ChenglongMa/zoplicate"
 abstract: "Detect and manage duplicate items in Zotero."

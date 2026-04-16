@@ -106,7 +106,7 @@ declare namespace Zotero {
       addListener(
         libraryID: number,
         setting: string,
-        fn: Function,
+        fn: (oldValue: any, newValue: any, conflict: boolean) => void | Promise<void>,
         bindTarget?: any,
       ): void;
     };
