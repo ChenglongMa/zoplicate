@@ -18,11 +18,9 @@ import { NonDuplicatesDB } from "../src/db/nonDuplicates";
 import { whenItemsDeleted } from "../src/features/nonDuplicates/notifyHandlers";
 
 const _Zotero = (globalThis as any).Zotero;
-const ssStore: Map<string, any> = _Zotero.SyncedSettings._store;
 
 beforeEach(() => {
   jest.clearAllMocks();
-  ssStore.clear();
   queryAsyncMock.mockResolvedValue([]);
   (_Zotero.Items.get as jest.Mock<any>).mockImplementation((itemID: number) => ({
     id: itemID,
@@ -31,88 +29,17 @@ beforeEach(() => {
   }));
 });
 
-describe("whenItemsDeleted synced cleanup", () => {
-  test("deleting item with key K removes pairs containing K from SyncedSettings", async () => {
-    // Setup: getKeysForItems query returns rows with both key columns
-    queryAsyncMock
-      .mockResolvedValueOnce([
-        { itemKey: "KEYA", itemKey2: "KEYB", libraryID: 1 },
-      ]) // getKeysForItems query
-      .mockResolvedValue([]); // deleteRecords
-
-    // SyncedSettings has pairs containing KEYA and KEYB
-    ssStore.set("1/zoplicate-nonDuplicatePairs", {
-      v: 1,
-      pairs: [["KEYA", "KEYC"], ["KEYB", "KEYD"], ["KEYE", "KEYF"]],
-    });
-
+describe("whenItemsDeleted local cleanup", () => {
+  test("deleting items removes local non-duplicate records only", async () => {
     await whenItemsDeleted([10]);
 
-    // SyncedSettings.set should have been called to remove pairs containing KEYA or KEYB
-    // (The exact filtering depends on the implementation)
-    // deleteRecords should still be called for local DB cleanup
     const deleteCalls = queryAsyncMock.mock.calls.filter(
       (c) => typeof c[0] === "string" && (c[0] as string).includes("DELETE"),
     );
     expect(deleteCalls.length).toBeGreaterThan(0);
-  });
-
-  test("local DB cleanup is preserved even when SyncedSettings fails", async () => {
-    // Setup: getKeysForItems returns keys
-    queryAsyncMock
-      .mockResolvedValueOnce([
-        { itemKey: "KEYA", itemKey2: null, libraryID: 1 },
-      ])
-      .mockResolvedValue([]); // deleteRecords
-
-    // Make SyncedSettings.get throw
-    (_Zotero.SyncedSettings.get as jest.Mock<any>).mockImplementationOnce(() => {
-      throw new Error("SyncedSettings failure");
-    });
-
-    // Should NOT throw
-    await whenItemsDeleted([10]);
-
-    // deleteRecords should still be called
-    const deleteCalls = queryAsyncMock.mock.calls.filter(
-      (c) => typeof c[0] === "string" && (c[0] as string).includes("DELETE"),
-    );
-    expect(deleteCalls.length).toBeGreaterThan(0);
-  });
-
-  test("batch deletes handled - multiple items with keys across libraries", async () => {
-    queryAsyncMock
-      .mockResolvedValueOnce([
-        { itemKey: "KEYA", itemKey2: "KEYB", libraryID: 1 },
-        { itemKey: "KEYC", itemKey2: null, libraryID: 2 },
-      ])
-      .mockResolvedValue([]);
-
-    ssStore.set("1/zoplicate-nonDuplicatePairs", {
-      v: 1,
-      pairs: [["KEYA", "KEYX"], ["KEYM", "KEYN"]],
-    });
-    ssStore.set("2/zoplicate-nonDuplicatePairs", {
-      v: 1,
-      pairs: [["KEYC", "KEYY"], ["KEYP", "KEYQ"]],
-    });
-
-    await whenItemsDeleted([10, 20, 30]);
-
-    // Should have called set for both libraries (filtering pairs with deleted keys)
-    expect(_Zotero.SyncedSettings.set).toHaveBeenCalledTimes(2);
-  });
-
-  test("missing keys are skipped gracefully", async () => {
-    // No keys found for the deleted items
-    queryAsyncMock
-      .mockResolvedValueOnce([])
-      .mockResolvedValue([]);
-
-    // Should not throw, and should not touch SyncedSettings
-    await whenItemsDeleted([10]);
-
+    expect(_Zotero.SyncedSettings.get).not.toHaveBeenCalled();
     expect(_Zotero.SyncedSettings.set).not.toHaveBeenCalled();
+    expect(_Zotero.SyncedSettings.clear).not.toHaveBeenCalled();
   });
 
   test("empty ids array is a no-op", async () => {
@@ -120,6 +47,7 @@ describe("whenItemsDeleted synced cleanup", () => {
 
     expect(queryAsyncMock).not.toHaveBeenCalled();
     expect(_Zotero.SyncedSettings.set).not.toHaveBeenCalled();
+    expect(_Zotero.SyncedSettings.clear).not.toHaveBeenCalled();
   });
 });
 

@@ -54,9 +54,22 @@ _如果你觉得这个插件对你有帮助，欢迎给它一个 ⭐️。感谢
 
 # 更新日志
 
-## v5.0.0
+## v5.0.1
 
 <details markdown="1" open>
+  <summary><i>点击展开。</i></summary>
+
+这个热修版本修复 Zotero 同步时报 `Invalid setting 'zoplicate-nonDuplicatePairs'` 的问题：
+
+1. 🐛 **修复**：禁用 v5.0.0 中写入 `Zotero.SyncedSettings` 的非重复条目同步路径，因为 Zotero 服务器不接受插件自定义 setting key。
+2. 🧹 **清理**：插件启动时会自动清理本地遗留的 `zoplicate-nonDuplicatePairs` synced setting，避免 Zotero 继续重试非法上传。
+3. 🗄️ **说明**：非重复条目关系仍保存在本地数据库中；在找到受支持的存储方式前，暂时关闭这部分跨设备同步。
+
+</details>
+
+## v5.0.0
+
+<details markdown="1">
   <summary><i>点击展开。</i></summary>
 
 这个版本主要完成 Zotero 9 迁移和数据一致性改进：
