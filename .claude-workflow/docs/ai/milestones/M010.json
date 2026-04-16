@@ -2,7 +2,7 @@
   "id": "M010",
   "title": "Local DB bug fix + key columns + schema versioning",
   "phase": "Data Integrity - Local Foundation",
-  "status": "next",
+  "status": "accepted",
   "depends_on": ["M009"],
   "goal": "Fix getNonDuplicates WHERE clause bug, introduce schema versioning and migration infrastructure, add itemKey/itemKey2 columns for stable Zotero item key storage.",
   "in_scope": [
