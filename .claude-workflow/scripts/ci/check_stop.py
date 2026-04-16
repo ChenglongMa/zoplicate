@@ -31,9 +31,12 @@ JSON_FILES = [
     ".claude/settings.json",
     ".mcp.json",
     ".claude-workflow/docs/ai/project_snapshot.json",
+    ".claude-workflow/docs/ai/upstream/zotero_watch_targets.json",
+    ".claude-workflow/docs/ai/upstream/zotero_upstream_contract.json",
 ]
 CLAUDE_REQUIRED_STRINGS = [
     "/milestone-loop",
+    "/upstream-pr-milestone",
     ".claude-workflow/docs/ai/project_snapshot.json",
     ".claude-workflow/state/runtime/working.json",
     "implementer",

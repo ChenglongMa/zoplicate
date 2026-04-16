@@ -31,8 +31,15 @@ tooling:
       - "Bash(git show *)"
       - "Bash(git rev-parse *)"
       - "Bash(uv run python .claude-workflow/scripts/agent/state_manager.py *)"
+      - "Bash(uv run python .claude-workflow/scripts/agent/update_zotero_reference.py)"
+      - "Bash(uv run python .claude-workflow/scripts/agent/update_zotero_reference.py *)"
       - "Bash(uv run python .claude-workflow/scripts/agent/parse_test_log.py *)"
       - "Bash(uv run python .claude-workflow/scripts/ci/check_stop.py)"
+      - "Bash(uv run python .claude-workflow/scripts/ci/check_zotero_upstream.py)"
+      - "Bash(uv run python .claude-workflow/scripts/ci/check_zotero_upstream.py *)"
+      - "Bash(uv run python -m unittest *)"
+      - "Bash(gh pr view *)"
+      - "Bash(gh pr diff *)"
       - "Bash(bash .claude-workflow/scripts/agent/run_tests_bg.sh)"
       - "Bash(bash .claude-workflow/scripts/agent/run_tests_bg.sh *)"
       - "Bash(bash .claude-workflow/scripts/agent/watchdog.sh)"
@@ -115,6 +122,7 @@ validation:
   required_modules: []
   claude_required_strings:
     - "/milestone-loop"
+    - "/upstream-pr-milestone"
     - ".claude-workflow/docs/ai/project_snapshot.json"
     - ".claude-workflow/state/runtime/working.json"
     - "implementer"

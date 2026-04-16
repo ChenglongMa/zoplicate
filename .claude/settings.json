@@ -20,6 +20,11 @@
       "Bash(uv run python .claude-workflow/scripts/agent/update_zotero_reference.py *)",
       "Bash(uv run python .claude-workflow/scripts/agent/parse_test_log.py *)",
       "Bash(uv run python .claude-workflow/scripts/ci/check_stop.py)",
+      "Bash(uv run python .claude-workflow/scripts/ci/check_zotero_upstream.py)",
+      "Bash(uv run python .claude-workflow/scripts/ci/check_zotero_upstream.py *)",
+      "Bash(uv run python -m unittest *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr diff *)",
       "Bash(bash .claude-workflow/scripts/agent/run_tests_bg.sh)",
       "Bash(bash .claude-workflow/scripts/agent/run_tests_bg.sh *)",
       "Bash(bash .claude-workflow/scripts/agent/watchdog.sh)",
@@ -72,7 +77,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -lc 'cd \"$CLAUDE_PROJECT_DIR\" && uv run python .claude-workflow/scripts/agent/update_zotero_reference.py --from-user-prompt --max-age-minutes 60'"
+            "command": "bash -lc 'cd \"$CLAUDE_PROJECT_DIR\" && uv run python .claude-workflow/scripts/agent/update_zotero_reference.py --from-user-prompt --prompt-prefix /milestone-loop --prompt-prefix /upstream-pr-milestone --max-age-minutes 60'"
           }
         ]
       }
