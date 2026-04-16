@@ -3,12 +3,9 @@
 </div>
 
 👉
-[![zotero target version](https://img.shields.io/badge/Zotero-8-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
-[![Version for Zotero 8](https://img.shields.io/github/package-json/v/ChenglongMa/zoplicate)](https://github.com/ChenglongMa/zoplicate/releases/latest)
-[![Downloads for Zotero 8](https://img.shields.io/github/downloads/ChenglongMa/zoplicate/total)](https://github.com/ChenglongMa/zoplicate/releases/latest)👈
-👉[![zotero target version](https://img.shields.io/badge/Zotero-6-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
-[![Version for Zotero 6](https://img.shields.io/github/package-json/v/ChenglongMa/zoplicate/zotero-6)](https://github.com/ChenglongMa/zoplicate/releases/tag/zotero6)
-[![Downloads for Zotero 6](https://img.shields.io/github/downloads/ChenglongMa/zoplicate/zotero6/total)](https://github.com/ChenglongMa/zoplicate/releases/tag/zotero6)👈
+[![zotero target version](https://img.shields.io/badge/Zotero-9-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
+[![Version for Zotero 9](https://img.shields.io/github/package-json/v/ChenglongMa/zoplicate)](https://github.com/ChenglongMa/zoplicate/releases/latest)
+[![Downloads for Zotero 9](https://img.shields.io/github/downloads/ChenglongMa/zoplicate/total)](https://github.com/ChenglongMa/zoplicate/releases/latest)👈
 
 ![GitHub License](https://img.shields.io/github/license/ChenglongMa/zoplicate)
 [![Using Zotero Plugin Template](https://img.shields.io/badge/Using-Zotero%20Plugin%20Template-blue?style=flat-square&logo=github)](https://github.com/windingwind/zotero-plugin-template)
@@ -61,9 +58,24 @@ A plugin that does one thing only: **Detect** and **Manage** duplicate items in 
 
 # Changelog
 
-## v4.0.0
+## v5.0.0
 
 <details markdown="1" open>
+  <summary><i>Click here to show more.</i></summary>
+
+This version focuses on the Zotero 9 migration and data integrity work:
+
+1. ✨ **NEW!**: Zoplicate now targets **Zotero 9** (`9.0` to `9.*`) and the release manifest is generated for Zotero 9.
+2. ✨ **NEW!**: Non-duplicate pairs can now be synced through `Zotero.SyncedSettings` with key-based storage for cross-device portability.
+3. 🧬 **CHANGE!**: The duplicate detection, dialog rendering, menu registration, window handling, and plugin lifecycle code were reorganized for the Zotero 9 runtime.
+4. 🐛 **FIX!**: Added local DB schema versioning, safer cleanup for merged/deleted items, startup hydration, and conflict-safe union merge for synced non-duplicate pairs.
+5. ✅ **TEST!**: Expanded the automated test suite for duplicate detection, non-duplicate sync, hydration, cleanup, lifecycle, menus, and bulk merge flows.
+
+</details>
+
+## v4.0.0
+
+<details markdown="1">
   <summary><i>Click here to show more.</i></summary>
 
 Many thanks to all the contributors and users who liked, reported issues, and provided valuable feedback! ❤️
@@ -295,11 +307,10 @@ Thanks [ChinJCheung](https://github.com/ChinJCheung)'s idea mentioned in [issue 
 
 ## From GitHub
 
-1. Download `.xpi` file according to the version of Zotero you are using.
-   - **For Zotero 7**: Visit the [release page](https://github.com/ChenglongMa/zoplicate/releases/latest) and download [the latest `.xpi` file](https://github.com/ChenglongMa/zoplicate/releases/latest/download/zoplicate.xpi).
-   - **For Zotero 6**: Visit the [release page](https://github.com/ChenglongMa/zoplicate/releases/tag/zotero6) and download [the `.xpi` file for Zotero 6](https://github.com/ChenglongMa/zoplicate/releases/download/zotero6/zoplicate.xpi).
+1. Zoplicate 5 targets **Zotero 9** (`9.0` to `9.*`).
+2. Visit the [latest release page](https://github.com/ChenglongMa/zoplicate/releases/latest) and download [the latest `zoplicate.xpi` file](https://github.com/ChenglongMa/zoplicate/releases/latest/download/zoplicate.xpi).
    - If you are using FireFox, right-click on the link of the XPI file and select "Save As...".
-2. Then, in Zotero, click `Tools` -> `Plugins` and drag the `.xpi` onto the Plugins window.
+3. Then, in Zotero, click `Tools` -> `Plugins` and drag the `.xpi` onto the Plugins window.
    - See [how to install a Zotero addon](https://www.zotero.org/support/plugins).
 
 ## From Add-on Market Plugin for Zotero
@@ -371,7 +382,6 @@ You can also find it when you select one or more duplicate items:
 > 
 > 1. Before clicking the button, please make sure you have properly configured the _Master Item_ preferences in [Settings](#settings).
 > 2. The **Bulk Merge** functionality will **take a while** to complete if you have a large number of duplicate items.
-> 3. This functionality is only available in Zotero 7 now. I will check compatibility and try to migrate to Zotero 6.
 
 You will see the progress of the bulk merge process:
 ![zoplicate bulk merge process](docs/bulk-merge-progress.png)
@@ -444,7 +454,7 @@ There are some ways to mark and unmark items as **Non-duplicates**:
 ## Plain citation
 
 ```text
-Ma, C. (2025). Zoplicate (v3.0.8) [Software]. Zenodo. https://doi.org/10.5281/zenodo.16986945
+Ma, C. (2026). Zoplicate (v5.0.0) [Software]. Zenodo. https://doi.org/10.5281/zenodo.16986945
 ```
 ## BibTeX
 
@@ -452,8 +462,8 @@ Ma, C. (2025). Zoplicate (v3.0.8) [Software]. Zenodo. https://doi.org/10.5281/ze
 @software{zoplicate_16986945,
   author = {Ma, Chenglong},
   title = {Zoplicate: Detect and manage duplicate items in Zotero},
-  version = {v3.0.8},
-  date = {2025-02-27},
+  version = {v5.0.0},
+  date = {2026-04-16},
   doi = {10.5281/zenodo.16986945},
   url = {https://github.com/ChenglongMa/zoplicate}
 }
