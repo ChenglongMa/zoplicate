@@ -308,9 +308,7 @@ export class NonDuplicatesDB extends SQLiteDB {
 
   /**
    * Get all unique keys (from both itemKey and itemKey2 columns) and their
-   * libraryIDs for a set of itemIDs. Used to clean up SyncedSettings when
-   * items are deleted (the items may already be gone from Zotero, so we
-   * must read keys from the DB).
+   * libraryIDs for a set of itemIDs.
    */
   async getKeysForItems(itemIDs: number[]): Promise<{ key: string; libraryID: number }[]> {
     if (itemIDs.length === 0) return [];

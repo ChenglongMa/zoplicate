@@ -15,13 +15,11 @@ import {
 import {
   createNonDuplicateButton,
   createNonDuplicatesNotifyHandler,
+  cleanupLegacyNonDuplicateSyncedSettings,
   NonDuplicates,
   registerNonDuplicatesGlobal,
   registerNonDuplicatesWindow,
-  hydrateAllLibraries,
-  registerSyncListener,
 } from "../features/nonDuplicates";
-import { nonDuplicateSyncStore } from "../integrations/zotero/syncedSettingsStore";
 import { registerPreferencesGlobal, registerPrefsScripts } from "../features/preferences";
 import { registerDevelopmentItemIDColumn } from "../integrations/zotero/devColumn";
 import { createMenuCacheNotifyHandler } from "../integrations/zotero/menuCache";
@@ -76,20 +74,8 @@ async function onStartup() {
   );
   globalDisposers.add(await registerDevelopmentItemIDColumn(getEnv()));
 
-  // Hydrate non-duplicate pairs between local DB and SyncedSettings
-  await hydrateAllLibraries(nonDuplicatesDB, nonDuplicateSyncStore);
-
-  // Register sync listeners per non-feed library
-  try {
-    const allLibraries = Zotero.Libraries.getAll();
-    for (const lib of allLibraries) {
-      if (lib.libraryType === "feed") continue;
-      const disposer = registerSyncListener(lib.libraryID);
-      globalDisposers.add(disposer);
-    }
-  } catch (err) {
-    Zotero.debug(`[zoplicate] sync listener registration failed: ${err}`);
-  }
+  // Clear the invalid v5.0.0 SyncedSettings key so Zotero sync stops retrying it.
+  await cleanupLegacyNonDuplicateSyncedSettings();
 
   await Promise.all(Zotero.getMainWindows().map((win) => onMainWindowLoad(win)));
 }

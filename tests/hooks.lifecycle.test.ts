@@ -66,20 +66,16 @@ const registerNonDuplicatesWindowMock = jest.fn(async (win: any) => {
   registrationOrder.push(`window:${win.name}:nonDuplicates`);
   return makeDisposer(`window:${win.name}:nonDuplicates`);
 });
-const hydrateAllLibrariesMock = jest.fn(async () => undefined);
-const registerSyncListenerMock = jest.fn(() => makeDisposer("global:syncListener"));
+const cleanupLegacyNonDuplicateSyncedSettingsMock = jest.fn(async () => {
+  registrationOrder.push("global:legacyCleanup");
+});
 jest.mock("../src/features/nonDuplicates", () => ({
+  cleanupLegacyNonDuplicateSyncedSettings: cleanupLegacyNonDuplicateSyncedSettingsMock,
   createNonDuplicateButton: jest.fn((_win: Window, id: string) => ({ tag: "button", id })),
   createNonDuplicatesNotifyHandler: jest.fn(() => jest.fn()),
   NonDuplicates: { getInstance: jest.fn(() => ({ allNonDuplicates: new Set() })) },
   registerNonDuplicatesGlobal: registerNonDuplicatesGlobalMock,
   registerNonDuplicatesWindow: registerNonDuplicatesWindowMock,
-  hydrateAllLibraries: hydrateAllLibrariesMock,
-  registerSyncListener: registerSyncListenerMock,
-}));
-
-jest.mock("../src/integrations/zotero/syncedSettingsStore", () => ({
-  nonDuplicateSyncStore: {},
 }));
 
 const registerNotifierMock = jest.fn(() => {
@@ -176,6 +172,7 @@ describe("app hooks lifecycle disposal", () => {
     expect(registerDuplicatesGlobalMock.mock.calls[0][0].getLoadedWindows()).toEqual([win1, win2]);
     expect(createDuplicatesNotifyHandlerMock).toHaveBeenCalledWith(expect.any(Function), expect.any(Function));
     expect(registerDevelopmentItemIDColumnMock).toHaveBeenCalledWith("production");
+    expect(cleanupLegacyNonDuplicateSyncedSettingsMock).toHaveBeenCalledTimes(1);
 
     const firstWindowRegistration = registrationOrder.findIndex((entry) => entry.startsWith("window:"));
     const lastGlobalRegistration = Math.max(

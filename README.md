@@ -58,9 +58,22 @@ A plugin that does one thing only: **Detect** and **Manage** duplicate items in 
 
 # Changelog
 
-## v5.0.0
+## v5.0.1
 
 <details markdown="1" open>
+  <summary><i>Click here to show more.</i></summary>
+
+This hotfix resolves the Zotero sync error reported as `Invalid setting 'zoplicate-nonDuplicatePairs'`:
+
+1. 🐛 **FIX!**: Disabled the v5.0.0 non-duplicate-pair sync path that wrote an unsupported custom key to `Zotero.SyncedSettings`.
+2. 🧹 **CLEANUP!**: Zoplicate now removes the legacy `zoplicate-nonDuplicatePairs` local synced setting on startup so Zotero stops retrying the invalid upload.
+3. 🗄️ **NOTE!**: Non-duplicate pairs continue to be stored locally; cross-device syncing for these pairs is disabled until a supported storage path is available.
+
+</details>
+
+## v5.0.0
+
+<details markdown="1">
   <summary><i>Click here to show more.</i></summary>
 
 This version focuses on the Zotero 9 migration and data integrity work:
