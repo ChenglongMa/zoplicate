@@ -25,6 +25,7 @@
     "release": "zotero-plugin release",
     "publish-release": "bash scripts/release.sh",
     "test": "jest",
+    "test:issue194": "jest tests/locale.regression194.test.ts",
     "update-deps": "npm update --save",
     "npm-check-updates": "ncu -u"
   },

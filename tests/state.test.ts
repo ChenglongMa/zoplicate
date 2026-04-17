@@ -108,6 +108,31 @@ describe("state accessors", () => {
     expect(getLocale()).toBe(loc);
   });
 
+  // 5.1
+  test("setLocale does not mutate unrelated state branches", () => {
+    const initialNeedReset = getNeedResetDuplicateSearch();
+    const initialCounts = getDuplicateCounts();
+    const loc = { current: { formatMessagesSync: () => [] } };
+
+    setLocale(loc);
+
+    expect(getNeedResetDuplicateSearch()).toBe(initialNeedReset);
+    expect(getDuplicateCounts()).toBe(initialCounts);
+    expect(getLocale()).toBe(loc);
+  });
+
+  // 5.2
+  test("locale can be replaced cleanly across sequential initializations", () => {
+    const first = { current: { formatMessagesSync: () => ["first"] } };
+    const second = { current: { formatMessagesSync: () => ["second"] } };
+
+    setLocale(first);
+    expect(getLocale()).toBe(first);
+
+    setLocale(second);
+    expect(getLocale()).toBe(second);
+  });
+
   // 6
   test("getPrefs returns undefined before prefs window opens", () => {
     expect(getPrefs()).toBeUndefined();
