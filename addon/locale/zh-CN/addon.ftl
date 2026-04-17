@@ -49,6 +49,8 @@ bulk-merge-master-item-detailed = 最详细的
 bulk-merge-popup-prepare = 准备中...
 bulk-merge-popup-process = 正在处理: { $item }
 bulk-merge-suspend = 暂停合并
+bulk-merge-suspending = 正在暂停...
+bulk-merge-popup-failed = 批量合并已停止。请查看 Zotero 日志了解详情。
 
 bulk-merge-suspend-title = 合并已暂停
 bulk-merge-suspend-message = 合并已暂停。您想继续还是取消该操作？

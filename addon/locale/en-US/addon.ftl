@@ -48,6 +48,8 @@ bulk-merge-master-item-detailed = Most Detailed
 bulk-merge-popup-prepare = Preparing...
 bulk-merge-popup-process = Processing: { $item }
 bulk-merge-suspend = Suspend
+bulk-merge-suspending = Suspending...
+bulk-merge-popup-failed = Bulk merge stopped. See the Zotero log for details.
 
 bulk-merge-suspend-title = Bulk Merge Suspended
 bulk-merge-suspend-message = Bulk Merge has been suspended. Would you like to Resume or Cancel it?
