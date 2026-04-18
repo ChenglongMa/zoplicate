@@ -14,7 +14,8 @@ describe("Issue #194 localization regression guard", () => {
   beforeEach(() => {
     (globalThis as any).addon.data.locale = undefined;
 
-    localizationCtor = jest.fn().mockImplementation(function (this: MockLocalizationInstance, bundles: string[], isolated: boolean) {
+    localizationCtor = jest.fn().mockImplementation(function (this: MockLocalizationInstance, ...args: unknown[]) {
+      const [bundles, isolated] = args as [string[], boolean];
       this.bundles = bundles;
       this.isolated = isolated;
       this.formatMessagesSync = jest.fn(() => []);
@@ -47,7 +48,8 @@ describe("Issue #194 localization regression guard", () => {
     expect(value).toBe("Zoplicate");
     expect(formatMessagesSync).toHaveBeenCalledWith([{ id: "zoplicate-addon-name", args: undefined }]);
 
-    const requestedID = formatMessagesSync.mock.calls[0][0][0].id;
+    const firstRequest = formatMessagesSync.mock.calls[0][0] as Array<{ id: string }>;
+    const requestedID = firstRequest[0].id;
     expect(requestedID.startsWith("zoplicate-")).toBe(true);
     expect(requestedID).not.toBe("zotero-attachments");
     expect(requestedID).not.toBe("zotero-tags");
