@@ -20,12 +20,12 @@
     "zotero:logs": "bash scripts/zotero-remote-debug.sh logs",
     "zotero:screenshot": "bash scripts/zotero-remote-debug.sh screenshot",
     "zotero:vnc": "xdg-open 'http://localhost:6080/vnc.html?host=localhost&port=6080&path=websockify&autoconnect=1&resize=scale'",
+    "zotero:beta": "bash scripts/zotero-beta-debug.sh start",
     "build": "tsc --noEmit && zotero-plugin build",
     "lint": "prettier --write . && eslint . --fix",
     "release": "zotero-plugin release",
     "publish-release": "bash scripts/release.sh",
     "test": "jest",
-    "test:issue194": "jest tests/locale.regression194.test.ts",
     "update-deps": "npm update --save",
     "npm-check-updates": "ncu -u"
   },
