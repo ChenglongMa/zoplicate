@@ -1,7 +1,10 @@
 import { defineConfig } from "zotero-plugin-scaffold";
 import pkg from "./package.json";
 import { copyFileSync, existsSync } from "fs";
-import { ensureZoteroLocaleFallbacks } from "./scripts/zoteroLocaleFallbacks";
+import { ensureZoteroLocaleFallbacks, ZOTERO_LOCALES } from "./scripts/zoteroLocaleFallbacks";
+
+const localeFallbackLocales =
+  process.env.ZOPLICATE_LOCALE_FALLBACKS === "minimal" ? (["en-US", "zh-CN"] as const) : ZOTERO_LOCALES;
 
 export default defineConfig({
   source: ["src", "addon"],
@@ -38,6 +41,7 @@ export default defineConfig({
         entryPoints: ["src/index.ts"],
         define: {
           __env__: `"${process.env.NODE_ENV}"`,
+          __devItemIDColumn__: JSON.stringify(process.env.ZOPLICATE_DEV_ITEM_ID_COLUMN === "1"),
         },
         bundle: true,
         target: "firefox115",
@@ -46,7 +50,7 @@ export default defineConfig({
     ],
     hooks: {
       "build:fluent": (ctx) => {
-        ensureZoteroLocaleFallbacks(ctx.dist, ctx.namespace);
+        ensureZoteroLocaleFallbacks(ctx.dist, ctx.namespace, localeFallbackLocales);
       },
       "build:makeUpdateJSON": (ctx) => {
         ["update.json", "update-beta.json"].forEach((fileName) => {

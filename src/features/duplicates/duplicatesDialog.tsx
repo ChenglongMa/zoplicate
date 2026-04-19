@@ -70,6 +70,17 @@ export function createDuplicatesDialogRenderer(
     const [rows, setRows] = React.useState<DuplicateDialogRow[]>(props.rows);
     const [savePreference, setSavePreference] = React.useState(props.savePreference);
     const [defaultAction, setDefaultAction] = React.useState<DuplicateDialogAction>(props.defaultAction);
+    const [tableOverflowing, setTableOverflowing] = React.useState(false);
+    const tableScrollRef = React.useRef<HTMLDivElement | null>(null);
+
+    const syncTableOverflow = React.useCallback(() => {
+      const tableScroll = tableScrollRef.current;
+      if (!tableScroll) {
+        setTableOverflowing(false);
+        return;
+      }
+      setTableOverflowing(tableScroll.scrollHeight > tableScroll.clientHeight + 1);
+    }, []);
 
     const commitState = React.useCallback(
       (
@@ -110,6 +121,29 @@ export function createDuplicatesDialogRenderer(
         defaultAction: nextDefaultAction,
       });
     }, [props.version]);
+
+    React.useLayoutEffect(() => {
+      const tableScroll = tableScrollRef.current;
+      const view = tableScroll?.ownerDocument.defaultView;
+
+      syncTableOverflow();
+
+      if (!tableScroll || !view) return undefined;
+
+      const ResizeObserverCtor = view.ResizeObserver;
+      const observer = ResizeObserverCtor ? new ResizeObserverCtor(syncTableOverflow) : undefined;
+      observer?.observe(tableScroll);
+
+      const table = tableScroll.querySelector(".du-table");
+      if (table) observer?.observe(table);
+
+      view.addEventListener("resize", syncTableOverflow);
+
+      return () => {
+        observer?.disconnect();
+        view.removeEventListener("resize", syncTableOverflow);
+      };
+    }, [rows, syncTableOverflow]);
 
     const uniformAction = getUniformAction(rows);
 
@@ -152,8 +186,12 @@ export function createDuplicatesDialogRenderer(
         <h2 id="zoplicate-duplicates-dialog-title" className="du-dialog-title">
           {props.strings.header}
         </h2>
-        <div className="du-table-shell">
-          <div className="du-table-scroll">
+        <div className="du-table-shell" data-overflowing={tableOverflowing ? "true" : undefined}>
+          <div
+            className="du-table-scroll"
+            data-overflowing={tableOverflowing ? "true" : undefined}
+            ref={tableScrollRef}
+          >
             <table className="du-table">
               <thead>
                 <tr>

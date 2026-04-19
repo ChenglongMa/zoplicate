@@ -21,6 +21,7 @@
     "zotero:screenshot": "bash scripts/zotero-remote-debug.sh screenshot",
     "zotero:vnc": "xdg-open 'http://localhost:6080/vnc.html?host=localhost&port=6080&path=websockify&autoconnect=1&resize=scale'",
     "zotero:beta": "bash scripts/zotero-beta-debug.sh start",
+    "zotero:beta:screenshot": "bash scripts/zotero-beta-debug.sh screenshot",
     "build": "tsc --noEmit && zotero-plugin build",
     "lint": "prettier --write . && eslint . --fix",
     "release": "zotero-plugin release",

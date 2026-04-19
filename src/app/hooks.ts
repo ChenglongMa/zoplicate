@@ -73,7 +73,7 @@ async function onStartup() {
       { pluginID: config.addonID },
     ),
   );
-  globalDisposers.add(await registerDevelopmentItemIDColumn(getEnv()));
+  globalDisposers.add(await registerDevelopmentItemIDColumn(getEnv(), __devItemIDColumn__));
 
   // Clear the invalid v5.0.0 SyncedSettings key so Zotero sync stops retrying it.
   await cleanupLegacyNonDuplicateSyncedSettings();

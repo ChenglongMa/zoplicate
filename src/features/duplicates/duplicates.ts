@@ -26,6 +26,65 @@ interface DuplicateWindowOptions {
 
 type LoadedWindowsProvider = () => Window[];
 
+const DUPLICATE_DIALOG_WIDTH = 900;
+const DUPLICATE_DIALOG_INITIAL_HEIGHT = 620;
+
+export interface DuplicateDialogResizeOptions {
+  width?: number;
+  onError?: (error: unknown) => void;
+}
+
+function getElementHeight(element?: Element | null): number {
+  const rectHeight = Number((element as HTMLElement | undefined)?.getBoundingClientRect?.().height ?? 0);
+  if (Number.isFinite(rectHeight) && rectHeight > 0) {
+    return rectHeight;
+  }
+
+  const height = Number((element as HTMLElement | undefined)?.scrollHeight ?? 0);
+  return Number.isFinite(height) && height > 0 ? height : 0;
+}
+
+export function getDuplicateDialogContentHeight(win: Window): number | undefined {
+  const doc = win.document;
+  const contentHeight = getElementHeight(
+    doc.querySelector(".zoplicate-duplicates-dialog") ?? doc.getElementById("zoplicate-duplicates-dialog-root"),
+  );
+  const buttonRowHeight = getElementHeight(doc.getElementById("btn_process")?.parentElement?.parentElement);
+  const measuredHeight = contentHeight + buttonRowHeight;
+  if (!measuredHeight) {
+    return undefined;
+  }
+
+  const chromeHeight = Math.max(0, Number(win.outerHeight || 0) - Number(win.innerHeight || 0));
+  return Math.ceil(measuredHeight + chromeHeight);
+}
+
+export function resizeDuplicateDialogToContent(
+  win: Window | undefined,
+  options: DuplicateDialogResizeOptions = {},
+): boolean {
+  if (!win) {
+    return false;
+  }
+
+  try {
+    if (win.closed || typeof win.resizeTo !== "function") {
+      return false;
+    }
+
+    const height = getDuplicateDialogContentHeight(win);
+    if (!height) {
+      return false;
+    }
+
+    win.resizeTo(options.width ?? DUPLICATE_DIALOG_WIDTH, height);
+    return true;
+  } catch (error) {
+    options.onError?.(error);
+    return false;
+  }
+}
+
 function normalizeItemIDs(itemIDs: number[]): number[] {
   return [...new Set(itemIDs)].sort((a, b) => a - b);
 }
@@ -238,7 +297,9 @@ export class Duplicates {
           this.dialog?.open(getString("du-dialog-title"), {
             centerscreen: true,
             resizable: true,
-            fitContent: true,
+            width: DUPLICATE_DIALOG_WIDTH,
+            height: DUPLICATE_DIALOG_INITIAL_HEIGHT,
+            fitContent: false,
             noDialogMode: false,
             alwaysRaised: true,
           }),
@@ -417,11 +478,16 @@ export class Duplicates {
     doc.head.appendChild(stylesheet);
   }
 
-  private scheduleDialogResize() {
-    const win = this.dialogWindow as (Window & { sizeToContent?: () => void }) | undefined;
-    if (!isWindowAlive(win) || !win.sizeToContent) return;
-    setTimeout(() => win.sizeToContent?.(), 50);
-    setTimeout(() => win.sizeToContent?.(), 350);
+  private scheduleDialogContentResize(win: Window) {
+    const resize = () => {
+      resizeDuplicateDialogToContent(win, {
+        width: DUPLICATE_DIALOG_WIDTH,
+        onError: (error) => ztoolkit.log("Dialog: failed to resize duplicate dialog.", error),
+      });
+    };
+    setTimeout(resize, 0);
+    setTimeout(resize, 100);
+    setTimeout(resize, 350);
   }
 
   private getZoteroRequire(win?: Window): ((module: string) => unknown) | undefined {
@@ -479,7 +545,7 @@ export class Duplicates {
       }
     }
 
-    this.scheduleDialogResize();
+    this.scheduleDialogContentResize(win);
   }
 
   private async createDialog() {

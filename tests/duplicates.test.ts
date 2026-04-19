@@ -120,6 +120,51 @@ describe("duplicate dialog group construction", () => {
   });
 });
 
+describe("Duplicates.showDuplicates", () => {
+  test("opens duplicate dialog with fixed dimensions and toolkit auto-fit disabled", async () => {
+    const openMock = jest.fn();
+    const dialogMock = {
+      dialogData: {},
+      setDialogData: jest.fn(function (this: any, dialogData: any) {
+        this.dialogData = dialogData;
+        return this;
+      }),
+      addCell: jest.fn(function (this: any) {
+        return this;
+      }),
+      addButton: jest.fn(function (this: any) {
+        return this;
+      }),
+      open: openMock,
+    };
+    _ztoolkit.Dialog = jest.fn(() => dialogMock);
+
+    const duplicateMaps: DuplicateGroupMap = new Map([
+      [
+        1,
+        {
+          itemIDs: [1, 2],
+          newItemIDs: [2],
+          action: Action.CANCEL,
+        },
+      ],
+    ]);
+
+    await Duplicates.instance.showDuplicates(duplicateMaps, { win: makeWindow() });
+
+    expect(_ztoolkit.Dialog).toHaveBeenCalledWith(1, 1);
+    expect(openMock).toHaveBeenCalledWith(
+      "du-dialog-title",
+      expect.objectContaining({
+        width: 900,
+        height: 620,
+        fitContent: false,
+        resizable: true,
+      }),
+    );
+  });
+});
+
 describe("Duplicates.processDuplicates", () => {
   test("keep old merges a duplicate group once and preserves the old item as master", async () => {
     const oldItem = createMockItem({ id: 1, dateAdded: "2020-01-01 00:00:00", displayTitle: "Old" });
