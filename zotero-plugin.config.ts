@@ -1,6 +1,5 @@
 import { defineConfig } from "zotero-plugin-scaffold";
 import pkg from "./package.json";
-import { copyFileSync, existsSync } from "fs";
 import { ensureZoteroLocaleFallbacks, ZOTERO_LOCALES } from "./scripts/zoteroLocaleFallbacks";
 
 const localeFallbackLocales =
@@ -51,14 +50,6 @@ export default defineConfig({
     hooks: {
       "build:fluent": (ctx) => {
         ensureZoteroLocaleFallbacks(ctx.dist, ctx.namespace, localeFallbackLocales);
-      },
-      "build:makeUpdateJSON": (ctx) => {
-        ["update.json", "update-beta.json"].forEach((fileName) => {
-          const source = `build/${fileName}`;
-          if (existsSync(source)) {
-            copyFileSync(source, fileName);
-          }
-        });
       },
     },
   },

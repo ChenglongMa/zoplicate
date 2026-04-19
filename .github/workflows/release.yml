@@ -52,28 +52,6 @@ jobs:
       - name: Release to GitHub
         run: npm run release -- --yes
 
-      - name: Sync update manifests to main
-        run: |
-          cp build/update.json /tmp/update.json
-          cp build/update-beta.json /tmp/update-beta.json
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git fetch origin main
-          git checkout -B main origin/main
-
-          cp /tmp/update.json update.json
-          cp /tmp/update-beta.json update-beta.json
-
-          if git diff --quiet -- update.json update-beta.json; then
-            echo "No update manifest changes to sync."
-          else
-            git add update.json update-beta.json
-            git commit -m "chore(publish): sync update manifests for ${GITHUB_REF_NAME}"
-            git push origin main
-          fi
-
       - name: Notify release
         uses: apexskier/github-release-commenter@v1
         continue-on-error: true
