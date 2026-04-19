@@ -100,7 +100,7 @@ jest.mock("../src/integrations/zotero/menuCache", () => ({
   createMenuCacheNotifyHandler: jest.fn(() => jest.fn()),
 }));
 
-const registerDevelopmentItemIDColumnMock = jest.fn(async (_env?: string) => {
+const registerDevelopmentItemIDColumnMock = jest.fn(async (_env?: string, _enabled?: boolean) => {
   registrationOrder.push("global:devColumn");
   return makeDisposer("global:devColumn");
 });
@@ -175,7 +175,7 @@ describe("app hooks lifecycle disposal", () => {
     );
     expect(registerDuplicatesGlobalMock.mock.calls[0][0].getLoadedWindows()).toEqual([win1, win2]);
     expect(createDuplicatesNotifyHandlerMock).toHaveBeenCalledWith(expect.any(Function), expect.any(Function));
-    expect(registerDevelopmentItemIDColumnMock).toHaveBeenCalledWith("production");
+    expect(registerDevelopmentItemIDColumnMock).toHaveBeenCalledWith("production", false);
     expect(cleanupLegacyNonDuplicateSyncedSettingsMock).toHaveBeenCalledTimes(1);
     expect(win1.MozXULElement.insertFTLIfNeeded).toHaveBeenCalledWith("zoplicate-itemSection.ftl");
     expect(win1.MozXULElement.insertFTLIfNeeded).toHaveBeenCalledWith("zoplicate-addon.ftl");

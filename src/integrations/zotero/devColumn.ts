@@ -3,8 +3,9 @@ import type { Disposer } from "../../app/lifecycle";
 
 export async function registerDevelopmentItemIDColumn(
   env: "development" | "production",
+  enabled = false,
 ): Promise<Disposer> {
-  if (env !== "development") {
+  if (env !== "development" || !enabled) {
     return () => {};
   }
 

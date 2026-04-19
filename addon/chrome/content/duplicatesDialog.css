@@ -3,7 +3,9 @@ html {
 }
 
 body {
+  box-sizing: border-box;
   margin: 0;
+  overflow: hidden;
   color: CanvasText;
   background: Canvas;
   font: message-box;
@@ -22,14 +24,20 @@ body {
 }
 
 #zoplicate-duplicates-dialog-root {
-  min-width: 760px;
+  box-sizing: border-box;
+  width: 860px;
+  min-width: 860px;
+  max-width: 860px;
+  overflow: hidden;
 }
 
 .zoplicate-duplicates-dialog {
   box-sizing: border-box;
-  width: 820px;
-  max-width: calc(100vw - 32px);
+  display: flex;
+  width: 100%;
   padding: 18px 20px 4px;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .du-dialog-title {
@@ -41,6 +49,9 @@ body {
 }
 
 .du-table-shell {
+  display: flex;
+  max-height: 480px;
+  flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--du-border);
   border-radius: 8px;
@@ -48,8 +59,14 @@ body {
 }
 
 .du-table-scroll {
-  max-height: 500px;
-  overflow: auto;
+  max-height: 480px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.du-table-scroll[data-overflowing="true"] {
+  overflow-y: scroll;
 }
 
 .du-table {
@@ -63,6 +80,7 @@ body {
 .du-table td {
   box-sizing: border-box;
   border-bottom: 1px solid var(--du-border);
+  vertical-align: middle;
 }
 
 .du-table tr:last-child td {
@@ -94,16 +112,17 @@ body {
 }
 
 .du-title-cell {
-  max-width: 0;
-  height: 40px;
-  padding: 0 12px;
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px 12px;
   overflow: hidden;
   color: CanvasText;
   font-size: 13px;
-  line-height: 40px;
+  line-height: 1.35;
   text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .du-action-cell {

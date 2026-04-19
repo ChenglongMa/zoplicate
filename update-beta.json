@@ -5,7 +5,7 @@
         {
           "version": "5.0.4",
           "update_link": "https://github.com/ChenglongMa/zoplicate/releases/download/v5.0.4/zoplicate.xpi",
-          "update_hash": "sha512:8eb054e44f5f9245c5d2b5a2ccb67dc1083d81c0a35d34575489cdde3b5ce20131a22de2bc55eddb52c0c169784badb7276eb99eda81d14e0254d48e25b9046c",
+          "update_hash": "sha512:e40abfd09c53e46e6b73d29512332b96ea8a535f3e960e6c860d255996a554e480c2217b0077857a746dbf319467a993b002ea5d81701cddcba57014a4ac594c",
           "applications": {
             "zotero": {
               "strict_min_version": "8.999",

@@ -150,6 +150,8 @@ export function createMockItem(overrides: MockItemOverrides = {}): any {
   }),
 };
 
+(globalThis as any).__devItemIDColumn__ = false;
+
 // ---------------------------------------------------------------------------
 // globalThis.Components
 // ---------------------------------------------------------------------------

@@ -20,7 +20,17 @@ describe("registerDevelopmentItemIDColumn", () => {
   });
 
   test("does not register outside development", async () => {
-    const disposer = await registerDevelopmentItemIDColumn("production");
+    const disposer = await registerDevelopmentItemIDColumn("production", true);
+
+    expect(registerColumnMock).not.toHaveBeenCalled();
+    expect(registerColumnsMock).not.toHaveBeenCalled();
+
+    await disposer();
+    expect(unregisterColumnMock).not.toHaveBeenCalled();
+  });
+
+  test("does not register in development unless explicitly enabled", async () => {
+    const disposer = await registerDevelopmentItemIDColumn("development");
 
     expect(registerColumnMock).not.toHaveBeenCalled();
     expect(registerColumnsMock).not.toHaveBeenCalled();
@@ -30,7 +40,7 @@ describe("registerDevelopmentItemIDColumn", () => {
   });
 
   test("registers with registerColumn and unregisters the returned dataKey", async () => {
-    const disposer = await registerDevelopmentItemIDColumn("development");
+    const disposer = await registerDevelopmentItemIDColumn("development", true);
 
     expect(registerColumnMock).toHaveBeenCalledTimes(1);
     expect(registerColumnsMock).not.toHaveBeenCalled();
@@ -53,7 +63,7 @@ describe("registerDevelopmentItemIDColumn", () => {
   test("does not unregister when registration returns false", async () => {
     registerColumnMock.mockResolvedValue(false);
 
-    const disposer = await registerDevelopmentItemIDColumn("development");
+    const disposer = await registerDevelopmentItemIDColumn("development", true);
     await disposer();
 
     expect(unregisterColumnMock).not.toHaveBeenCalled();

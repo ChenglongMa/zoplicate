@@ -74,6 +74,38 @@ function defaultOption(container: HTMLElement) {
   return label as HTMLElement;
 }
 
+function mockTableScrollDimensions(dimensions: { scrollHeight: number; clientHeight: number }) {
+  const originalScrollHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollHeight");
+  const originalClientHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "clientHeight");
+
+  Object.defineProperty(HTMLElement.prototype, "scrollHeight", {
+    configurable: true,
+    get(this: HTMLElement) {
+      return this.classList.contains("du-table-scroll") ? dimensions.scrollHeight : 0;
+    },
+  });
+  Object.defineProperty(HTMLElement.prototype, "clientHeight", {
+    configurable: true,
+    get(this: HTMLElement) {
+      return this.classList.contains("du-table-scroll") ? dimensions.clientHeight : 0;
+    },
+  });
+
+  return () => {
+    if (originalScrollHeight) {
+      Object.defineProperty(HTMLElement.prototype, "scrollHeight", originalScrollHeight);
+    } else {
+      delete (HTMLElement.prototype as unknown as Record<string, unknown>).scrollHeight;
+    }
+
+    if (originalClientHeight) {
+      Object.defineProperty(HTMLElement.prototype, "clientHeight", originalClientHeight);
+    } else {
+      delete (HTMLElement.prototype as unknown as Record<string, unknown>).clientHeight;
+    }
+  };
+}
+
 afterEach(async () => {
   await act(async () => {
     activeRenderers.splice(0).forEach((renderer) => renderer.unmount());
@@ -218,5 +250,66 @@ describe("DuplicatesDialog React renderer", () => {
       savePreference: false,
       defaultAction: Action.CANCEL,
     });
+  });
+
+  test("keeps controls outside the scrolling table when many duplicate rows render", async () => {
+    const rows = makeRows(
+      Array.from({ length: 36 }, (_, index) => ({
+        groupID: index + 1,
+        title:
+          index % 6 === 0
+            ? `Long duplicate title ${index + 1} with enough words to wrap across multiple lines in the fixed-width dialog`
+            : `Duplicate title ${index + 1}`,
+        action: Action.KEEP,
+      })),
+    );
+    const { container } = await renderDialog(
+      makeProps({
+        rows,
+        savePreference: true,
+        defaultAction: Action.KEEP,
+      }),
+    );
+
+    const tableScroll = container.querySelector(".du-table-scroll");
+    expect(tableScroll).toBeTruthy();
+    expect(tableScroll?.querySelectorAll("tbody tr")).toHaveLength(36);
+
+    const defaultAction = defaultOption(container);
+    expect(tableScroll?.contains(defaultAction)).toBe(false);
+  });
+
+  test("marks the table scroll container only when duplicate rows overflow", async () => {
+    const restoreDimensions = mockTableScrollDimensions({ scrollHeight: 720, clientHeight: 480 });
+    try {
+      const { container } = await renderDialog(
+        makeProps({
+          rows: makeRows(
+            Array.from({ length: 36 }, (_, index) => ({
+              groupID: index + 1,
+              title: `Duplicate title ${index + 1}`,
+              action: Action.KEEP,
+            })),
+          ),
+        }),
+      );
+
+      expect(container.querySelector(".du-table-shell")?.getAttribute("data-overflowing")).toBe("true");
+      expect(container.querySelector(".du-table-scroll")?.getAttribute("data-overflowing")).toBe("true");
+    } finally {
+      restoreDimensions();
+    }
+  });
+
+  test("does not mark the table scroll container when rows fit", async () => {
+    const restoreDimensions = mockTableScrollDimensions({ scrollHeight: 220, clientHeight: 480 });
+    try {
+      const { container } = await renderDialog(makeProps());
+
+      expect(container.querySelector(".du-table-shell")?.hasAttribute("data-overflowing")).toBe(false);
+      expect(container.querySelector(".du-table-scroll")?.hasAttribute("data-overflowing")).toBe(false);
+    } finally {
+      restoreDimensions();
+    }
   });
 });

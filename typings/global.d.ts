@@ -18,6 +18,7 @@ declare const rootURI: string;
 declare const addon: import("../src/app/addon").default;
 
 declare const __env__: "production" | "development";
+declare const __devItemIDColumn__: boolean;
 
 declare class Localization {}
 
