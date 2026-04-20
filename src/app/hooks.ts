@@ -36,6 +36,14 @@ const windowDisposers = new WeakMap<Window, DisposerRegistry>();
 const loadedWindows = new Set<Window>();
 let shutdownComplete = false;
 
+async function runShutdownStep(label: string, step: () => void | Promise<void>): Promise<void> {
+  try {
+    await step();
+  } catch (e) {
+    ztoolkit.log(`addon onShutdown: ${label} failed`, e);
+  }
+}
+
 async function onStartup() {
   shutdownComplete = false;
   await Promise.all([Zotero.initializationPromise, Zotero.unlockPromise, Zotero.uiReadyPromise]);
@@ -110,11 +118,14 @@ async function onMainWindowLoad(win: Window): Promise<void> {
       await notifyDispatcher.setReady(false);
     }
   });
-  setTimeout(() => {
+  const readyTimer = setTimeout(() => {
     if (loadedWindows.has(win)) {
       void notifyDispatcher.setReady(true);
     }
   }, 500);
+  winRegistry.add(() => {
+    clearTimeout(readyTimer);
+  });
 }
 
 async function disposeWindow(win: Window): Promise<void> {
@@ -142,16 +153,18 @@ async function onShutdown() {
     return;
   }
   shutdownComplete = true;
-  debug("addon onShutdown");
-  await disposeAllWindows();
-  await globalDisposers.disposeAll();
-  notifyDispatcher.reset();
-  closeDialogWindow();
-  await NonDuplicatesDB.instance.close();
-  ztoolkit.unregisterAll();
   setAlive(false);
-  // @ts-ignore - Plugin instance is not typed
-  delete Zotero[config.addonInstance];
+  debug("addon onShutdown");
+  await runShutdownStep("dispose all windows", disposeAllWindows);
+  await runShutdownStep("dispose global resources", () => globalDisposers.disposeAll());
+  await runShutdownStep("reset notifier dispatcher", () => notifyDispatcher.reset());
+  await runShutdownStep("close dialog window", closeDialogWindow);
+  await runShutdownStep("close non-duplicates database", () => NonDuplicatesDB.instance.close());
+  await runShutdownStep("unregister ztoolkit resources", () => ztoolkit.unregisterAll());
+  await runShutdownStep("delete addon instance", () => {
+    // @ts-ignore - Plugin instance is not typed
+    delete Zotero[config.addonInstance];
+  });
 }
 
 async function onPrefsEvent(type: string, data: { [key: string]: any }) {

@@ -88,7 +88,7 @@ const notifyDispatcherMock = {
     return makeDisposer("global:handler");
   }),
   dispatch: jest.fn(),
-  setReady: jest.fn(async () => undefined),
+  setReady: jest.fn(async (_ready: boolean) => undefined),
   reset: jest.fn(() => order.push("dispatcher:reset")),
 };
 jest.mock("../src/integrations/zotero/notifier", () => ({
@@ -203,6 +203,8 @@ describe("app hooks lifecycle disposal", () => {
     expect(order.filter((entry) => entry.startsWith("window:")).length).toBe(8);
     expect(order.filter((entry) => entry === "ztoolkit:unregisterAll")).toHaveLength(1);
     expect(notifyDispatcherMock.reset).toHaveBeenCalledTimes(1);
+    jest.runOnlyPendingTimers();
+    expect(notifyDispatcherMock.setReady).not.toHaveBeenCalledWith(true);
 
     jest.useRealTimers();
   });
@@ -234,5 +236,37 @@ describe("app hooks lifecycle disposal", () => {
     expect(win1.MozXULElement.insertFTLIfNeeded).toHaveBeenCalledWith("zoplicate-addon.ftl");
 
     await hooks.onShutdown();
+  });
+
+  test("onShutdown still runs final cleanup when database close fails", async () => {
+    jest.clearAllMocks();
+    registrationOrder.length = 0;
+    order.length = 0;
+    (globalThis as any).addon.data.alive = true;
+
+    const win1 = makeWindow("one");
+    (globalThis as any).Zotero.initializationPromise = Promise.resolve();
+    (globalThis as any).Zotero.unlockPromise = Promise.resolve();
+    (globalThis as any).Zotero.uiReadyPromise = Promise.resolve();
+    (globalThis as any).Zotero.getMainWindows = jest.fn(() => [win1]);
+    (globalThis as any).Zotero.Zoplicate = {};
+    (globalThis as any).ztoolkit.unregisterAll = jest.fn(() => order.push("ztoolkit:unregisterAll"));
+    closeDbMock.mockImplementationOnce(async () => {
+      order.push("db:close");
+      throw new Error("close failed");
+    });
+
+    const hooks = (await import("../src/app/hooks")).default;
+
+    await hooks.onStartup();
+    await expect(hooks.onShutdown()).resolves.toBeUndefined();
+
+    expect((globalThis as any).addon.data.alive).toBe(false);
+    expect((globalThis as any).ztoolkit.unregisterAll).toHaveBeenCalledTimes(1);
+    expect((globalThis as any).Zotero.Zoplicate).toBeUndefined();
+    expect((globalThis as any).ztoolkit.log).toHaveBeenCalledWith(
+      "addon onShutdown: close non-duplicates database failed",
+      expect.any(Error),
+    );
   });
 });
