@@ -15,6 +15,7 @@ tmp.*
 
 .scaffold
 .references/
+.workflow/
 .claude-workflow/state/
 .claude-workflow/docs/ai/plans/
 

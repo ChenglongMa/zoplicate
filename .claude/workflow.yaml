@@ -1,0 +1,23 @@
+project:
+  name: "Zoplicate"
+  slug: "zoplicate"
+  type: "code"
+
+commands:
+  test: "npm test"
+  lint: "npx eslint src/"
+  typecheck: "npx tsc --noEmit"
+  build: "npm run build"
+
+watchdog:
+  enabled: true
+  stale_minutes: 30
+
+defaults:
+  approval: "manual"
+  max_plan_rounds: 3
+  max_test_review_rounds: 2
+  max_fix_rounds: 3
+
+agent_overrides: {}
+model_overrides: {}
