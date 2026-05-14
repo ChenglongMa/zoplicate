@@ -1,0 +1,41 @@
+{
+  "id": "M014",
+  "title": "Zotero upstream compatibility review",
+  "phase": "Maintenance - Zotero Upstream Compatibility",
+  "status": "next",
+  "depends_on": [
+    "M013"
+  ],
+  "goal": "Review Zotero upstream changes that affect Zoplicate's duplicate detection, merge, patch, or UI integration contracts.",
+  "in_scope": [
+    "Inspect changed upstream watch targets: collection-tree-render-item, collection-tree-row-duplicates-search-object, duplicates-merge-pane-merge, item-tree-duplicate-selection",
+    "Update Zoplicate compatibility code and tests only where upstream changes require it.",
+    "Refresh upstream contract snapshots after compatibility work."
+  ],
+  "out_of_scope": [
+    "Unrelated feature work",
+    "Broad refactors not required by upstream compatibility",
+    "Changing release metadata unless Zotero compatibility bounds actually change"
+  ],
+  "acceptance": [
+    "Review .claude-workflow/docs/ai/upstream/zotero_upstream_report.md and classify every changed target.",
+    "Update only the Zoplicate code paths impacted by the changed upstream targets.",
+    "Run uv run python .claude-workflow/scripts/ci/check_zotero_upstream.py --check-only after fixes.",
+    "Run uv run python .claude-workflow/scripts/ci/check_stop.py.",
+    "Run npx tsc --noEmit.",
+    "Run targeted tests: tests/duplicatePaneUI.test.ts tests/duplicateSearchRecognition.test.ts tests/duplicateStats.test.ts tests/merger.test.ts."
+  ],
+  "upstream_watch": {
+    "detected_at_utc": "2026-05-14T06:31:37Z",
+    "changed_targets": [
+      "collection-tree-render-item",
+      "collection-tree-row-duplicates-search-object",
+      "duplicates-merge-pane-merge",
+      "item-tree-duplicate-selection"
+    ],
+    "watchlist_changed": false,
+    "report_path": ".claude-workflow/docs/ai/upstream/zotero_upstream_report.md",
+    "contract_path": ".claude-workflow/docs/ai/upstream/zotero_upstream_contract.json",
+    "watch_targets_path": ".claude-workflow/docs/ai/upstream/zotero_watch_targets.json"
+  }
+}
