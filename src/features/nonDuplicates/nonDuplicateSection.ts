@@ -130,18 +130,15 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
 
         const notifierKey = Zotero.Notifier.registerObserver(
           {
-            notify: (event, type, ids, extraData) => {
+            notify: (event, type, ids, _extraData) => {
+              // @ts-ignore - Zoplicate dispatches this custom notifier event.
+              if (event !== "refreshNonDuplicate" || type !== "item") {
+                return;
+              }
               const itemID = body.dataset.itemID;
               const item = itemID && Zotero.Items.get(itemID);
-              ztoolkit.log(`non duplicate notify ${type}`, ids, item);
-              if (
-                item &&
-                // @ts-ignore - Zoplicate dispatches this custom notifier event.
-                event === "refreshNonDuplicate" &&
-                type === "item" &&
-                (ids as number[]).includes(item.id)
-              ) {
-                ztoolkit.log(`non duplicate notify [removeNonDuplicate] ${type}`, ids, item.id);
+              if (item && (ids as number[]).includes(item.id)) {
+                ztoolkit.log("non duplicate notify [refreshNonDuplicate]", ids, item.id);
                 refresh();
               }
             },

@@ -41,6 +41,14 @@ describe("createDuplicatesNotifyHandler window selection", () => {
     expect(whenItemsAddedMock).toHaveBeenCalledWith(expect.anything(), [10], { win: liveWin });
   });
 
+  test("calls fetchDuplicates when modify event has per-item keyed refreshDuplicates", async () => {
+    const handler = createDuplicatesNotifyHandler(() => false, () => []);
+
+    await handler("modify", "item", [78898], { 78898: { refreshDuplicates: true } });
+
+    expect(fetchDuplicatesMock).toHaveBeenCalledWith({ libraryID: 1, refresh: true });
+  });
+
   test("skips closed windows when refreshing duplicate pane UI", async () => {
     const liveWin = {
       closed: false,

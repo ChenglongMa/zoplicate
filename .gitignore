@@ -234,3 +234,4 @@ __marimo__/
 .claude/settings.local.json
 .tmp/
 coverage/
+docs/ai
