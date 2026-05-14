@@ -32,18 +32,17 @@ export function patchItemSaveData(): Disposer {
             }
           }
         }
-        await original.call(this, event);
-
         const refreshDuplicates =
           !event.isNew &&
           !event.options.skipNotifier &&
           (this._changed.creators !== undefined || this._changed.itemData !== undefined) &&
           this.isRegularItem();
         if (refreshDuplicates) {
-          const notifierData = event.notifierData || {};
-          notifierData.refreshDuplicates = true;
-          Zotero.Notifier.queue("modify", "item", this.id, notifierData, event.options.notifierQueue);
+          event.notifierData = event.notifierData || {};
+          event.notifierData.refreshDuplicates = true;
         }
+
+        await original.call(this, event);
       },
   );
 }
