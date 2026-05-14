@@ -5,18 +5,18 @@ description: Review Zotero upstream watch PRs, synchronize the Zotero watchlist 
 
 # upstream-pr-milestone
 
-You triage Zotero upstream watch PRs for Zoplicate. Your job is to keep the upstream watch metadata accurate and to prepare milestone drafts that `/milestone-loop` can execute later.
+You triage Zotero upstream watch PRs for Zoplicate. Your job is to keep the upstream watch metadata accurate and to prepare milestone drafts that `/milestone-tdd` can execute later.
 
 This skill may write workflow metadata only:
 
-- `.claude-workflow/docs/ai/upstream/zotero_watch_targets.json`
-- `.claude-workflow/docs/ai/upstream/zotero_upstream_contract.json`
-- `.claude-workflow/docs/ai/upstream/zotero_upstream_report.md`
-- `.claude-workflow/docs/ai/milestones/M*.json`
-- `.claude-workflow/docs/ai/milestone_index.json`
-- `.claude-workflow/docs/ai/project_snapshot.json`
+- `.workflow/upstream/zotero_watch_targets.json`
+- `.workflow/upstream/zotero_upstream_contract.json`
+- `.workflow/upstream/zotero_upstream_report.md`
+- `.workflow/milestones/M*.json`
+- `.workflow/milestone_index.json`
+- `.workflow/project_snapshot.json`
 
-Do not modify product logic in `src/`, `addon/`, or `typings/`. If product code needs a fix, report the generated milestone and hand it to `/milestone-loop milestone=M###`.
+Do not modify product logic in `src/`, `addon/`, or `typings/`. If product code needs a fix, report the generated milestone and hand it to `/milestone-tdd milestone=M###`.
 
 ## Invocation
 
@@ -46,11 +46,11 @@ Modes:
 Read these first:
 
 - `CLAUDE.md`
-- `.claude-workflow/docs/ai/upstream/zotero_watch_targets.json`
-- `.claude-workflow/docs/ai/upstream/zotero_upstream_contract.json` if present
-- `.claude-workflow/docs/ai/upstream/zotero_upstream_report.md` if present
-- `.claude-workflow/docs/ai/milestone_index.json`
-- Latest `.claude-workflow/docs/ai/milestones/M*.json` that has `upstream_watch`, if present
+- `.workflow/upstream/zotero_watch_targets.json`
+- `.workflow/upstream/zotero_upstream_contract.json` if present
+- `.workflow/upstream/zotero_upstream_report.md` if present
+- `.workflow/milestone_index.json`
+- Latest `.workflow/milestones/M*.json` that has `upstream_watch`, if present
 
 ## Diff Acquisition
 
@@ -97,7 +97,7 @@ Return a concise review with:
 - `Verdict`: `approve`, `needs-sync-watchlist`, `needs-regenerate`, or `blocked`.
 - `Findings`: concrete file/path references.
 - `Commands Checked`: commands actually run.
-- `Next Step`: either `/upstream-pr-milestone ... mode=sync-watchlist`, `/upstream-pr-milestone ... mode=regenerate`, or `/milestone-loop milestone=M###`.
+- `Next Step`: either `/upstream-pr-milestone ... mode=sync-watchlist`, `/upstream-pr-milestone ... mode=regenerate`, or `/milestone-tdd milestone=M###`.
 
 ## Sync-Watchlist Mode
 
@@ -105,13 +105,13 @@ Return a concise review with:
 2. Run:
 
 ```bash
-uv run python .claude-workflow/scripts/ci/check_zotero_upstream.py --sync-watch-targets-from-pr-diff /tmp/zoplicate-upstream-pr.diff --update
+uv run python scripts/ci/check_zotero_upstream.py --sync-watch-targets-from-pr-diff /tmp/zoplicate-upstream-pr.diff --update
 ```
 
 3. Run:
 
 ```bash
-uv run python .claude-workflow/scripts/ci/check_stop.py
+uv run python scripts/ci/check_stop.py
 ```
 
 4. Review the resulting diff. Ensure all writes are limited to the allowed workflow metadata paths listed above.
@@ -128,11 +128,11 @@ Automatic watchlist behavior:
 Run:
 
 ```bash
-uv run python .claude-workflow/scripts/ci/check_zotero_upstream.py --update
-uv run python .claude-workflow/scripts/ci/check_stop.py
+uv run python scripts/ci/check_zotero_upstream.py --update
+uv run python scripts/ci/check_stop.py
 ```
 
-Then review the generated report and milestone. If product code changes are required, do not implement them here; identify the milestone ID for `/milestone-loop`.
+Then review the generated report and milestone. If product code changes are required, do not implement them here; identify the milestone ID for `/milestone-tdd`.
 
 ## Hard Rules
 

@@ -7,7 +7,7 @@
         "--with",
         "mcp",
         "python",
-        ".claude-workflow/scripts/agent/episodic_mcp_server.py"
+        "scripts/agent/episodic_mcp_server.py"
       ],
       "env": {
         "OMP_NUM_THREADS": "1",
@@ -34,7 +34,11 @@
         "-y",
         "@modelcontextprotocol/server-filesystem",
         ".claude",
-        ".claude-workflow"
+        ".workflow/state/shared",
+        ".workflow/milestones",
+        ".workflow/upstream",
+        "CLAUDE.md",
+        ".mcp.json"
       ]
     },
     "zotero-reference": {

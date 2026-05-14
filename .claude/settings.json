@@ -1,46 +1,30 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "plansDirectory": ".claude-workflow/docs/ai/plans",
+  "plansDirectory": "docs/ai/plans",
   "permissions": {
     "defaultMode": "acceptEdits",
     "allow": [
-      "Bash(pwd)",
-      "Bash(ls *)",
-      "Bash(find *)",
       "Bash(tmux *)",
-      "Bash(timeout *)",
+      "Bash(python3 ~/.claude/scripts/state_manager.py *)",
+      "Bash(bash ~/.claude/scripts/run_tests.sh *)",
+      "Bash(bash ~/.claude/scripts/watchdog.sh *)",
+      "Bash(uv run python scripts/ci/check_stop.py)",
+      "Bash(uv run python scripts/ci/check_zotero_upstream.py *)",
+      "Bash(uv run python scripts/agent/update_zotero_reference.py *)",
       "Bash(git status)",
       "Bash(git diff *)",
       "Bash(git log *)",
       "Bash(git branch *)",
       "Bash(git show *)",
-      "Bash(git rev-parse *)",
-      "Bash(uv run python .claude-workflow/scripts/agent/state_manager.py *)",
-      "Bash(uv run python .claude-workflow/scripts/agent/update_zotero_reference.py)",
-      "Bash(uv run python .claude-workflow/scripts/agent/update_zotero_reference.py *)",
-      "Bash(uv run python .claude-workflow/scripts/agent/parse_test_log.py *)",
-      "Bash(uv run python .claude-workflow/scripts/ci/check_stop.py)",
-      "Bash(uv run python .claude-workflow/scripts/ci/check_zotero_upstream.py)",
-      "Bash(uv run python .claude-workflow/scripts/ci/check_zotero_upstream.py *)",
-      "Bash(uv run python -m unittest *)",
       "Bash(gh pr view *)",
       "Bash(gh pr diff *)",
-      "Bash(bash .claude-workflow/scripts/agent/run_tests_bg.sh)",
-      "Bash(bash .claude-workflow/scripts/agent/run_tests_bg.sh *)",
-      "Bash(bash .claude-workflow/scripts/agent/watchdog.sh)",
-      "Bash(bash .claude-workflow/scripts/agent/watchdog.sh *)",
-      "Bash(bash .claude-workflow/scripts/agent/validate_state.sh)",
-      "Bash(bash .claude-workflow/scripts/agent/run_overnight.sh *)",
       "Bash(npm test *)",
       "Bash(npm run test *)",
       "Bash(npx jest *)",
       "Bash(npx tsc *)",
       "Bash(npx eslint *)",
       "Bash(npm run build *)",
-      "Bash(npm run start *)",
-      "WebSearch",
-      "Bash(node *)",
-      "Bash(cat *)"
+      "WebSearch"
     ],
     "ask": [
       "Bash(git commit *)",
@@ -66,7 +50,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -lc 'cd \"$CLAUDE_PROJECT_DIR\" && uv run python .claude-workflow/scripts/agent/update_zotero_reference.py --max-age-minutes 60'"
+            "command": "bash -lc 'cd \"$CLAUDE_PROJECT_DIR\" && uv run python scripts/agent/update_zotero_reference.py --max-age-minutes 60'"
           }
         ]
       }
@@ -77,60 +61,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -lc 'cd \"$CLAUDE_PROJECT_DIR\" && uv run python .claude-workflow/scripts/agent/update_zotero_reference.py --from-user-prompt --prompt-prefix /milestone-loop --prompt-prefix /upstream-pr-milestone --max-age-minutes 60'"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -lc 'cd \"$CLAUDE_PROJECT_DIR\" && bash .claude-workflow/scripts/agent/hook_secret_guard.sh'"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -lc 'cd \"$CLAUDE_PROJECT_DIR\" && bash .claude-workflow/scripts/agent/hook_secret_guard.sh'"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -lc 'cd \"$CLAUDE_PROJECT_DIR\" && bash .claude-workflow/scripts/agent/state_gate.sh'",
-            "timeout": 5000
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -lc 'cd \"$CLAUDE_PROJECT_DIR\" && bash .claude-workflow/scripts/agent/hook_checkpoint.sh'",
-            "timeout": 5000
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -lc 'cd \"$CLAUDE_PROJECT_DIR\" && bash .claude-workflow/scripts/agent/hook_stop.sh'",
-            "timeout": 300
+            "command": "bash -lc 'cd \"$CLAUDE_PROJECT_DIR\" && uv run python scripts/agent/update_zotero_reference.py --from-user-prompt --prompt-prefix /milestone-tdd --prompt-prefix /upstream-pr-milestone --max-age-minutes 60'"
           }
         ]
       }
