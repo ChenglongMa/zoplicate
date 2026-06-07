@@ -590,7 +590,7 @@ def build_report(
             "## Next Steps",
             "",
             "1. Review this report and `.workflow/upstream/zotero_watch_targets.json`.",
-            "2. If a draft milestone was generated, run `/upstream-pr-milestone pr=<pr> mode=review` before `/milestone-loop`.",
+            "2. If a draft milestone was generated, run `/upstream-pr-milestone pr=<pr> mode=review` before `/milestone-tdd`.",
             "3. If the PR changes Zoplicate's Zotero-facing dependencies, run `/upstream-pr-milestone pr=<pr> mode=sync-watchlist`.",
             "",
         ]

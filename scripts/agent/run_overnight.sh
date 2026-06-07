@@ -4,7 +4,7 @@ set -euo pipefail
 # run_overnight.sh -- Batch milestone runner for unattended overnight execution
 #
 # Usage:
-#   .claude-workflow/scripts/agent/run_overnight.sh [--halt-on-failure] [--auto-commit] <milestones-file>
+#   scripts/agent/run_overnight.sh [--halt-on-failure] [--auto-commit] <milestones-file>
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../../.." && pwd)}"
 cd "$PROJECT_DIR"
@@ -40,7 +40,7 @@ done
 
 if [[ -z "$MILESTONES_FILE" ]]; then
   echo "Error: milestones file required."
-  echo "Usage: .claude-workflow/scripts/agent/run_overnight.sh [--halt-on-failure] [--auto-commit] <milestones-file>"
+  echo "Usage: scripts/agent/run_overnight.sh [--halt-on-failure] [--auto-commit] <milestones-file>"
   exit 1
 fi
 
@@ -75,7 +75,7 @@ if [[ "$AUTO_COMMIT" == "true" ]] && ! command -v git &>/dev/null; then
 fi
 
 TIMESTAMP=$(date -u +%Y%m%dT%H%M%S)
-LOG_DIR=".claude-workflow/state/logs/overnight"
+LOG_DIR=".workflow/logs/overnight"
 mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/run_overnight_${TIMESTAMP}.log"
 
@@ -112,7 +112,7 @@ import json, sys
 from pathlib import Path
 
 milestone_id = sys.argv[1]
-spec_path = Path('.claude-workflow/docs/ai/milestones') / f'{milestone_id}.json'
+spec_path = Path('.workflow/milestones') / f'{milestone_id}.json'
 with spec_path.open(encoding='utf-8') as handle:
     spec = json.load(handle)
 
@@ -191,7 +191,7 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   TOTAL=$((TOTAL + 1))
   log "--- Milestone $TOTAL: $MILESTONE_ID ---"
 
-  PROMPT="/milestone-loop milestone=${MILESTONE_ID} approval=auto watchdog_stale_minutes=60"
+  PROMPT="/milestone-tdd milestone=${MILESTONE_ID} approval=auto watchdog_stale_minutes=60"
   CLAUDE_ARGS=(-p "$PROMPT" --max-budget-usd "$MAX_BUDGET_USD")
   if [[ -n "$PERMISSION_MODE" ]]; then
     CLAUDE_ARGS+=(--permission-mode "$PERMISSION_MODE")
@@ -213,7 +213,7 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   else
     if uv run python -c "
 import json, sys
-s = json.load(open('.claude-workflow/docs/ai/project_snapshot.json'))
+s = json.load(open('.workflow/project_snapshot.json'))
 sys.exit(0 if s.get('latest_accepted_milestone') == sys.argv[1] else 1)
 " "$MILESTONE_ID" 2>/dev/null; then
       if [[ "$AUTO_COMMIT" == "true" ]]; then

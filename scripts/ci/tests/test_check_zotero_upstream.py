@@ -145,8 +145,8 @@ new file mode 100644
         with tempfile.TemporaryDirectory() as tmp_dir:
             project_dir = Path(tmp_dir)
             targets = [make_target()]
-            upstream_dir = project_dir / ".claude-workflow" / "docs" / "ai" / "upstream"
-            milestones_dir = project_dir / ".claude-workflow" / "docs" / "ai" / "milestones"
+            upstream_dir = project_dir / ".workflow" / "upstream"
+            milestones_dir = project_dir / ".workflow" / "milestones"
             upstream_dir.mkdir(parents=True)
             milestones_dir.mkdir(parents=True)
             atomic_write_json(upstream_dir / "zotero_watch_targets.json", {"schema_version": "1.0", "targets": targets})
@@ -190,11 +190,11 @@ new file mode 100644
                 },
             )
             atomic_write_json(
-                project_dir / ".claude-workflow" / "docs" / "ai" / "milestone_index.json",
+                project_dir / ".workflow" / "milestone_index.json",
                 {"milestones": [{"id": "M013", "title": "Accepted", "status": "accepted"}]},
             )
             atomic_write_json(
-                project_dir / ".claude-workflow" / "docs" / "ai" / "project_snapshot.json",
+                project_dir / ".workflow" / "project_snapshot.json",
                 {
                     "schema_version": "1.0",
                     "latest_accepted_milestone": "M013",
@@ -237,10 +237,10 @@ new file mode 100644
                 remote_url="file:///fake",
                 refs=None,
                 also_refs=None,
-                watch_targets=".claude-workflow/docs/ai/upstream/zotero_watch_targets.json",
-                contract=".claude-workflow/docs/ai/upstream/zotero_upstream_contract.json",
-                report=".claude-workflow/docs/ai/upstream/zotero_upstream_report.md",
-                milestone_dir=".claude-workflow/docs/ai/milestones",
+                watch_targets=".workflow/upstream/zotero_watch_targets.json",
+                contract=".workflow/upstream/zotero_upstream_contract.json",
+                report=".workflow/upstream/zotero_upstream_report.md",
+                milestone_dir=".workflow/milestones",
                 update=True,
                 check_only=False,
                 sync_watch_targets_from_pr_diff=None,

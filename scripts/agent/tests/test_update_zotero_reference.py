@@ -30,14 +30,14 @@ class OrderedGitRunner:
 
 
 class UpdateZoteroReferenceTests(unittest.TestCase):
-    def test_should_handle_user_prompt_matches_milestone_loop(self) -> None:
+    def test_should_handle_user_prompt_matches_milestone_tdd(self) -> None:
         self.assertTrue(
-            should_handle_user_prompt('{"prompt":"  /milestone-loop milestone=M001"}', "/milestone-loop")
+            should_handle_user_prompt('{"prompt":"  /milestone-tdd milestone=M001"}', "/milestone-tdd")
         )
-        self.assertFalse(should_handle_user_prompt('{"prompt":"summarize this file"}', "/milestone-loop"))
+        self.assertFalse(should_handle_user_prompt('{"prompt":"summarize this file"}', "/milestone-tdd"))
 
     def test_should_handle_user_prompt_matches_any_configured_prefix(self) -> None:
-        prefixes = ["/milestone-loop", "/upstream-pr-milestone"]
+        prefixes = ["/milestone-tdd", "/upstream-pr-milestone"]
 
         self.assertTrue(
             should_handle_user_prompt('{"prompt":" /upstream-pr-milestone pr=12 mode=review"}', prefixes)
@@ -57,7 +57,7 @@ class UpdateZoteroReferenceTests(unittest.TestCase):
     def test_refresh_reference_clones_missing_repo(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             project_dir = Path(tmp_dir)
-            status_path = project_dir / ".claude-workflow" / "state" / "runtime" / "zotero_reference_status.json"
+            status_path = project_dir / ".workflow" / "state" / "runtime" / "zotero_reference_status.json"
             reference_dir = project_dir / ".references" / "zotero"
             config = RefreshConfig(
                 project_dir=project_dir,
@@ -103,7 +103,7 @@ class UpdateZoteroReferenceTests(unittest.TestCase):
             project_dir = Path(tmp_dir)
             reference_dir = project_dir / ".references" / "zotero"
             (reference_dir / ".git").mkdir(parents=True)
-            status_path = project_dir / ".claude-workflow" / "state" / "runtime" / "zotero_reference_status.json"
+            status_path = project_dir / ".workflow" / "state" / "runtime" / "zotero_reference_status.json"
             config = RefreshConfig(
                 project_dir=project_dir,
                 reference_dir=reference_dir,
@@ -139,7 +139,7 @@ class UpdateZoteroReferenceTests(unittest.TestCase):
             project_dir = Path(tmp_dir)
             reference_dir = project_dir / ".references" / "zotero"
             (reference_dir / ".git").mkdir(parents=True)
-            status_path = project_dir / ".claude-workflow" / "state" / "runtime" / "zotero_reference_status.json"
+            status_path = project_dir / ".workflow" / "state" / "runtime" / "zotero_reference_status.json"
             config = RefreshConfig(
                 project_dir=project_dir,
                 reference_dir=reference_dir,
