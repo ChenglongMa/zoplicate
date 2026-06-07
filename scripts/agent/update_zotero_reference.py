@@ -60,7 +60,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--from-user-prompt",
         action="store_true",
-        help="Read UserPromptSubmit hook payload from stdin and refresh only for /milestone-loop prompts.",
+        help="Read UserPromptSubmit hook payload from stdin and refresh only for configured milestone prompts.",
     )
     parser.add_argument(
         "--prompt-prefix",
@@ -329,7 +329,7 @@ def refresh_reference(
 def main() -> int:
     args = parse_args()
     if args.from_user_prompt:
-        prompt_prefixes = args.prompt_prefix or ["/milestone-loop"]
+        prompt_prefixes = args.prompt_prefix or ["/milestone-tdd"]
         if not should_handle_user_prompt(sys.stdin.read(), prompt_prefixes):
             return 0
 

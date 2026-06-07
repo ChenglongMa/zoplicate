@@ -31,12 +31,12 @@ jobs:
         run: python -m pip install --upgrade uv
 
       - name: Check Zotero upstream contracts
-        run: uv run python .claude-workflow/scripts/ci/check_zotero_upstream.py --update
+        run: uv run python scripts/ci/check_zotero_upstream.py --update
 
       - name: Validate workflow metadata
         run: |
-          uv run python -m unittest discover .claude-workflow/scripts -p 'test_*.py'
-          uv run python .claude-workflow/scripts/ci/check_stop.py
+          uv run python -m unittest discover scripts -p 'test_*.py'
+          uv run python scripts/ci/check_stop.py
 
       - name: Create upstream watch PR
         uses: peter-evans/create-pull-request@v8
@@ -46,14 +46,14 @@ jobs:
           delete-branch: true
           title: "chore: update Zotero upstream watch"
           commit-message: "chore: update Zotero upstream watch"
-          body-path: .claude-workflow/docs/ai/upstream/zotero_upstream_report.md
+          body-path: .workflow/upstream/zotero_upstream_report.md
           labels: |
             upstream-zotero
             maintenance
           add-paths: |
-            .claude-workflow/docs/ai/upstream/zotero_watch_targets.json
-            .claude-workflow/docs/ai/upstream/zotero_upstream_contract.json
-            .claude-workflow/docs/ai/upstream/zotero_upstream_report.md
-            .claude-workflow/docs/ai/milestones/*.json
-            .claude-workflow/docs/ai/milestone_index.json
-            .claude-workflow/docs/ai/project_snapshot.json
+            .workflow/upstream/zotero_watch_targets.json
+            .workflow/upstream/zotero_upstream_contract.json
+            .workflow/upstream/zotero_upstream_report.md
+            .workflow/milestones/*.json
+            .workflow/milestone_index.json
+            .workflow/project_snapshot.json

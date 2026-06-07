@@ -1,0 +1,230 @@
+{
+  "schema_version": "1.0",
+  "targets": [
+    {
+      "id": "duplicates-get-search-object",
+      "upstream_ref_paths": ["chrome/content/zotero/xpcom/duplicates.js"],
+      "anchor_kind": "function_assignment",
+      "anchor_pattern": "Zotero.Duplicates.prototype.getSearchObject",
+      "local_dependency_paths": [
+        "src/integrations/zotero/patches/patchGetSearchObject.ts",
+        "src/integrations/zotero/duplicateSearch.ts",
+        "src/features/duplicateStats/duplicateStats.ts"
+      ],
+      "reason": "Zoplicate patches and caches Zotero.Duplicates.getSearchObject() search/temp-table behavior.",
+      "risk_level": "high",
+      "recommended_tests": [
+        "tests/duplicateSearchRecognition.test.ts",
+        "tests/duplicateStats.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "duplicates-find-duplicates",
+      "upstream_ref_paths": ["chrome/content/zotero/xpcom/duplicates.js"],
+      "anchor_kind": "function_assignment",
+      "anchor_pattern": "Zotero.Duplicates.prototype._findDuplicates",
+      "local_dependency_paths": [
+        "src/integrations/zotero/patches/patchFindDuplicates.ts",
+        "src/integrations/zotero/duplicateSearch.ts",
+        "typings/duplicates.d.ts"
+      ],
+      "reason": "Zoplicate wraps _findDuplicates() and relies on its DisjointSetForest population flow.",
+      "risk_level": "high",
+      "recommended_tests": [
+        "tests/patchFindDuplicates.cross.test.ts",
+        "tests/duplicateSearchRecognition.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "duplicates-get-set-items-by-item-id",
+      "upstream_ref_paths": ["chrome/content/zotero/xpcom/duplicates.js"],
+      "anchor_kind": "function_assignment",
+      "anchor_pattern": "Zotero.Duplicates.prototype.getSetItemsByItemID",
+      "local_dependency_paths": [
+        "src/integrations/zotero/duplicateSearch.ts",
+        "src/features/duplicates/duplicates.ts",
+        "src/features/bulkMerge/bulkMergeService.ts",
+        "src/features/duplicateStats/duplicateStats.ts"
+      ],
+      "reason": "Duplicate dialogs, bulk merge, stats, and non-duplicate checks all consume Zotero duplicate sets by item ID.",
+      "risk_level": "high",
+      "recommended_tests": [
+        "tests/duplicateSearchRecognition.test.ts",
+        "tests/duplicates.test.ts",
+        "tests/bulkMerge.test.ts",
+        "tests/duplicateStats.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "disjoint-set-union",
+      "upstream_ref_paths": ["chrome/content/zotero/xpcom/duplicates.js"],
+      "anchor_kind": "function_assignment",
+      "anchor_pattern": "Zotero.DisjointSetForest.prototype.union",
+      "local_dependency_paths": [
+        "src/integrations/zotero/patches/patchFindDuplicates.ts",
+        "typings/duplicates.d.ts"
+      ],
+      "reason": "Zoplicate intercepts union() to exclude user-marked non-duplicate pairs.",
+      "risk_level": "high",
+      "recommended_tests": ["tests/patchFindDuplicates.cross.test.ts"],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "disjoint-set-find",
+      "upstream_ref_paths": ["chrome/content/zotero/xpcom/duplicates.js"],
+      "anchor_kind": "function_assignment",
+      "anchor_pattern": "Zotero.DisjointSetForest.prototype.find",
+      "local_dependency_paths": [
+        "typings/duplicates.d.ts",
+        "src/app/state.ts"
+      ],
+      "reason": "The cached duplicate-set type and set traversal assumptions depend on the union-find object shape.",
+      "risk_level": "medium",
+      "recommended_tests": ["tests/patchFindDuplicates.cross.test.ts"],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "disjoint-set-find-all-in-set",
+      "upstream_ref_paths": ["chrome/content/zotero/xpcom/duplicates.js"],
+      "anchor_kind": "function_assignment",
+      "anchor_pattern": "Zotero.DisjointSetForest.prototype.findAllInSet",
+      "local_dependency_paths": [
+        "typings/duplicates.d.ts",
+        "src/integrations/zotero/duplicateSearch.ts"
+      ],
+      "reason": "Zotero.Duplicates.getSetItemsByItemID() delegates to findAllInSet().",
+      "risk_level": "medium",
+      "recommended_tests": ["tests/duplicateSearchRecognition.test.ts"],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "item-save-data",
+      "upstream_ref_paths": ["chrome/content/zotero/xpcom/data/item.js"],
+      "anchor_kind": "function_assignment",
+      "anchor_pattern": "Zotero.Item.prototype._saveData",
+      "local_dependency_paths": ["src/integrations/zotero/patches/patchItemSaveData.ts"],
+      "reason": "Zoplicate patches Zotero.Item._saveData() for duplicate-refresh notifier data and child re-parenting after merges.",
+      "risk_level": "high",
+      "recommended_tests": [
+        "tests/duplicatesNotifyHandlers.test.ts",
+        "tests/hooks.lifecycle.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "merge-items",
+      "upstream_ref_paths": ["chrome/content/zotero/mergeItems.mjs"],
+      "anchor_kind": "exported_function",
+      "anchor_pattern": "mergeItems",
+      "local_dependency_paths": ["src/shared/duplicates/mergeItems.ts"],
+      "reason": "Zoplicate delegates all duplicate merge side effects to Zotero mergeItems().",
+      "risk_level": "high",
+      "recommended_tests": ["tests/merger.test.ts"],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "merge-items-move-relations",
+      "upstream_ref_paths": ["chrome/content/zotero/mergeItems.mjs"],
+      "anchor_kind": "function_declaration",
+      "anchor_pattern": "moveRelations",
+      "local_dependency_paths": [
+        "src/shared/duplicates/mergeItems.ts",
+        "src/db/duplicateFinder.ts"
+      ],
+      "reason": "Zoplicate's retained-duplicate fallback follows Zotero merge-tracking relations created during merge.",
+      "risk_level": "medium",
+      "recommended_tests": [
+        "tests/merger.test.ts",
+        "tests/duplicateFinder.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "duplicates-merge-pane-set-items",
+      "upstream_ref_paths": ["chrome/content/zotero/elements/duplicatesMergePane.js"],
+      "anchor_kind": "class_method",
+      "anchor_pattern": "setItems",
+      "local_dependency_paths": ["src/features/duplicates/duplicatePaneUI.ts"],
+      "reason": "Zoplicate inserts buttons around Zotero's duplicate merge pane and relies on item-type validation behavior.",
+      "risk_level": "medium",
+      "recommended_tests": ["tests/duplicatePaneUI.test.ts"],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "duplicates-merge-pane-set-master",
+      "upstream_ref_paths": ["chrome/content/zotero/elements/duplicatesMergePane.js"],
+      "anchor_kind": "class_method",
+      "anchor_pattern": "setMaster",
+      "local_dependency_paths": [
+        "src/shared/duplicates/mergeItems.ts",
+        "src/features/duplicates/duplicatePaneUI.ts"
+      ],
+      "reason": "Zoplicate mirrors Zotero duplicate-pane field-prefill semantics before calling mergeItems().",
+      "risk_level": "medium",
+      "recommended_tests": [
+        "tests/merger.test.ts",
+        "tests/duplicatePaneUI.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "duplicates-merge-pane-merge",
+      "upstream_ref_paths": ["chrome/content/zotero/elements/duplicatesMergePane.js"],
+      "anchor_kind": "class_method",
+      "anchor_pattern": "merge",
+      "local_dependency_paths": ["src/shared/duplicates/mergeItems.ts"],
+      "reason": "Zoplicate's merge wrapper follows Zotero's duplicate-pane merge preparation behavior.",
+      "risk_level": "medium",
+      "recommended_tests": ["tests/merger.test.ts"],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "collection-tree-row-duplicates-search-object",
+      "upstream_ref_paths": ["chrome/content/zotero/xpcom/collectionTreeRow.js"],
+      "anchor_kind": "function_assignment",
+      "anchor_pattern": "Zotero.CollectionTreeRow.prototype.getSearchObject",
+      "local_dependency_paths": [
+        "src/integrations/zotero/patches/patchGetSearchObject.ts",
+        "src/features/duplicateStats/duplicateStats.ts"
+      ],
+      "reason": "Zotero drops duplicate temp tables from the collection-tree row unload lifecycle; Zoplicate caches duplicate searches.",
+      "risk_level": "high",
+      "recommended_tests": [
+        "tests/duplicateSearchRecognition.test.ts",
+        "tests/duplicateStats.test.ts"
+      ],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "collection-tree-render-item",
+      "upstream_ref_paths": ["chrome/content/zotero/collectionTree.jsx"],
+      "anchor_kind": "method_assignment",
+      "anchor_pattern": "renderItem",
+      "local_dependency_paths": ["src/features/duplicateStats/duplicateStats.ts"],
+      "reason": "Duplicate count rendering depends on Zotero's collection row DOM structure.",
+      "risk_level": "medium",
+      "recommended_tests": ["tests/duplicateStats.test.ts"],
+      "needs_manual_mapping": false
+    },
+    {
+      "id": "item-tree-duplicate-selection",
+      "upstream_ref_paths": ["chrome/content/zotero/itemTree.jsx"],
+      "anchor_kind": "method_assignment",
+      "anchor_pattern": "_handleSelectionChange",
+      "local_dependency_paths": [
+        "src/features/duplicates/duplicatePaneUI.ts",
+        "src/integrations/zotero/duplicateSearch.ts"
+      ],
+      "reason": "Zotero duplicate-pane selection expands one selected item to its duplicate set.",
+      "risk_level": "medium",
+      "recommended_tests": [
+        "tests/duplicatePaneUI.test.ts",
+        "tests/duplicateSearchRecognition.test.ts"
+      ],
+      "needs_manual_mapping": false
+    }
+  ]
+}

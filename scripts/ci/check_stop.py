@@ -35,11 +35,11 @@ JSON_FILES = [
     ".workflow/upstream/zotero_upstream_contract.json",
 ]
 CLAUDE_REQUIRED_STRINGS = [
-    "/milestone-loop",
+    "/milestone-tdd",
     "/upstream-pr-milestone",
     ".workflow/project_snapshot.json",
     ".workflow/state/working.json",
-    "implementer",
+    ".workflow/upstream/zotero_watch_targets.json",
 ]
 CODEBASE_SERVER_NAME = "zoplicate-codebase"
 WORKFLOW_SERVER_NAME = "zoplicate-workflow"
@@ -54,7 +54,11 @@ CODEBASE_PATHS = {
 }
 WORKFLOW_PATHS = {
     ".claude",
-    ".workflow",
+    ".workflow/state/shared",
+    ".workflow/milestones",
+    ".workflow/upstream",
+    "CLAUDE.md",
+    ".mcp.json",
 }
 ZOTERO_PATHS = {
     ".references/zotero/app",
@@ -74,7 +78,7 @@ ZOTERO_PATHS = {
 
 
 def repo_root() -> Path:
-    return Path(__file__).resolve().parents[3]
+    return Path(__file__).resolve().parents[2]
 
 
 def print_check(label: str, ok: bool) -> None:
@@ -164,13 +168,8 @@ def settings_hook_checks(path: Path) -> list[tuple[str, bool]]:
     hooks = config.get("hooks", {})
     session_start = hooks.get("SessionStart", [])
     user_prompt_submit = hooks.get("UserPromptSubmit", [])
-    pre = hooks.get("PreToolUse", [])
-    post = hooks.get("PostToolUse", [])
-    stop = hooks.get("Stop", [])
 
     session_matchers = [entry.get("matcher", "") for entry in session_start]
-    pre_matchers = [entry.get("matcher", "") for entry in pre]
-    post_matchers = [entry.get("matcher", "") for entry in post]
     session_commands = [
         hook.get("command", "")
         for entry in session_start
@@ -198,24 +197,8 @@ def settings_hook_checks(path: Path) -> list[tuple[str, bool]]:
             any("update_zotero_reference.py" in command for command in prompt_commands),
         ),
         (
-            ".claude/settings.json has PreToolUse matcher covering Read",
-            any(matcher_covers(matcher, "Read") for matcher in pre_matchers),
-        ),
-        (
-            ".claude/settings.json has PreToolUse matcher covering Bash",
-            any(matcher_covers(matcher, "Bash") for matcher in pre_matchers),
-        ),
-        (
-            ".claude/settings.json has PreToolUse matcher covering Edit|Write",
-            any(matcher_covers(matcher, "Edit", "Write") for matcher in pre_matchers),
-        ),
-        (
-            ".claude/settings.json has PostToolUse matcher covering Edit|Write",
-            any(matcher_covers(matcher, "Edit", "Write") for matcher in post_matchers),
-        ),
-        (
-            ".claude/settings.json has at least one Stop hook",
-            isinstance(stop, list) and bool(stop),
+            ".claude/settings.json UserPromptSubmit covers /milestone-tdd and /upstream-pr-milestone",
+            any("/milestone-tdd" in command and "/upstream-pr-milestone" in command for command in prompt_commands),
         ),
     ]
 
