@@ -241,6 +241,17 @@ export class Duplicates {
           continue;
         }
 
+        // Skip auto-merge when a newly added item is explicitly related to
+        // another member of the group. Such relations are created on purpose
+        // (e.g. Zotero's "Create Book Section" duplicate-and-convert flow, which
+        // briefly produces a same-type clone before changing its type), so the
+        // pair must never be auto-detected as a duplicate and silently merged.
+        // See issue #169 / #180.
+        if (this.groupHasExplicitRelation(duplicateGroup.newItemIDs, activeItems)) {
+          ztoolkit.log("Skipping duplicate group with explicitly related items: ", groupID, duplicateGroup);
+          continue;
+        }
+
         await this.waitForNewItemAttachments(duplicateGroup.newItemIDs, activeItemIDs);
 
         const mergePlan = this.createMergePlan(duplicateGroup, activeItems, masterItemPref);
@@ -379,6 +390,31 @@ export class Duplicates {
   private selectMasterItem(items: Zotero.Item[], masterItemPref: MasterItem): Zotero.Item | undefined {
     if (items.length === 0) return undefined;
     return new DuplicateItems(items, masterItemPref).masterItem;
+  }
+
+  /**
+   * Whether any newly added item in the group is explicitly related to another
+   * active member of the same group. The relation is checked in both directions
+   * because, depending on save ordering, only one side of the relation may be
+   * loaded when the duplicate is detected.
+   */
+  private groupHasExplicitRelation(newItemIDs: number[], activeItems: Zotero.Item[]): boolean {
+    const newItemIDSet = new Set(newItemIDs);
+    const newItems = activeItems.filter((item) => newItemIDSet.has(item.id));
+    if (newItems.length === 0) return false;
+
+    const otherItems = activeItems.filter((item) => !newItemIDSet.has(item.id));
+    if (otherItems.length === 0) return false;
+
+    const otherKeys = new Set(otherItems.map((item) => item.key));
+
+    return newItems.some((newItem) => {
+      const newItemKey = newItem.key;
+      const relatedToOther = (newItem.relatedItems ?? []).some((relKey) => otherKeys.has(relKey));
+      if (relatedToOther) return true;
+
+      return otherItems.some((other) => (other.relatedItems ?? []).includes(newItemKey));
+    });
   }
 
   private createMergePlan(
