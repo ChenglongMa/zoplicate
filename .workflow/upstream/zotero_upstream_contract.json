@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_at_utc": "2026-04-16T05:40:37Z",
+  "generated_at_utc": "2026-06-09T06:58:19Z",
   "remote_url": "https://github.com/zotero/zotero.git",
   "watched_refs": [
     "9.0",
@@ -290,7 +290,7 @@
   ],
   "snapshots": {
     "9.0": {
-      "head": "e22e2cd9dd3c322314b7e772564c59d09a30eb2b",
+      "head": "74a3617e7ea7ad9be21fe0973b0901f75d1df6b5",
       "anchors": {
         "collection-tree-render-item": {
           "status": "ok",
@@ -415,14 +415,14 @@
       }
     },
     "main": {
-      "head": "d2d4451165376e884cb1b05f3d853a7a01deeed2",
+      "head": "dcf5010415a41c4aaa38e88d18f9cc03823f2d55",
       "anchors": {
         "collection-tree-render-item": {
           "status": "ok",
           "source_path": "chrome/content/zotero/collectionTree.jsx",
           "anchor_kind": "method_assignment",
           "anchor_pattern": "renderItem",
-          "sha256": "76c638339b87033b22c11383edbb76172ff6211b8330281dd98e6d1110386fa3",
+          "sha256": "55458a31bff84b7db7d294b1b06f62b34a7282a57bb9d9f919c71099ab3ebbb4",
           "message": ""
         },
         "collection-tree-row-duplicates-search-object": {
@@ -430,7 +430,7 @@
           "source_path": "chrome/content/zotero/xpcom/collectionTreeRow.js",
           "anchor_kind": "function_assignment",
           "anchor_pattern": "Zotero.CollectionTreeRow.prototype.getSearchObject",
-          "sha256": "b5db26c1e731402290ad716ba2b6a12669b8e3d76de04062d94c4ad30fd63a4b",
+          "sha256": "f395136ef22a4036c8e49ae0f8d2dfa86a417c3809107eb26ea04a2e0343b3e6",
           "message": ""
         },
         "disjoint-set-find": {
@@ -486,7 +486,7 @@
           "source_path": "chrome/content/zotero/elements/duplicatesMergePane.js",
           "anchor_kind": "class_method",
           "anchor_pattern": "merge",
-          "sha256": "1909ccefdd7ba6cbd9fa0eadd2a8436451aaa6e32d0b8ce21348a5aeca875426",
+          "sha256": "0b280ce4ae564c3a2bddd966a7e7618d15bdd114c3e7039eac50f65b6180bc12",
           "message": ""
         },
         "duplicates-merge-pane-set-items": {
@@ -494,7 +494,7 @@
           "source_path": "chrome/content/zotero/elements/duplicatesMergePane.js",
           "anchor_kind": "class_method",
           "anchor_pattern": "setItems",
-          "sha256": "e3714f202a30b2d877f7f3fa0f51139f263a2651f333bedea58955b1451b95a9",
+          "sha256": "978112b1ca0b41c355e7e902e63aa60ed805da6f0d39178177957b5a450d71a7",
           "message": ""
         },
         "duplicates-merge-pane-set-master": {
@@ -502,7 +502,7 @@
           "source_path": "chrome/content/zotero/elements/duplicatesMergePane.js",
           "anchor_kind": "class_method",
           "anchor_pattern": "setMaster",
-          "sha256": "5ef6d6b8d6940b125d576df97a8c9858ff9e7a471788f2edc06fcec6866763e0",
+          "sha256": "3f6be4391630f7a440652ecd8b8797ad793ece9f6b75ad7729cdbdbf948b9fbe",
           "message": ""
         },
         "item-save-data": {
@@ -514,12 +514,12 @@
           "message": ""
         },
         "item-tree-duplicate-selection": {
-          "status": "ok",
-          "source_path": "chrome/content/zotero/itemTree.jsx",
+          "status": "missing",
+          "source_path": "",
           "anchor_kind": "method_assignment",
           "anchor_pattern": "_handleSelectionChange",
-          "sha256": "4a78905c6d91c855457f9e6c170ea43956518849d6b89021766910c3d39a6165",
-          "message": ""
+          "sha256": "",
+          "message": "chrome/content/zotero/itemTree.jsx: anchor not found: _handleSelectionChange"
         },
         "merge-items": {
           "status": "ok",
