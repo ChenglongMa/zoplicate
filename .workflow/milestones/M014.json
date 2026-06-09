@@ -1,0 +1,55 @@
+{
+  "id": "M014",
+  "title": "Zotero upstream drift watch (dev radar)",
+  "phase": "Maintenance - Zotero Upstream Compatibility",
+  "status": "accepted",
+  "depends_on": [
+    "M013"
+  ],
+  "goal": "Track Zotero dev (main) drift in watched anchors. Released/beta versions are NOT yet affected; do not change release-targeting product code -- record where relocated logic moved for future adaptation.",
+  "resolution": "deep-verify (Layer B/C) confirmed all 6 changed targets hold on release (9.0.4), beta (9.0), and dev (main/dcf5010); zero release/beta contract breaks; no product code change required. Relocated dev logic recorded in zotero_watch_targets.json cascade_hints: item-tree-duplicate-selection moved to collectionViewItemTree.jsx (subclass), collection-tree-row caching moved to per-instance cache. See zotero_upstream_deep_verify.md.",
+  "in_scope": [
+    "Inspect changed upstream watch targets: collection-tree-render-item, collection-tree-row-duplicates-search-object, duplicates-merge-pane-merge, duplicates-merge-pane-set-items, duplicates-merge-pane-set-master, item-tree-duplicate-selection",
+    "Verify the behavioral contracts of each changed target on the release tier.",
+    "Update Zoplicate compatibility code and tests only where a release/beta contract actually broke.",
+    "Refresh upstream contract snapshots after compatibility work."
+  ],
+  "out_of_scope": [
+    "Unrelated feature work",
+    "Broad refactors not required by upstream compatibility",
+    "Chasing dev-only (radar) drift with product code changes",
+    "Changing release metadata unless Zotero compatibility bounds actually change"
+  ],
+  "acceptance": [
+    "Review .workflow/upstream/zotero_upstream_report.md and classify every changed target by tier severity (urgent/scheduled/radar).",
+    "Verify item-tree-duplicate-selection (radar) contracts still hold on the release tier: In a duplicates view, selecting a single item expands the selection to that item's entire duplicate set. | The duplicate-set expansion is gated on Zotero.CollectionTreeRow.isDuplicates() and a single-row selection.",
+    "Do NOT modify release-targeting product code; the released/beta versions are unaffected.",
+    "For each dev-only change, trace where the relocated logic went (one hop) and record new watch targets.",
+    "Run uv run python scripts/ci/check_zotero_upstream.py --check-only to refresh radar status.",
+    "Run uv run python scripts/ci/check_stop.py."
+  ],
+  "upstream_watch": {
+    "detected_at_utc": "2026-06-09T12:02:42Z",
+    "severity": "radar",
+    "changed_targets": [
+      "collection-tree-render-item",
+      "collection-tree-row-duplicates-search-object",
+      "duplicates-merge-pane-merge",
+      "duplicates-merge-pane-set-items",
+      "duplicates-merge-pane-set-master",
+      "item-tree-duplicate-selection"
+    ],
+    "target_severity": {
+      "collection-tree-render-item": "radar",
+      "collection-tree-row-duplicates-search-object": "radar",
+      "duplicates-merge-pane-merge": "radar",
+      "duplicates-merge-pane-set-items": "radar",
+      "duplicates-merge-pane-set-master": "radar",
+      "item-tree-duplicate-selection": "radar"
+    },
+    "watchlist_changed": false,
+    "report_path": ".workflow/upstream/zotero_upstream_report.md",
+    "contract_path": ".workflow/upstream/zotero_upstream_contract.json",
+    "watch_targets_path": ".workflow/upstream/zotero_watch_targets.json"
+  }
+}

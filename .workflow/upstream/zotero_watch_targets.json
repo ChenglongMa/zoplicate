@@ -17,6 +17,14 @@
         "tests/duplicateSearchRecognition.test.ts",
         "tests/duplicateStats.test.ts"
       ],
+      "contracts": [
+        "getSearchObject() builds and returns a Zotero.Search backed by a duplicates temp table for the library.",
+        "The temp table / search result is stable enough to be cached and reused across calls within a collection-tree row lifecycle."
+      ],
+      "cascade_hints": [
+        "chrome/content/zotero/xpcom/duplicates.js: temp-table creation (CREATE TEMPORARY TABLE) and Zotero.Search construction.",
+        "If temp-table lifecycle moved, check collectionTreeRow.js unload/onUnload and any new cache invalidation hook."
+      ],
       "needs_manual_mapping": false
     },
     {
@@ -34,6 +42,14 @@
       "recommended_tests": [
         "tests/patchFindDuplicates.cross.test.ts",
         "tests/duplicateSearchRecognition.test.ts"
+      ],
+      "contracts": [
+        "_findDuplicates() groups duplicate item IDs by populating a DisjointSetForest via union() calls.",
+        "The forest is the single source of duplicate grouping that Zoplicate can intercept to exclude non-duplicate pairs."
+      ],
+      "cascade_hints": [
+        "chrome/content/zotero/xpcom/duplicates.js: DisjointSetForest instantiation and the union() call sites inside _findDuplicates.",
+        "If grouping moved to a different structure, the [[disjoint-set-union]] interception point must be re-mapped."
       ],
       "needs_manual_mapping": false
     },
@@ -70,6 +86,13 @@
       "reason": "Zoplicate intercepts union() to exclude user-marked non-duplicate pairs.",
       "risk_level": "high",
       "recommended_tests": ["tests/patchFindDuplicates.cross.test.ts"],
+      "contracts": [
+        "union(a, b) merges the two items' sets in the DisjointSetForest; skipping a union keeps the items in separate duplicate sets.",
+        "union() receives item IDs (or nodes) that Zoplicate can map back to pairs to suppress non-duplicate merges."
+      ],
+      "cascade_hints": [
+        "chrome/content/zotero/xpcom/duplicates.js: DisjointSetForest.prototype.union signature and caller [[duplicates-find-duplicates]]."
+      ],
       "needs_manual_mapping": false
     },
     {
@@ -123,6 +146,13 @@
       "reason": "Zoplicate delegates all duplicate merge side effects to Zotero mergeItems().",
       "risk_level": "high",
       "recommended_tests": ["tests/merger.test.ts"],
+      "contracts": [
+        "mergeItems(items, ...) merges a set of duplicate items into a master, handling relations, attachments, and trashing of non-masters.",
+        "Calling mergeItems is sufficient for Zoplicate's bulk merge; Zoplicate does not reimplement merge side effects."
+      ],
+      "cascade_hints": [
+        "chrome/content/zotero/mergeItems.mjs: exported mergeItems signature and the [[merge-items-move-relations]] helper it calls."
+      ],
       "needs_manual_mapping": false
     },
     {
@@ -196,6 +226,15 @@
         "tests/duplicateSearchRecognition.test.ts",
         "tests/duplicateStats.test.ts"
       ],
+      "contracts": [
+        "On a duplicates row, getSearchObject() delegates to this.ref.getSearchObject() (Zotero.Duplicates.getSearchObject) for the row's library.",
+        "The duplicate temp table is dropped on row unload (this.onUnload), the lifecycle Zoplicate's caching compensates for.",
+        "isDuplicates() and .ref.libraryID remain the row's stable identity surface that Zoplicate reads."
+      ],
+      "cascade_hints": [
+        "Zoplicate patches the INNER Zotero.Duplicates.prototype.getSearchObject (see [[duplicates-get-search-object]]), NOT CollectionTreeRow.getSearchObject -- so CollectionTreeRow-level cache changes are usually benign.",
+        "EVIDENCE (deep-verify @ dev/dcf5010): caching moved from the global Zotero.CollectionTreeCache to a per-instance cache (this._cachedSearch/_cachedResults/_cachedTempTable + new clearCache()); getSearchObject early-returns this._cachedSearch. Additive; all contracts preserved."
+      ],
       "needs_manual_mapping": false
     },
     {
@@ -212,7 +251,7 @@
     {
       "id": "item-tree-duplicate-selection",
       "upstream_ref_paths": ["chrome/content/zotero/itemTree.jsx"],
-      "anchor_kind": "method_assignment",
+      "anchor_kind": "class_member",
       "anchor_pattern": "_handleSelectionChange",
       "local_dependency_paths": [
         "src/features/duplicates/duplicatePaneUI.ts",
@@ -223,6 +262,14 @@
       "recommended_tests": [
         "tests/duplicatePaneUI.test.ts",
         "tests/duplicateSearchRecognition.test.ts"
+      ],
+      "contracts": [
+        "In a duplicates view, selecting a single item expands the selection to that item's entire duplicate set.",
+        "The duplicate-set expansion is gated on Zotero.CollectionTreeRow.isDuplicates() and a single-row selection."
+      ],
+      "cascade_hints": [
+        "CONFIRMED (deep-verify @ dev/dcf5010): the duplicate-selection logic moved OFF itemTree.jsx _handleSelectionChange (now debounce-only) into the CollectionViewItemTree subclass at chrome/content/zotero/collectionViewItemTree.jsx (~_handleSelectionChange / _handleRowMouseUpDown, lines ~1550-1567). Both contracts hold there (getSetItemsByItemID expansion + isDuplicates()&&count==1&&duplicateMouseSelection gating; only added optional chaining).",
+        "release/beta (9.0.x): logic still lives in itemTree.jsx _handleSelectionChange. Keep this anchor for those tiers. Repoint the dev anchor to collectionViewItemTree.jsx only if/when this refactor lands in a release."
       ],
       "needs_manual_mapping": false
     }

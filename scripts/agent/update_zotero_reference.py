@@ -287,7 +287,13 @@ def refresh_reference(
             remote_head = rev_parse(config.reference_dir, "FETCH_HEAD", git_runner)
 
             if remote_head != previous_head:
-                git_runner(config.reference_dir, ["merge", "--ff-only", "FETCH_HEAD"])
+                # The reference is a read-only mirror, not a working branch. A
+                # depth-1 fetch advances the shallow root, so the fetched tip
+                # shares no history with the local HEAD and `merge --ff-only`
+                # fails with "refusing to merge unrelated histories". Hard-reset
+                # to the fetched tip instead -- we only ever want the latest
+                # snapshot, never a real merge.
+                git_runner(config.reference_dir, ["reset", "--hard", "FETCH_HEAD"])
 
             head = rev_parse(config.reference_dir, "HEAD", git_runner)
             status = "updated" if head != previous_head else "unchanged"
