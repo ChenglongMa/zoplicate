@@ -118,7 +118,7 @@ class UpdateZoteroReferenceTests(unittest.TestCase):
                     (reference_dir, ("rev-parse", "HEAD"), "old123456789\n"),
                     (reference_dir, ("fetch", "--depth", "1", "origin", "main"), ""),
                     (reference_dir, ("rev-parse", "FETCH_HEAD"), "new456789abc\n"),
-                    (reference_dir, ("merge", "--ff-only", "FETCH_HEAD"), ""),
+                    (reference_dir, ("reset", "--hard", "FETCH_HEAD"), ""),
                     (reference_dir, ("rev-parse", "HEAD"), "new456789abc\n"),
                 ]
             )

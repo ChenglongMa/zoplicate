@@ -1,5 +1,25 @@
 #!/usr/bin/env python3
-"""Track Zotero upstream implementation contracts used by Zoplicate."""
+"""Track Zotero upstream implementation contracts used by Zoplicate.
+
+Zoplicate strongly depends on concrete Zotero source behavior (private APIs,
+DOM, merge/duplicate logic). Zotero ships three moving references that can
+disagree:
+
+- a released tag (e.g. ``9.0.4``)  -- the BASELINE / truth users actually run,
+- the release branch HEAD (``9.0``) -- the BETA / upcoming release,
+- ``main``                          -- the DEV radar / future version.
+
+This watcher records, per reference, whether each watched anchor still exists
+and whether its body changed, and classifies drift by *which tier* moved:
+
+- release moved  -> ``urgent``   (real, user-facing breakage)
+- beta moved     -> ``scheduled`` (will ship next; pre-adapt)
+- dev moved      -> ``radar``     (future risk; track, do not chase yet)
+
+Anchor existence is a cheap, deterministic pre-filter only. The expensive part
+-- did the *behavioral contract* still hold, and where did relocated logic go --
+is delegated to the agent workflow referenced by the upstream skill.
+"""
 
 from __future__ import annotations
 
@@ -22,14 +42,43 @@ if __package__ in {None, ""}:
 from scripts.agent.workflow_state import atomic_write_json, build_paths
 
 DEFAULT_REMOTE_URL = "https://github.com/zotero/zotero.git"
-DEFAULT_PRIMARY_REF = "9.0"
-DEFAULT_SECONDARY_REF = "main"
+
+# Tiered references. release = baseline/truth, beta = upcoming, dev = radar.
+DEFAULT_RELEASE_SERIES = "9."
+DEFAULT_BETA_REF = "9.0"
+DEFAULT_DEV_REF = "main"
+
+REF_ROLE_RELEASE = "release"
+REF_ROLE_BETA = "beta"
+REF_ROLE_DEV = "dev"
+
+# Drift severity by the tier that moved.
+SEVERITY_URGENT = "urgent"
+SEVERITY_SCHEDULED = "scheduled"
+SEVERITY_RADAR = "radar"
+
+ROLE_SEVERITY = {
+    REF_ROLE_RELEASE: SEVERITY_URGENT,
+    REF_ROLE_BETA: SEVERITY_SCHEDULED,
+    REF_ROLE_DEV: SEVERITY_RADAR,
+}
+SEVERITY_RANK = {SEVERITY_RADAR: 0, SEVERITY_SCHEDULED: 1, SEVERITY_URGENT: 2}
+
 WATCH_TARGETS_REL = ".workflow/upstream/zotero_watch_targets.json"
 CONTRACT_REL = ".workflow/upstream/zotero_upstream_contract.json"
 REPORT_REL = ".workflow/upstream/zotero_upstream_report.md"
 MILESTONE_REL = ".workflow/milestones"
 MILESTONE_INDEX_REL = ".workflow/milestone_index.json"
 PROJECT_SNAPSHOT_REL = ".workflow/project_snapshot.json"
+DEFAULT_REFERENCE_DIR = ".references/zotero"
+
+# An anchor_kind may name a fallback group so a target survives upstream syntax
+# refactors (e.g. arrow-field <-> class-method) without a watchlist edit. The
+# body that matters is the same; only the declaration shape changed.
+ANCHOR_KIND_FALLBACKS = {
+    "class_member": ["class_method", "method_assignment"],
+    "function_any": ["function_assignment", "function_declaration", "exported_function"],
+}
 
 
 @dataclass(frozen=True)
@@ -38,6 +87,7 @@ class AnchorResult:
     source_path: str
     anchor_text: str
     sha256: str
+    matched_kind: str = ""
     message: str = ""
 
 
@@ -88,6 +138,12 @@ def normalize_targets_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
                 "reason": str(target["reason"]),
                 "risk_level": str(target["risk_level"]),
                 "recommended_tests": sorted(str(path) for path in target.get("recommended_tests", [])),
+                # Behavioral contracts: 1-3 natural-language assertions describing
+                # WHAT Zoplicate relies on this anchor doing. Order is meaningful,
+                # so it is preserved (not sorted).
+                "contracts": [str(item) for item in target.get("contracts", [])],
+                # Where relocated logic might have gone; seeds one-hop cascade.
+                "cascade_hints": [str(item) for item in target.get("cascade_hints", [])],
                 "needs_manual_mapping": bool(target.get("needs_manual_mapping", False)),
             }
         )
@@ -183,7 +239,7 @@ def extract_block(text: str, regex: str, pattern_label: str) -> str:
     return text[match.start() : close_index + 1].replace("\r\n", "\n").strip() + "\n"
 
 
-def extract_anchor(text: str, anchor_kind: str, anchor_pattern: str) -> str:
+def extract_anchor_single(text: str, anchor_kind: str, anchor_pattern: str) -> str:
     escaped = re.escape(anchor_pattern)
     if anchor_kind == "function_assignment":
         return extract_block(
@@ -216,6 +272,37 @@ def extract_anchor(text: str, anchor_kind: str, anchor_pattern: str) -> str:
     raise ValueError(f"unsupported anchor_kind: {anchor_kind}")
 
 
+def anchor_kind_candidates(anchor_kind: str) -> list[str]:
+    return ANCHOR_KIND_FALLBACKS.get(anchor_kind, [anchor_kind])
+
+
+def extract_anchor(text: str, anchor_kind: str, anchor_pattern: str) -> str:
+    """Extract the anchor body, tolerating declaration-shape refactors.
+
+    When ``anchor_kind`` names a fallback group (see ``ANCHOR_KIND_FALLBACKS``)
+    every candidate shape is tried until one matches, so a method that flips
+    between ``name = (a) => {`` and ``name(a) {`` does not read as ``missing``.
+    """
+    errors: list[str] = []
+    for candidate in anchor_kind_candidates(anchor_kind):
+        try:
+            return extract_anchor_single(text, candidate, anchor_pattern)
+        except ValueError as exc:
+            errors.append(str(exc))
+    raise ValueError("; ".join(errors) if errors else f"anchor not found: {anchor_pattern}")
+
+
+def extract_anchor_with_kind(text: str, anchor_kind: str, anchor_pattern: str) -> tuple[str, str]:
+    """Like :func:`extract_anchor` but also reports which candidate matched."""
+    errors: list[str] = []
+    for candidate in anchor_kind_candidates(anchor_kind):
+        try:
+            return extract_anchor_single(text, candidate, anchor_pattern), candidate
+        except ValueError as exc:
+            errors.append(str(exc))
+    raise ValueError("; ".join(errors) if errors else f"anchor not found: {anchor_pattern}")
+
+
 def extract_target(root: Path, target: dict[str, Any]) -> AnchorResult:
     if target.get("needs_manual_mapping") or target.get("anchor_kind") == "manual":
         return AnchorResult(
@@ -234,12 +321,13 @@ def extract_target(root: Path, target: dict[str, Any]) -> AnchorResult:
             continue
         text = source_path.read_text(encoding="utf-8", errors="replace")
         try:
-            anchor_text = extract_anchor(text, target["anchor_kind"], target["anchor_pattern"])
+            anchor_text, matched_kind = extract_anchor_with_kind(text, target["anchor_kind"], target["anchor_pattern"])
             return AnchorResult(
                 status="ok",
                 source_path=rel_path,
                 anchor_text=anchor_text,
                 sha256=sha256_text(anchor_text),
+                matched_kind=matched_kind,
             )
         except ValueError as exc:
             messages.append(f"{rel_path}: {exc}")
@@ -253,9 +341,81 @@ def extract_target(root: Path, target: dict[str, Any]) -> AnchorResult:
     )
 
 
-def git_output(cwd: Path, args: list[str]) -> str:
+def git_output(cwd: Path | None, args: list[str]) -> str:
     result = subprocess.run(["git", *args], cwd=cwd, text=True, capture_output=True, check=True)
     return result.stdout.strip()
+
+
+def infer_role(ref: str) -> str:
+    if re.fullmatch(r"\d+\.\d+\.\d+.*", ref):
+        return REF_ROLE_RELEASE
+    if re.fullmatch(r"\d+\.\d+", ref):
+        return REF_ROLE_BETA
+    return REF_ROLE_DEV
+
+
+def resolve_release_tag(remote_url: str, series_prefix: str, *, git_runner=git_output) -> str | None:
+    """Return the highest stable tag (``X.Y.Z``) under ``series_prefix``.
+
+    Pre-release tags (``-beta``, ``-rc``) are ignored: the baseline tier must
+    track what users actually run, not what is in flight.
+    """
+    try:
+        output = git_runner(None, ["ls-remote", "--tags", "--refs", remote_url])
+    except Exception:
+        return None
+    best: str | None = None
+    best_key: tuple[int, ...] | None = None
+    for line in output.splitlines():
+        parts = line.split()
+        if len(parts) < 2:
+            continue
+        tag = parts[1].removeprefix("refs/tags/")
+        if not tag.startswith(series_prefix):
+            continue
+        match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", tag)
+        if not match:
+            continue
+        key = tuple(int(part) for part in match.groups())
+        if best_key is None or key > best_key:
+            best_key = key
+            best = tag
+    return best
+
+
+def build_watched_refs(args: argparse.Namespace, remote_url: str, *, git_runner=git_output) -> list[tuple[str, str]]:
+    """Resolve the (ref, role) tiers to snapshot.
+
+    Explicit ``--ref``/``--also-ref`` override the tiered defaults; their role
+    is inferred from the ref shape. Otherwise the release tier is resolved to
+    the latest stable tag, with the release branch as beta and ``main`` as dev.
+    """
+    explicit = list(getattr(args, "refs", None) or []) + list(getattr(args, "also_refs", None) or [])
+    if explicit:
+        out: list[tuple[str, str]] = []
+        seen: set[str] = set()
+        for ref in explicit:
+            if ref not in seen:
+                seen.add(ref)
+                out.append((ref, infer_role(ref)))
+        return out
+
+    tiers: list[tuple[str, str]] = []
+    release = getattr(args, "release_ref", None)
+    if release is None:
+        release = resolve_release_tag(remote_url, getattr(args, "release_series", DEFAULT_RELEASE_SERIES), git_runner=git_runner)
+    if release:
+        tiers.append((release, REF_ROLE_RELEASE))
+    tiers.append((getattr(args, "beta_ref", None) or DEFAULT_BETA_REF, REF_ROLE_BETA))
+    tiers.append((getattr(args, "dev_ref", None) or DEFAULT_DEV_REF, REF_ROLE_DEV))
+
+    out = []
+    seen = set()
+    for ref, role in tiers:
+        if ref not in seen:
+            seen.add(ref)
+            out.append((ref, role))
+    return out
 
 
 def clone_refs(remote_url: str, refs: list[str]) -> tuple[tempfile.TemporaryDirectory[str], dict[str, Path]]:
@@ -274,7 +434,29 @@ def clone_refs(remote_url: str, refs: list[str]) -> tuple[tempfile.TemporaryDire
     return temp_dir, ref_dirs
 
 
-def collect_snapshots(ref_dirs: dict[str, Path], targets: list[dict[str, Any]]) -> dict[str, Any]:
+def reusable_reference_dir(project_dir: Path, reference_dir: str | None) -> Path | None:
+    """Resolve a shared local clone usable as the dev-tier source.
+
+    Single-source policy: the dev/``main`` tier reads the same full clone that
+    project MCP uses (``.references/zotero``) instead of a throwaway clone, so
+    there is one dev source of truth. Release/beta tiers stay ephemeral
+    verification checkouts (you never develop against a frozen tag).
+    """
+    if not reference_dir:
+        return None
+    path = Path(reference_dir)
+    if not path.is_absolute():
+        path = project_dir / path
+    path = path.resolve()
+    return path if (path / ".git").exists() else None
+
+
+def collect_snapshots(
+    ref_dirs: dict[str, Path],
+    targets: list[dict[str, Any]],
+    ref_roles: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    ref_roles = ref_roles or {}
     snapshots: dict[str, Any] = {}
     for ref, root in ref_dirs.items():
         try:
@@ -289,27 +471,53 @@ def collect_snapshots(ref_dirs: dict[str, Path], targets: list[dict[str, Any]]) 
                 "source_path": result.source_path,
                 "anchor_kind": target["anchor_kind"],
                 "anchor_pattern": target["anchor_pattern"],
+                "matched_kind": result.matched_kind,
                 "sha256": result.sha256,
                 "message": result.message,
             }
-        snapshots[ref] = {"head": head, "anchors": anchors}
+        snapshots[ref] = {"head": head, "role": ref_roles.get(ref, infer_role(ref)), "anchors": anchors}
     return snapshots
 
 
-def compare_contracts(old: dict[str, Any] | None, new: dict[str, Any]) -> list[dict[str, Any]]:
+def compare_contracts(
+    old: dict[str, Any] | None,
+    new: dict[str, Any],
+    ref_roles: dict[str, str] | None = None,
+) -> list[dict[str, Any]]:
     if not old:
         return []
+    ref_roles = ref_roles or {}
     changes: list[dict[str, Any]] = []
     old_snapshots = old.get("snapshots", {})
     for ref, snapshot in new.get("snapshots", {}).items():
+        # A ref absent from the prior contract is a newly-introduced tier (e.g.
+        # adding the release tag). Its first snapshot establishes a baseline; it
+        # is not drift, so skip it to avoid a flood of false "missing -> ok".
+        if ref not in old_snapshots:
+            continue
         old_snapshot = old_snapshots.get(ref, {})
         old_anchors = old_snapshot.get("anchors", {})
+        role = ref_roles.get(ref, snapshot.get("role") or infer_role(ref))
         for target_id, anchor in snapshot.get("anchors", {}).items():
             old_anchor = old_anchors.get(target_id)
+            # The only behavioral signals are existence (status) and body
+            # (sha256). anchor_kind / anchor_pattern / matched_kind / source_path
+            # are locator metadata: editing them in the watchlist (e.g. widening
+            # anchor_kind to a fallback group) must NOT register as upstream
+            # drift when the matched body and status are unchanged.
+            old_signal = (
+                ((old_anchor or {}).get("status", "missing")),
+                ((old_anchor or {}).get("sha256", "")),
+            )
+            new_signal = (anchor.get("status", "missing"), anchor.get("sha256", ""))
+            if old_anchor is not None and old_signal == new_signal:
+                continue
             if old_anchor != anchor:
                 changes.append(
                     {
                         "ref": ref,
+                        "role": role,
+                        "severity": ROLE_SEVERITY.get(role, SEVERITY_RADAR),
                         "target_id": target_id,
                         "old_sha256": (old_anchor or {}).get("sha256", ""),
                         "new_sha256": anchor.get("sha256", ""),
@@ -319,6 +527,15 @@ def compare_contracts(old: dict[str, Any] | None, new: dict[str, Any]) -> list[d
                     }
                 )
     return changes
+
+
+def max_severity(changes: list[dict[str, Any]]) -> str:
+    best = SEVERITY_RADAR
+    for change in changes:
+        severity = change.get("severity", SEVERITY_RADAR)
+        if SEVERITY_RANK.get(severity, 0) > SEVERITY_RANK.get(best, 0):
+            best = severity
+    return best
 
 
 def parse_diff(diff_text: str) -> tuple[dict[str, str], set[str], dict[str, list[str]]]:
@@ -478,6 +695,8 @@ def sync_watch_targets_from_diff_text(targets: list[dict[str, Any]], diff_text: 
                     "reason": detected["reason"],
                     "risk_level": "medium",
                     "recommended_tests": [],
+                    "contracts": [],
+                    "cascade_hints": [],
                     "needs_manual_mapping": True,
                 }
             )
@@ -518,11 +737,22 @@ def impacted_targets(targets: list[dict[str, Any]], changes: list[dict[str, Any]
     return [target for target in targets if target["id"] in wanted]
 
 
+def severity_by_target(changes: list[dict[str, Any]]) -> dict[str, str]:
+    """Highest severity seen per target across all refs."""
+    result: dict[str, str] = {}
+    for change in changes:
+        target_id = change["target_id"]
+        severity = change.get("severity", SEVERITY_RADAR)
+        if target_id not in result or SEVERITY_RANK.get(severity, 0) > SEVERITY_RANK.get(result[target_id], 0):
+            result[target_id] = severity
+    return result
+
+
 def build_report(
     *,
     generated_at: str,
     remote_url: str,
-    refs: list[str],
+    watched: list[tuple[str, str]],
     old_contract_exists: bool,
     watchlist_changed: bool,
     changes: list[dict[str, Any]],
@@ -533,14 +763,17 @@ def build_report(
     targets_rel: str,
     milestone_dir_rel: str,
 ) -> str:
+    overall = max_severity(changes) if changes else SEVERITY_RADAR
+    refs_label = ", ".join(f"{ref} ({role})" for ref, role in watched)
     lines = [
         "# Zotero Upstream Watch Report",
         "",
         f"- Generated: `{generated_at}`",
         f"- Remote: `{remote_url}`",
-        f"- Refs: `{', '.join(refs)}`",
+        f"- Refs: `{refs_label}`",
         f"- Watchlist changed: `{'yes' if watchlist_changed else 'no'}`",
         f"- Baseline existed: `{'yes' if old_contract_exists else 'no'}`",
+        f"- Overall severity: `{overall if changes else 'none'}`",
         f"- Draft milestone: `{milestone_id or 'none'}`",
         "",
     ]
@@ -558,19 +791,67 @@ def build_report(
     elif not changes and not watchlist_changed and not manual_targets:
         lines.extend(["## Status", "", "No watched Zotero upstream anchors changed.", ""])
     else:
-        lines.extend(["## Changed Targets", ""])
+        lines.extend(
+            [
+                "## Tier Severity Legend",
+                "",
+                "- `urgent` (release tag): users are affected now -- fix and adapt.",
+                "- `scheduled` (release branch / beta): ships next -- pre-adapt before release.",
+                "- `radar` (main / dev): future risk only -- track, do not chase yet.",
+                "",
+                "## Changed Targets",
+                "",
+            ]
+        )
         if changes:
-            lines.extend(["| Ref | Target | Old | New | Status | Source |", "| --- | --- | --- | --- | --- | --- |"])
-            for change in changes:
+            lines.extend(
+                [
+                    "| Ref | Role | Severity | Target | Old | New | Status | Source |",
+                    "| --- | --- | --- | --- | --- | --- | --- | --- |",
+                ]
+            )
+            ordered = sorted(
+                changes,
+                key=lambda change: (-SEVERITY_RANK.get(change.get("severity", SEVERITY_RADAR), 0), change["target_id"]),
+            )
+            for change in ordered:
                 old_sha = (change["old_sha256"] or change["old_status"])[:12]
                 new_sha = (change["new_sha256"] or change["new_status"])[:12]
                 lines.append(
-                    f"| `{change['ref']}` | `{change['target_id']}` | `{old_sha}` | `{new_sha}` | "
+                    f"| `{change['ref']}` | `{change.get('role', '')}` | `{change.get('severity', '')}` | "
+                    f"`{change['target_id']}` | `{old_sha}` | `{new_sha}` | "
                     f"`{change['old_status']} -> {change['new_status']}` | `{change['source_path']}` |"
                 )
             lines.append("")
         else:
             lines.extend(["No upstream anchor hashes changed.", ""])
+
+        # Anchors that vanished get explicit triage guidance: a missing anchor is
+        # only a real removal if the symbol cannot be found anywhere upstream.
+        missing_changes = [change for change in changes if change.get("new_status") == "missing"]
+        if missing_changes:
+            lines.extend(["## Missing-Anchor Triage", ""])
+            for change in missing_changes:
+                lines.append(
+                    f"- `{change['target_id']}` on `{change['ref']}` ({change.get('severity', '')}): "
+                    "grep the symbol across the upstream clone. Still present => declaration-shape refactor "
+                    "(widen anchor_kind / add fallback). Absent => true removal/rename "
+                    "(set needs_manual_mapping=true and trace the relocated logic)."
+                )
+            lines.append("")
+
+        contract_targets = [
+            target
+            for target in impacted_targets(targets, changes)
+            if target.get("contracts")
+        ]
+        if contract_targets:
+            lines.extend(["## Behavioral Contracts To Verify", ""])
+            for target in contract_targets:
+                lines.append(f"- `{target['id']}`:")
+                for contract in target["contracts"]:
+                    lines.append(f"  - {contract}")
+            lines.append("")
 
         if manual_targets:
             lines.extend(["## Manual Mappings", ""])
@@ -590,8 +871,9 @@ def build_report(
             "## Next Steps",
             "",
             "1. Review this report and `.workflow/upstream/zotero_watch_targets.json`.",
-            "2. If a draft milestone was generated, run `/upstream-pr-milestone pr=<pr> mode=review` before `/milestone-tdd`.",
-            "3. If the PR changes Zoplicate's Zotero-facing dependencies, run `/upstream-pr-milestone pr=<pr> mode=sync-watchlist`.",
+            "2. For each changed target, verify the behavioral contracts on the release tier before touching code.",
+            "3. `urgent`/`scheduled` drift: run `/upstream-pr-milestone pr=<pr> mode=review`, then `/milestone-tdd milestone=M###`.",
+            "4. `radar`-only drift: track relocated logic via cascade hints; do not modify release-targeting product code yet.",
             "",
         ]
     )
@@ -604,6 +886,7 @@ def build_milestone(
     generated_at: str,
     latest_accepted: str,
     changed_targets: list[dict[str, Any]],
+    changes: list[dict[str, Any]],
     watchlist_changed: bool,
     report_rel: str,
     contract_rel: str,
@@ -612,41 +895,93 @@ def build_milestone(
     target_ids = [target["id"] for target in changed_targets]
     tests = sorted({test for target in changed_targets for test in target.get("recommended_tests", [])})
     manual_targets = [target["id"] for target in changed_targets if target.get("needs_manual_mapping")]
-    acceptance = [
-        f"Review {report_rel} and classify every changed target.",
-        "Update only the Zoplicate code paths impacted by the changed upstream targets.",
-        "Run uv run python scripts/ci/check_zotero_upstream.py --check-only after fixes.",
-        "Run uv run python scripts/ci/check_stop.py.",
-        "Run npx tsc --noEmit.",
-    ]
-    if tests:
-        acceptance.append("Run targeted tests: " + " ".join(tests) + ".")
+    overall = max_severity(changes) if changes else SEVERITY_RADAR
+    per_target_severity = severity_by_target(changes)
+    radar_only = overall == SEVERITY_RADAR
+
+    if radar_only:
+        title = "Zotero upstream drift watch (dev radar)"
+        status = "planned"
+        goal = (
+            "Track Zotero dev (main) drift in watched anchors. Released/beta versions are NOT yet affected; "
+            "do not change release-targeting product code -- record where relocated logic moved for future adaptation."
+        )
     else:
-        acceptance.append("Add or identify the smallest relevant regression test for each changed target.")
+        title = "Zotero upstream compatibility fix (release-affecting)"
+        status = "next"
+        goal = (
+            "Adapt Zoplicate to Zotero upstream changes that affect the released or upcoming (beta) version's "
+            "duplicate detection, merge, patch, or UI integration contracts."
+        )
+
+    acceptance = [
+        f"Review {report_rel} and classify every changed target by tier severity (urgent/scheduled/radar).",
+    ]
+
+    # Per-target behavioral contract verification -- the core of the milestone.
+    contract_lines: list[str] = []
+    for target in changed_targets:
+        contracts = target.get("contracts", [])
+        if not contracts:
+            continue
+        severity = per_target_severity.get(target["id"], SEVERITY_RADAR)
+        contract_lines.append(
+            f"Verify {target['id']} ({severity}) contracts still hold on the release tier: " + " | ".join(contracts)
+        )
+    acceptance.extend(contract_lines)
+
+    if radar_only:
+        acceptance.extend(
+            [
+                "Do NOT modify release-targeting product code; the released/beta versions are unaffected.",
+                "For each dev-only change, trace where the relocated logic went (one hop) and record new watch targets.",
+                "Run uv run python scripts/ci/check_zotero_upstream.py --check-only to refresh radar status.",
+                "Run uv run python scripts/ci/check_stop.py.",
+            ]
+        )
+    else:
+        acceptance.extend(
+            [
+                "Update only the Zoplicate code paths whose verified contract actually broke on release/beta.",
+                "For each broken contract, trace where the upstream logic relocated (one hop) and update dependent local methods.",
+                "Run uv run python scripts/ci/check_zotero_upstream.py --check-only after fixes.",
+                "Run uv run python scripts/ci/check_stop.py.",
+                "Run npx tsc --noEmit.",
+            ]
+        )
+        if tests:
+            acceptance.append("Run targeted tests: " + " ".join(tests) + ".")
+        else:
+            acceptance.append("Add or identify the smallest relevant regression test for each broken contract.")
+
     if manual_targets:
         acceptance.append("Resolve manual upstream mappings: " + ", ".join(manual_targets) + ".")
 
     return {
         "id": milestone_id,
-        "title": "Zotero upstream compatibility review",
+        "title": title,
         "phase": "Maintenance - Zotero Upstream Compatibility",
-        "status": "next",
+        "status": status,
         "depends_on": [latest_accepted] if latest_accepted else [],
-        "goal": "Review Zotero upstream changes that affect Zoplicate's duplicate detection, merge, patch, or UI integration contracts.",
+        "goal": goal,
         "in_scope": [
             "Inspect changed upstream watch targets: " + (", ".join(target_ids) if target_ids else "watchlist metadata"),
-            "Update Zoplicate compatibility code and tests only where upstream changes require it.",
+            "Verify the behavioral contracts of each changed target on the release tier.",
+            "Update Zoplicate compatibility code and tests only where a release/beta contract actually broke.",
             "Refresh upstream contract snapshots after compatibility work.",
         ],
         "out_of_scope": [
             "Unrelated feature work",
             "Broad refactors not required by upstream compatibility",
+            "Chasing dev-only (radar) drift with product code changes",
             "Changing release metadata unless Zotero compatibility bounds actually change",
         ],
         "acceptance": acceptance,
         "upstream_watch": {
             "detected_at_utc": generated_at,
+            "severity": overall,
             "changed_targets": target_ids,
+            "target_severity": per_target_severity,
             "watchlist_changed": watchlist_changed,
             "report_path": report_rel,
             "contract_path": contract_rel,
@@ -689,12 +1024,24 @@ def update_milestone_state(
 
     atomic_write_json(milestones_dir / f"{milestone_id}.json", milestone)
 
+    severity = milestone.get("upstream_watch", {}).get("severity", SEVERITY_RADAR)
     snapshot = load_json(snapshot_path)
     snapshot["current_target_milestone"] = milestone_id
+    # Radar-only drift must not advance the active product status to "next";
+    # it is tracked, not in-flight work.
     snapshot["current_status"] = "planned"
     snapshot["last_updated_utc"] = utc_now()
     risks = snapshot.setdefault("open_risks_summary", [])
-    risk = f"{milestone_id} generated by Zotero upstream watch; review {report_rel} before implementation."
+    if severity == SEVERITY_RADAR:
+        risk = (
+            f"{milestone_id} is a Zotero dev (main) radar watch; released/beta unaffected. "
+            f"Track relocated logic via {report_rel}; do not change product code yet."
+        )
+    else:
+        risk = (
+            f"{milestone_id} flags release/beta-affecting Zotero upstream drift ({severity}); "
+            f"verify contracts in {report_rel} before implementation."
+        )
     if risk not in risks:
         risks.append(risk)
     atomic_write_json(snapshot_path, snapshot)
@@ -704,15 +1051,16 @@ def build_contract(
     *,
     generated_at: str,
     remote_url: str,
-    refs: list[str],
+    watched: list[tuple[str, str]],
     targets: list[dict[str, Any]],
     snapshots: dict[str, Any],
 ) -> dict[str, Any]:
     return {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "generated_at_utc": generated_at,
         "remote_url": remote_url,
-        "watched_refs": refs,
+        "watched_refs": [ref for ref, _ in watched],
+        "ref_roles": {ref: role for ref, role in watched},
         "watch_targets_hash": stable_json_hash(targets),
         "watch_targets": targets,
         "snapshots": snapshots,
@@ -725,6 +1073,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--remote-url", default=DEFAULT_REMOTE_URL)
     parser.add_argument("--ref", dest="refs", action="append", default=None)
     parser.add_argument("--also-ref", dest="also_refs", action="append", default=None)
+    parser.add_argument("--release-ref", default=None, help="Pin the release/baseline tag instead of auto-resolving.")
+    parser.add_argument("--release-series", default=DEFAULT_RELEASE_SERIES, help="Tag prefix for release-tier resolution.")
+    parser.add_argument("--beta-ref", default=None, help="Release-branch (beta) ref. Defaults to the current series branch.")
+    parser.add_argument("--dev-ref", default=None, help="Dev (radar) ref. Defaults to main.")
+    parser.add_argument(
+        "--reference-dir",
+        default=None,
+        help="Reuse this local clone as the dev-tier source (single-source policy). Defaults to no reuse.",
+    )
     parser.add_argument("--watch-targets", default=WATCH_TARGETS_REL)
     parser.add_argument("--contract", default=CONTRACT_REL)
     parser.add_argument("--report", default=REPORT_REL)
@@ -738,9 +1095,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def run(args: argparse.Namespace) -> int:
     paths = build_paths(args.project_dir)
     project_dir = paths.project_dir
-    refs = args.refs or [DEFAULT_PRIMARY_REF]
-    refs.extend(args.also_refs or [DEFAULT_SECONDARY_REF])
-    refs = list(dict.fromkeys(refs))
     generated_at = utc_now()
 
     watch_targets_path = project_dir / args.watch_targets
@@ -761,25 +1115,45 @@ def run(args: argparse.Namespace) -> int:
     if not shutil.which("git"):
         raise RuntimeError("git is required to check Zotero upstream contracts")
 
-    temp_dir, ref_dirs = clone_refs(args.remote_url, refs)
+    watched = build_watched_refs(args, args.remote_url)
+    ref_roles = {ref: role for ref, role in watched}
+
+    # Dev-tier single-source reuse: read the shared .references clone instead of
+    # a throwaway clone of main, when available.
+    reuse_dir = reusable_reference_dir(project_dir, getattr(args, "reference_dir", None))
+    reuse_dirs: dict[str, Path] = {}
+    refs_to_clone: list[str] = []
+    for ref, role in watched:
+        if reuse_dir is not None and role == REF_ROLE_DEV:
+            reuse_dirs[ref] = reuse_dir
+        else:
+            refs_to_clone.append(ref)
+
+    temp_dir, ref_dirs = clone_refs(args.remote_url, refs_to_clone)
     try:
-        snapshots = collect_snapshots(ref_dirs, targets)
+        all_dirs = {**ref_dirs, **reuse_dirs}
+        snapshots = collect_snapshots(all_dirs, targets, ref_roles)
     finally:
         temp_dir.cleanup()
 
     new_contract = build_contract(
         generated_at=generated_at,
         remote_url=args.remote_url,
-        refs=refs,
+        watched=watched,
         targets=targets,
         snapshots=snapshots,
     )
 
-    changes = compare_contracts(old_contract, new_contract)
+    changes = compare_contracts(old_contract, new_contract, ref_roles)
     old_hash = (old_contract or {}).get("watch_targets_hash", "")
     watchlist_changed = bool(old_contract and old_hash != new_contract["watch_targets_hash"]) or watchlist_changed_by_diff
     old_contract_exists = old_contract is not None
-    needs_milestone = old_contract_exists and (bool(changes) or watchlist_changed)
+    # A milestone is warranted only by real upstream movement (anchor changes) or
+    # an unresolved manual mapping. A pure watchlist metadata edit (adding
+    # contracts, widening anchor_kind) refreshes the contract/report but must not
+    # spawn a product milestone.
+    has_manual = any(target.get("needs_manual_mapping") for target in targets)
+    needs_milestone = old_contract_exists and (bool(changes) or has_manual)
 
     milestone_id: str | None = None
     if needs_milestone:
@@ -790,7 +1164,7 @@ def run(args: argparse.Namespace) -> int:
     report_text = build_report(
         generated_at=generated_at,
         remote_url=args.remote_url,
-        refs=refs,
+        watched=watched,
         old_contract_exists=old_contract_exists,
         watchlist_changed=watchlist_changed,
         changes=changes,
@@ -815,6 +1189,7 @@ def run(args: argparse.Namespace) -> int:
                 generated_at=generated_at,
                 latest_accepted=str(snapshot.get("latest_accepted_milestone", "")),
                 changed_targets=impacted_targets(targets, changes),
+                changes=changes,
                 watchlist_changed=watchlist_changed,
                 report_rel=args.report,
                 contract_rel=args.contract,

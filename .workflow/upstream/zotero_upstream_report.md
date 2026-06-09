@@ -1,15 +1,22 @@
 # Zotero Upstream Watch Report
 
-- Generated: `2026-04-16T05:40:37Z`
+- Generated: `2026-06-09T12:13:02Z`
 - Remote: `https://github.com/zotero/zotero.git`
-- Refs: `9.0, main`
-- Watchlist changed: `no`
-- Baseline existed: `no`
+- Refs: `9.0.4 (release), 9.0 (beta), main (dev)`
+- Watchlist changed: `yes`
+- Baseline existed: `yes`
+- Overall severity: `none`
 - Draft milestone: `none`
 
-## Status
+## Tier Severity Legend
 
-Baseline initialized. No compatibility milestone was generated for the first snapshot.
+- `urgent` (release tag): users are affected now -- fix and adapt.
+- `scheduled` (release branch / beta): ships next -- pre-adapt before release.
+- `radar` (main / dev): future risk only -- track, do not chase yet.
+
+## Changed Targets
+
+No upstream anchor hashes changed.
 
 ## Artifacts
 
@@ -21,5 +28,6 @@ Baseline initialized. No compatibility milestone was generated for the first sna
 ## Next Steps
 
 1. Review this report and `.workflow/upstream/zotero_watch_targets.json`.
-2. If a draft milestone was generated, run `/upstream-pr-milestone pr=<pr> mode=review` before `/milestone-tdd`.
-3. If the PR changes Zoplicate's Zotero-facing dependencies, run `/upstream-pr-milestone pr=<pr> mode=sync-watchlist`.
+2. For each changed target, verify the behavioral contracts on the release tier before touching code.
+3. `urgent`/`scheduled` drift: run `/upstream-pr-milestone pr=<pr> mode=review`, then `/milestone-tdd milestone=M###`.
+4. `radar`-only drift: track relocated logic via cascade hints; do not modify release-targeting product code yet.
