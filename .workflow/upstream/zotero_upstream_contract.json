@@ -1,14 +1,14 @@
 {
   "schema_version": "1.1",
-  "generated_at_utc": "2026-06-09T12:13:02Z",
+  "generated_at_utc": "2026-06-14T07:57:01Z",
   "remote_url": "https://github.com/zotero/zotero.git",
   "watched_refs": [
-    "9.0.4",
+    "9.0.5",
     "9.0",
     "main"
   ],
   "ref_roles": {
-    "9.0.4": "release",
+    "9.0.5": "release",
     "9.0": "beta",
     "main": "dev"
   },
@@ -360,8 +360,8 @@
     }
   ],
   "snapshots": {
-    "9.0.4": {
-      "head": "74a3617e7ea7ad9be21fe0973b0901f75d1df6b5",
+    "9.0.5": {
+      "head": "f0bcd5ae139fb8bdacfe9c85180b7b86f4d373c1",
       "role": "release",
       "anchors": {
         "collection-tree-render-item": {
@@ -502,7 +502,7 @@
       }
     },
     "9.0": {
-      "head": "74a3617e7ea7ad9be21fe0973b0901f75d1df6b5",
+      "head": "0e7f01a54994692b02eb35296c999d570ee38d68",
       "role": "beta",
       "anchors": {
         "collection-tree-render-item": {
@@ -643,7 +643,7 @@
       }
     },
     "main": {
-      "head": "dcf5010415a41c4aaa38e88d18f9cc03823f2d55",
+      "head": "97aa4f93eaa935b0cddcf42aa40458995502b0fd",
       "role": "dev",
       "anchors": {
         "collection-tree-render-item": {
@@ -661,7 +661,7 @@
           "anchor_kind": "function_assignment",
           "anchor_pattern": "Zotero.CollectionTreeRow.prototype.getSearchObject",
           "matched_kind": "function_assignment",
-          "sha256": "f395136ef22a4036c8e49ae0f8d2dfa86a417c3809107eb26ea04a2e0343b3e6",
+          "sha256": "6d9c9b9ad42fae8c41ebdcbd78de2295ddaacfbaa4c10304df6f0e3de30bcfab",
           "message": ""
         },
         "disjoint-set-find": {
