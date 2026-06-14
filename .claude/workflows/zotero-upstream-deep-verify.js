@@ -123,6 +123,14 @@ if (work.length === 0) {
 }
 log(`${work.length} changed target(s) to verify across tiers.`)
 
+// Describe the actual tiers from ref_roles so the verify prompt is not pinned
+// to specific ref names (release tags advance; the branch may bump to 10.x).
+const refRoles = loaded.ref_roles || {}
+const tierList =
+  Object.entries(refRoles)
+    .map(([ref, role]) => `${role} = "${ref}"`)
+    .join(', ') || 'release tag, beta branch, dev (main)'
+
 // Pipeline: each target is verified (Layer B), then — only if a contract broke
 // or the anchor went missing — traced (Layer C). No barrier: a target that
 // holds skips tracing immediately while others are still verifying.
@@ -137,13 +145,15 @@ Upstream file(s): ${(target.upstream_ref_paths || []).join(', ')}
 Contracts Zoplicate depends on:
 ${(target.contracts || []).map((c, i) => `  ${i + 1}. ${c}`).join('\n') || '  (none recorded — infer from local consumers)'}
 
-For EACH watched ref/tier (release tag, beta branch "9.0", dev "main"), inspect the
-upstream source for this anchor and decide whether EVERY contract above still holds.
-Use the zotero-reference MCP for dev/main, and read the released tag where available.
+For EACH watched ref/tier (${tierList}), inspect the upstream source for this anchor
+and decide whether EVERY contract above still holds.
+Use the zotero-reference MCP for the dev tier; for the release/beta tiers read the
+corresponding ref from the upstream remote (git or GitHub raw at that ref).
 A contract "holds" if the observable behavior is preserved even if the code was
 refactored. Cite concrete evidence (file:line, code shape). Set overall to the
 WORST tier where a contract breaks (release worst, then beta, then dev). If nothing
-breaks, overall="holds".`,
+breaks, overall="holds". If a tier's source is unavailable (e.g. the dev MCP is
+disconnected), say so explicitly in that tier's evidence rather than guessing.`,
       { label: `verify:${target.target_id}`, phase: 'Verify', schema: VERDICT_SCHEMA },
     ).then((verdict) => ({ target, verdict })),
   (verified) => {

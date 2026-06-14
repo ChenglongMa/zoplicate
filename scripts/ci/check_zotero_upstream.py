@@ -479,6 +479,36 @@ def collect_snapshots(
     return snapshots
 
 
+def snapshot_role(ref: str, snapshot: dict[str, Any], ref_roles: dict[str, str]) -> str:
+    return ref_roles.get(ref) or snapshot.get("role") or infer_role(ref)
+
+
+def resolve_baseline_snapshot(
+    ref: str,
+    role: str,
+    old_snapshots: dict[str, Any],
+    old_roles_by_ref: dict[str, str],
+) -> dict[str, Any] | None:
+    """Find the prior snapshot to compare a new (ref, role) against.
+
+    Comparison is by ROLE, not by ref name. A release tag that advances
+    (``9.0.4`` -> ``9.0.5``) is a NEW ref name but the SAME release role, so it
+    must still be compared against the previous release snapshot -- otherwise
+    every release bump silently skips release-tier drift detection.
+
+    Order: exact ref match (cheapest, most precise), then the unique prior
+    snapshot carrying the same role. If the role is ambiguous in the old
+    contract (more than one ref had it), fall back to no baseline so we don't
+    guess wrong.
+    """
+    if ref in old_snapshots:
+        return old_snapshots[ref]
+    same_role = [old_snapshots[r] for r, old_role in old_roles_by_ref.items() if old_role == role]
+    if len(same_role) == 1:
+        return same_role[0]
+    return None
+
+
 def compare_contracts(
     old: dict[str, Any] | None,
     new: dict[str, Any],
@@ -489,15 +519,22 @@ def compare_contracts(
     ref_roles = ref_roles or {}
     changes: list[dict[str, Any]] = []
     old_snapshots = old.get("snapshots", {})
+    # Map each old ref to the role it played, so a renamed-but-same-role ref
+    # (e.g. an advanced release tag) can find its predecessor snapshot.
+    old_ref_roles = old.get("ref_roles", {})
+    old_roles_by_ref = {
+        ref: old_ref_roles.get(ref) or snap.get("role") or infer_role(ref)
+        for ref, snap in old_snapshots.items()
+    }
     for ref, snapshot in new.get("snapshots", {}).items():
-        # A ref absent from the prior contract is a newly-introduced tier (e.g.
-        # adding the release tag). Its first snapshot establishes a baseline; it
-        # is not drift, so skip it to avoid a flood of false "missing -> ok".
-        if ref not in old_snapshots:
+        role = snapshot_role(ref, snapshot, ref_roles)
+        old_snapshot = resolve_baseline_snapshot(ref, role, old_snapshots, old_roles_by_ref)
+        # No comparable prior snapshot for this role at all (e.g. the very first
+        # time a tier is introduced). Its first snapshot establishes a baseline;
+        # it is not drift, so skip it to avoid a flood of false "missing -> ok".
+        if old_snapshot is None:
             continue
-        old_snapshot = old_snapshots.get(ref, {})
         old_anchors = old_snapshot.get("anchors", {})
-        role = ref_roles.get(ref, snapshot.get("role") or infer_role(ref))
         for target_id, anchor in snapshot.get("anchors", {}).items():
             old_anchor = old_anchors.get(target_id)
             # The only behavioral signals are existence (status) and body
@@ -527,6 +564,33 @@ def compare_contracts(
                     }
                 )
     return changes
+
+
+def detect_baseline_advances(old: dict[str, Any] | None, new: dict[str, Any]) -> list[dict[str, Any]]:
+    """Detect tiers whose ref NAME advanced while keeping the same role.
+
+    A release tag bump (``9.0.4`` -> ``9.0.5``) is not drift, but it IS a
+    notable event: the version users run has moved. Surfacing it makes the
+    "adapt to the released version" baseline auditable instead of silent.
+    """
+    if not old:
+        return []
+    old_snapshots = old.get("snapshots", {})
+    old_ref_roles = old.get("ref_roles", {})
+    old_roles_by_ref = {
+        ref: old_ref_roles.get(ref) or snap.get("role") or infer_role(ref)
+        for ref, snap in old_snapshots.items()
+    }
+    new_ref_roles = new.get("ref_roles", {})
+    advances: list[dict[str, Any]] = []
+    for ref, snap in new.get("snapshots", {}).items():
+        if ref in old_snapshots:
+            continue
+        role = new_ref_roles.get(ref) or snap.get("role") or infer_role(ref)
+        prior = [r for r, old_role in old_roles_by_ref.items() if old_role == role]
+        if len(prior) == 1:
+            advances.append({"role": role, "old_ref": prior[0], "new_ref": ref})
+    return advances
 
 
 def max_severity(changes: list[dict[str, Any]]) -> str:
@@ -762,7 +826,9 @@ def build_report(
     contract_rel: str,
     targets_rel: str,
     milestone_dir_rel: str,
+    baseline_advances: list[dict[str, Any]] | None = None,
 ) -> str:
+    baseline_advances = baseline_advances or []
     overall = max_severity(changes) if changes else SEVERITY_RADAR
     refs_label = ", ".join(f"{ref} ({role})" for ref, role in watched)
     lines = [
@@ -777,6 +843,15 @@ def build_report(
         f"- Draft milestone: `{milestone_id or 'none'}`",
         "",
     ]
+
+    if baseline_advances:
+        lines.extend(["## Baseline Advances", ""])
+        for advance in baseline_advances:
+            lines.append(
+                f"- `{advance['role']}` tier advanced `{advance['old_ref']}` -> `{advance['new_ref']}`; "
+                "anchors compared against the prior tier snapshot (not skipped)."
+            )
+        lines.append("")
 
     manual_targets = [target for target in targets if target.get("needs_manual_mapping")]
     if not old_contract_exists:
@@ -1145,6 +1220,7 @@ def run(args: argparse.Namespace) -> int:
     )
 
     changes = compare_contracts(old_contract, new_contract, ref_roles)
+    baseline_advances = detect_baseline_advances(old_contract, new_contract)
     old_hash = (old_contract or {}).get("watch_targets_hash", "")
     watchlist_changed = bool(old_contract and old_hash != new_contract["watch_targets_hash"]) or watchlist_changed_by_diff
     old_contract_exists = old_contract is not None
@@ -1168,6 +1244,7 @@ def run(args: argparse.Namespace) -> int:
         old_contract_exists=old_contract_exists,
         watchlist_changed=watchlist_changed,
         changes=changes,
+        baseline_advances=baseline_advances,
         targets=targets,
         milestone_id=milestone_id,
         report_rel=args.report,
@@ -1176,7 +1253,11 @@ def run(args: argparse.Namespace) -> int:
         milestone_dir_rel=args.milestone_dir,
     )
 
-    should_write_outputs = args.update and (not old_contract_exists or bool(changes) or watchlist_changed)
+    # A baseline advance with no anchor change still merits writing the refreshed
+    # contract so the new ref name becomes the comparison point next run.
+    should_write_outputs = args.update and (
+        not old_contract_exists or bool(changes) or watchlist_changed or bool(baseline_advances)
+    )
 
     if should_write_outputs:
         atomic_write_json(contract_path, new_contract)
