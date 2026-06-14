@@ -380,6 +380,36 @@
         "Run uv run python scripts/ci/check_zotero_upstream.py --check-only to refresh radar status.",
         "Run uv run python scripts/ci/check_stop.py."
       ]
+    },
+    {
+      "id": "M015",
+      "title": "Zotero upstream drift watch (dev radar)",
+      "phase": "Maintenance - Zotero Upstream Compatibility",
+      "status": "accepted",
+      "depends_on": [
+        "M014"
+      ],
+      "goal": "Track Zotero dev (main) drift in watched anchors. Released/beta versions are NOT yet affected; do not change release-targeting product code -- record where relocated logic moved for future adaptation.",
+      "in_scope": [
+        "Inspect changed upstream watch targets: collection-tree-row-duplicates-search-object",
+        "Verify the behavioral contracts of each changed target on the release tier.",
+        "Update Zoplicate compatibility code and tests only where a release/beta contract actually broke.",
+        "Refresh upstream contract snapshots after compatibility work."
+      ],
+      "out_of_scope": [
+        "Unrelated feature work",
+        "Broad refactors not required by upstream compatibility",
+        "Chasing dev-only (radar) drift with product code changes",
+        "Changing release metadata unless Zotero compatibility bounds actually change"
+      ],
+      "acceptance": [
+        "Review .workflow/upstream/zotero_upstream_report.md and classify every changed target by tier severity (urgent/scheduled/radar).",
+        "Verify collection-tree-row-duplicates-search-object (radar) contracts still hold on the release tier: On a duplicates row, getSearchObject() delegates to this.ref.getSearchObject() (Zotero.Duplicates.getSearchObject) for the row's library. | The duplicate temp table is dropped on row unload (this.onUnload), the lifecycle Zoplicate's caching compensates for. | isDuplicates() and .ref.libraryID remain the row's stable identity surface that Zoplicate reads.",
+        "Do NOT modify release-targeting product code; the released/beta versions are unaffected.",
+        "For each dev-only change, trace where the relocated logic went (one hop) and record new watch targets.",
+        "Run uv run python scripts/ci/check_zotero_upstream.py --check-only to refresh radar status.",
+        "Run uv run python scripts/ci/check_stop.py."
+      ]
     }
   ],
   "deviation_policy": {

@@ -273,6 +273,71 @@ class ComparisonTests(unittest.TestCase):
         changes = upstream.compare_contracts(old, new, {"9.0.4": "release", "9.0": "beta", "main": "dev"})
         self.assertEqual(changes, [])
 
+    def _tiered_snap(self, sha: str, role: str) -> dict[str, object]:
+        return {
+            "head": "h",
+            "role": role,
+            "anchors": {
+                "t": {
+                    "status": "ok",
+                    "source_path": "a.js",
+                    "anchor_kind": "class_member",
+                    "anchor_pattern": "x",
+                    "matched_kind": "class_method",
+                    "sha256": sha,
+                    "message": "",
+                }
+            },
+        }
+
+    def test_release_tag_advance_still_compares_by_role(self) -> None:
+        # Regression: when the release tag advances (9.0.4 -> 9.0.5), the new ref
+        # name must be compared against the prior RELEASE snapshot, not skipped.
+        old = self._contract(
+            {
+                "9.0.4": self._tiered_snap("rel-old", "release"),
+                "9.0": self._tiered_snap("b", "beta"),
+                "main": self._tiered_snap("d", "dev"),
+            }
+        )
+        new = self._contract(
+            {
+                "9.0.5": self._tiered_snap("rel-new", "release"),
+                "9.0": self._tiered_snap("b", "beta"),
+                "main": self._tiered_snap("d", "dev"),
+            }
+        )
+        changes = upstream.compare_contracts(old, new, {"9.0.5": "release", "9.0": "beta", "main": "dev"})
+        self.assertEqual(len(changes), 1)
+        self.assertEqual(changes[0]["ref"], "9.0.5")
+        self.assertEqual(changes[0]["severity"], upstream.SEVERITY_URGENT)
+
+    def test_release_tag_advance_with_no_body_change_is_not_drift(self) -> None:
+        old = self._contract(
+            {"9.0.4": self._tiered_snap("same", "release"), "9.0": self._tiered_snap("b", "beta")}
+        )
+        new = self._contract(
+            {"9.0.5": self._tiered_snap("same", "release"), "9.0": self._tiered_snap("b", "beta")}
+        )
+        changes = upstream.compare_contracts(old, new, {"9.0.5": "release", "9.0": "beta"})
+        self.assertEqual(changes, [])
+
+    def test_detect_baseline_advances_reports_tag_bump(self) -> None:
+        old = self._contract({"9.0.4": self._tiered_snap("s", "release"), "main": self._tiered_snap("d", "dev")})
+        new = self._contract({"9.0.5": self._tiered_snap("s", "release"), "main": self._tiered_snap("d", "dev")})
+        advances = upstream.detect_baseline_advances(old, new)
+        self.assertEqual(advances, [{"role": "release", "old_ref": "9.0.4", "new_ref": "9.0.5"}])
+
+    def test_ambiguous_role_does_not_guess_baseline(self) -> None:
+        # If two old refs shared a role, a renamed ref cannot be unambiguously
+        # matched, so it is treated as a fresh baseline (no false drift).
+        old = self._contract(
+            {"9.0.3": self._tiered_snap("a", "release"), "9.0.4": self._tiered_snap("b", "release")}
+        )
+        new = self._contract({"9.0.5": self._tiered_snap("c", "release")})
+        changes = upstream.compare_contracts(old, new, {"9.0.5": "release"})
+        self.assertEqual(changes, [])
+
     def test_dev_only_change_is_radar(self) -> None:
         def snap(sha: str, role: str) -> dict[str, object]:
             return {

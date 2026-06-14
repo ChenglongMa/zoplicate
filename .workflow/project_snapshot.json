@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
-  "latest_accepted_milestone": "M014",
-  "current_target_milestone": "M014",
+  "latest_accepted_milestone": "M015",
+  "current_target_milestone": "M015",
   "current_status": "accepted",
-  "last_updated_utc": "2026-06-09T12:02:48Z",
+  "last_updated_utc": "2026-06-14T08:30:18Z",
   "open_risks_summary": [
     "Zotero UI/import flows cannot be fully verified with Jest alone.",
     "FTL .label attribute rendering requires manual Zotero 9 runtime verification.",
@@ -30,6 +30,7 @@
     "M013 unsynced items (no key) are skipped during SyncedSettings dual-write; picked up on next hydration after key assignment.",
     "M013 Zotero.Libraries.getAll() availability at uiReadyPromise assumed but not independently verified at runtime.",
     "M013 end-to-end tests use mocks; MANUAL Zotero runtime testing required to validate full sync flow.",
-    "M014 (accepted) deep-verify confirmed all 6 dev-drifted anchors hold on release/beta/dev; no product change. Relocated dev logic (collectionViewItemTree.jsx; per-instance CollectionTreeRow cache) recorded in watchlist cascade_hints for future release adaptation."
+    "M014 (accepted) deep-verify confirmed all 6 dev-drifted anchors hold on release/beta/dev; no product change. Relocated dev logic (collectionViewItemTree.jsx; per-instance CollectionTreeRow cache) recorded in watchlist cascade_hints for future release adaptation.",
+    "M015 (accepted) verified collection-tree-row getSearchObject contracts hold on dev/97aa4f9 (per-instance _cachedSearch early-return is benign); no product change. Engine fix: release tag advance (9.0.4->9.0.5) no longer silently skips release-tier comparison (role-based compare + Baseline Advances report)."
   ]
 }
