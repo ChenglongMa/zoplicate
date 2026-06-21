@@ -1,16 +1,12 @@
 # Zotero Upstream Watch Report
 
-- Generated: `2026-06-14T08:30:12Z`
+- Generated: `2026-06-21T08:10:57Z`
 - Remote: `https://github.com/zotero/zotero.git`
 - Refs: `9.0.5 (release), 9.0 (beta), main (dev)`
 - Watchlist changed: `no`
 - Baseline existed: `yes`
 - Overall severity: `radar`
-- Draft milestone: `M015`
-
-## Baseline Advances
-
-- `release` tier advanced `9.0.4` -> `9.0.5`; anchors compared against the prior tier snapshot (not skipped).
+- Draft milestone: `M016`
 
 ## Tier Severity Legend
 
@@ -22,7 +18,10 @@
 
 | Ref | Role | Severity | Target | Old | New | Status | Source |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `main` | `dev` | `radar` | `collection-tree-row-duplicates-search-object` | `f395136ef22a` | `6d9c9b9ad42f` | `ok -> ok` | `chrome/content/zotero/xpcom/collectionTreeRow.js` |
+| `main` | `dev` | `radar` | `collection-tree-render-item` | `55458a31bff8` | `4ddb6fc3061a` | `ok -> ok` | `chrome/content/zotero/collectionTree.jsx` |
+| `main` | `dev` | `radar` | `collection-tree-row-duplicates-search-object` | `6d9c9b9ad42f` | `0b74ab2e9c70` | `ok -> ok` | `chrome/content/zotero/xpcom/collectionTreeRow.js` |
+| `main` | `dev` | `radar` | `item-save-data` | `f84711ed44bc` | `1c3a71d62308` | `ok -> ok` | `chrome/content/zotero/xpcom/data/item.js` |
+| `main` | `dev` | `radar` | `merge-items` | `3b7ab707962a` | `3d256be1843d` | `ok -> ok` | `chrome/content/zotero/mergeItems.mjs` |
 
 ## Behavioral Contracts To Verify
 
@@ -30,13 +29,16 @@
   - On a duplicates row, getSearchObject() delegates to this.ref.getSearchObject() (Zotero.Duplicates.getSearchObject) for the row's library.
   - The duplicate temp table is dropped on row unload (this.onUnload), the lifecycle Zoplicate's caching compensates for.
   - isDuplicates() and .ref.libraryID remain the row's stable identity surface that Zoplicate reads.
+- `merge-items`:
+  - mergeItems(items, ...) merges a set of duplicate items into a master, handling relations, attachments, and trashing of non-masters.
+  - Calling mergeItems is sufficient for Zoplicate's bulk merge; Zoplicate does not reimplement merge side effects.
 
 ## Artifacts
 
 - Watchlist: `.workflow/upstream/zotero_watch_targets.json`
 - Contract: `.workflow/upstream/zotero_upstream_contract.json`
 - Report: `.workflow/upstream/zotero_upstream_report.md`
-- Draft milestone: `.workflow/milestones/M015.json`
+- Draft milestone: `.workflow/milestones/M016.json`
 
 ## Next Steps
 

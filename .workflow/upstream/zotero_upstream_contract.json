@@ -1,6 +1,6 @@
 {
   "schema_version": "1.1",
-  "generated_at_utc": "2026-06-14T08:30:12Z",
+  "generated_at_utc": "2026-06-21T08:10:57Z",
   "remote_url": "https://github.com/zotero/zotero.git",
   "watched_refs": [
     "9.0.5",
@@ -502,7 +502,7 @@
       }
     },
     "9.0": {
-      "head": "0e7f01a54994692b02eb35296c999d570ee38d68",
+      "head": "3242a3dd75e02b5ea00fb47b829d5a60f5d4be71",
       "role": "beta",
       "anchors": {
         "collection-tree-render-item": {
@@ -643,7 +643,7 @@
       }
     },
     "main": {
-      "head": "97aa4f93eaa935b0cddcf42aa40458995502b0fd",
+      "head": "40cb1cfa84cd1b56a6f21b91f472e4c8ce96e44d",
       "role": "dev",
       "anchors": {
         "collection-tree-render-item": {
@@ -652,7 +652,7 @@
           "anchor_kind": "method_assignment",
           "anchor_pattern": "renderItem",
           "matched_kind": "method_assignment",
-          "sha256": "55458a31bff84b7db7d294b1b06f62b34a7282a57bb9d9f919c71099ab3ebbb4",
+          "sha256": "4ddb6fc3061a9e110b0ede9e6c20c76ffc8e019d343748b8af6e6d622d5f91f3",
           "message": ""
         },
         "collection-tree-row-duplicates-search-object": {
@@ -661,7 +661,7 @@
           "anchor_kind": "function_assignment",
           "anchor_pattern": "Zotero.CollectionTreeRow.prototype.getSearchObject",
           "matched_kind": "function_assignment",
-          "sha256": "6d9c9b9ad42fae8c41ebdcbd78de2295ddaacfbaa4c10304df6f0e3de30bcfab",
+          "sha256": "0b74ab2e9c70402684790d83d43eaa29ce0fd4352ebf2763aebdef3b1fa831df",
           "message": ""
         },
         "disjoint-set-find": {
@@ -751,7 +751,7 @@
           "anchor_kind": "function_assignment",
           "anchor_pattern": "Zotero.Item.prototype._saveData",
           "matched_kind": "function_assignment",
-          "sha256": "f84711ed44bcb17c0c5bed2a71512a704e536655c23608aa2b6a4bc5440557e5",
+          "sha256": "1c3a71d623080b7ee4b2c909629984e7d4de121e29a971155ea9a6ac21e329bc",
           "message": ""
         },
         "item-tree-duplicate-selection": {
@@ -769,7 +769,7 @@
           "anchor_kind": "exported_function",
           "anchor_pattern": "mergeItems",
           "matched_kind": "exported_function",
-          "sha256": "3b7ab707962a373f42fbf3d5d4a56f367839d6665012bff1f3c223026b5a91f6",
+          "sha256": "3d256be1843d0ed526e054eb940ada128ebb9858a7c1ff2fa0a3fd0fde2edd34",
           "message": ""
         },
         "merge-items-move-relations": {
