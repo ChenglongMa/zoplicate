@@ -1,6 +1,6 @@
 {
   "schema_version": "1.1",
-  "generated_at_utc": "2026-06-14T08:30:12Z",
+  "generated_at_utc": "2026-06-21T08:39:23Z",
   "remote_url": "https://github.com/zotero/zotero.git",
   "watched_refs": [
     "9.0.5",
@@ -12,7 +12,7 @@
     "9.0": "beta",
     "main": "dev"
   },
-  "watch_targets_hash": "7cd8f388170aa25a338f364906183e27d67726241a2c53fef687a7bf6e88dfc6",
+  "watch_targets_hash": "996ef8479ad3567dcd252709eb02134d60182bf585d0b08c5151a53395384e87",
   "watch_targets": [
     {
       "id": "collection-tree-render-item",
@@ -29,8 +29,14 @@
       "recommended_tests": [
         "tests/duplicateStats.test.ts"
       ],
-      "contracts": [],
-      "cascade_hints": [],
+      "contracts": [
+        "collectionTree renderItem builds a row whose primary cell is a 'span.cell.label.primary' containing a 'span.cell-text' label node -- Zoplicate queries both selectors to inject a duplicate-count badge.",
+        "The cell element accepts appended child span nodes (Zoplicate adds a '.number' badge) without renderItem overwriting them on re-render of unchanged rows."
+      ],
+      "cascade_hints": [
+        "chrome/content/zotero/collectionTree.jsx: renderItem assignment and the 'cell label primary' / 'cell-text' className construction.",
+        "If the row DOM moves to a different element/class, update the querySelector targets in src/features/duplicateStats/duplicateStats.ts."
+      ],
       "needs_manual_mapping": false
     },
     {
@@ -282,8 +288,15 @@
         "tests/duplicatesNotifyHandlers.test.ts",
         "tests/hooks.lifecycle.test.ts"
       ],
-      "contracts": [],
-      "cascade_hints": [],
+      "contracts": [
+        "_saveData(env) receives env.isNew, env.options.skipNotifier, env.options.notifierQueue, and a mutable env.notifierData that is forwarded to Zotero.Notifier.queue('modify'/'add', 'item', id, env.notifierData) -- Zoplicate injects env.notifierData.refreshDuplicates.",
+        "this._changed.creators and this._changed.itemData expose which fields changed before save; Zoplicate gates the duplicate-refresh flag on them plus this.isRegularItem().",
+        "this.parentID is readable/writable inside _saveData before original.call, so Zoplicate can re-parent a child whose parent was trashed (used with DuplicateFinder/DuplicateItems master selection)."
+      ],
+      "cascade_hints": [
+        "chrome/content/zotero/xpcom/data/item.js: Zotero.Item.prototype._saveData = async function (env) { ... } and its Zotero.Notifier.queue(...) call sites.",
+        "If notifier payload plumbing moves off env.notifierData (e.g. to a structured event), patchItemSaveData.ts must follow the new injection point."
+      ],
       "needs_manual_mapping": false
     },
     {
@@ -502,7 +515,7 @@
       }
     },
     "9.0": {
-      "head": "0e7f01a54994692b02eb35296c999d570ee38d68",
+      "head": "3242a3dd75e02b5ea00fb47b829d5a60f5d4be71",
       "role": "beta",
       "anchors": {
         "collection-tree-render-item": {
@@ -643,7 +656,7 @@
       }
     },
     "main": {
-      "head": "97aa4f93eaa935b0cddcf42aa40458995502b0fd",
+      "head": "40cb1cfa84cd1b56a6f21b91f472e4c8ce96e44d",
       "role": "dev",
       "anchors": {
         "collection-tree-render-item": {
@@ -652,7 +665,7 @@
           "anchor_kind": "method_assignment",
           "anchor_pattern": "renderItem",
           "matched_kind": "method_assignment",
-          "sha256": "55458a31bff84b7db7d294b1b06f62b34a7282a57bb9d9f919c71099ab3ebbb4",
+          "sha256": "4ddb6fc3061a9e110b0ede9e6c20c76ffc8e019d343748b8af6e6d622d5f91f3",
           "message": ""
         },
         "collection-tree-row-duplicates-search-object": {
@@ -661,7 +674,7 @@
           "anchor_kind": "function_assignment",
           "anchor_pattern": "Zotero.CollectionTreeRow.prototype.getSearchObject",
           "matched_kind": "function_assignment",
-          "sha256": "6d9c9b9ad42fae8c41ebdcbd78de2295ddaacfbaa4c10304df6f0e3de30bcfab",
+          "sha256": "0b74ab2e9c70402684790d83d43eaa29ce0fd4352ebf2763aebdef3b1fa831df",
           "message": ""
         },
         "disjoint-set-find": {
@@ -751,7 +764,7 @@
           "anchor_kind": "function_assignment",
           "anchor_pattern": "Zotero.Item.prototype._saveData",
           "matched_kind": "function_assignment",
-          "sha256": "f84711ed44bcb17c0c5bed2a71512a704e536655c23608aa2b6a4bc5440557e5",
+          "sha256": "1c3a71d623080b7ee4b2c909629984e7d4de121e29a971155ea9a6ac21e329bc",
           "message": ""
         },
         "item-tree-duplicate-selection": {
@@ -769,7 +782,7 @@
           "anchor_kind": "exported_function",
           "anchor_pattern": "mergeItems",
           "matched_kind": "exported_function",
-          "sha256": "3b7ab707962a373f42fbf3d5d4a56f367839d6665012bff1f3c223026b5a91f6",
+          "sha256": "3d256be1843d0ed526e054eb940ada128ebb9858a7c1ff2fa0a3fd0fde2edd34",
           "message": ""
         },
         "merge-items-move-relations": {

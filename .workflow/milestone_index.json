@@ -410,6 +410,39 @@
         "Run uv run python scripts/ci/check_zotero_upstream.py --check-only to refresh radar status.",
         "Run uv run python scripts/ci/check_stop.py."
       ]
+    },
+    {
+      "id": "M016",
+      "title": "Zotero upstream drift watch (dev radar)",
+      "phase": "Maintenance - Zotero Upstream Compatibility",
+      "status": "accepted",
+      "depends_on": [
+        "M015"
+      ],
+      "goal": "Track Zotero dev (main) drift in watched anchors. Released/beta versions are NOT yet affected; do not change release-targeting product code -- record where relocated logic moved for future adaptation.",
+      "in_scope": [
+        "Inspect changed upstream watch targets: collection-tree-render-item, collection-tree-row-duplicates-search-object, item-save-data, merge-items",
+        "Verify the behavioral contracts of each changed target on the release tier.",
+        "Update Zoplicate compatibility code and tests only where a release/beta contract actually broke.",
+        "Refresh upstream contract snapshots after compatibility work."
+      ],
+      "out_of_scope": [
+        "Unrelated feature work",
+        "Broad refactors not required by upstream compatibility",
+        "Chasing dev-only (radar) drift with product code changes",
+        "Changing release metadata unless Zotero compatibility bounds actually change"
+      ],
+      "acceptance": [
+        "Review .workflow/upstream/zotero_upstream_report.md and classify every changed target by tier severity (urgent/scheduled/radar).",
+        "Verify collection-tree-render-item (radar) contracts still hold on the release tier: collectionTree renderItem builds a row whose primary cell is a 'span.cell.label.primary' containing a 'span.cell-text' label node -- Zoplicate queries both selectors to inject a duplicate-count badge. | The cell element accepts appended child span nodes (Zoplicate adds a '.number' badge) without renderItem overwriting them on re-render of unchanged rows.",
+        "Verify collection-tree-row-duplicates-search-object (radar) contracts still hold on the release tier: On a duplicates row, getSearchObject() delegates to this.ref.getSearchObject() (Zotero.Duplicates.getSearchObject) for the row's library. | The duplicate temp table is dropped on row unload (this.onUnload), the lifecycle Zoplicate's caching compensates for. | isDuplicates() and .ref.libraryID remain the row's stable identity surface that Zoplicate reads.",
+        "Verify item-save-data (radar) contracts still hold on the release tier: _saveData(env) receives env.isNew, env.options.skipNotifier, env.options.notifierQueue, and a mutable env.notifierData that is forwarded to Zotero.Notifier.queue('modify'/'add', 'item', id, env.notifierData) -- Zoplicate injects env.notifierData.refreshDuplicates. | this._changed.creators and this._changed.itemData expose which fields changed before save; Zoplicate gates the duplicate-refresh flag on them plus this.isRegularItem(). | this.parentID is readable/writable inside _saveData before original.call, so Zoplicate can re-parent a child whose parent was trashed (used with DuplicateFinder/DuplicateItems master selection).",
+        "Verify merge-items (radar) contracts still hold on the release tier: mergeItems(items, ...) merges a set of duplicate items into a master, handling relations, attachments, and trashing of non-masters. | Calling mergeItems is sufficient for Zoplicate's bulk merge; Zoplicate does not reimplement merge side effects.",
+        "Do NOT modify release-targeting product code; the released/beta versions are unaffected.",
+        "For each dev-only change, trace where the relocated logic went (one hop) and record new watch targets.",
+        "Run uv run python scripts/ci/check_zotero_upstream.py --check-only to refresh radar status.",
+        "Run uv run python scripts/ci/check_stop.py."
+      ]
     }
   ],
   "deviation_policy": {

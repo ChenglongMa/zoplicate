@@ -135,6 +135,15 @@
         "tests/duplicatesNotifyHandlers.test.ts",
         "tests/hooks.lifecycle.test.ts"
       ],
+      "contracts": [
+        "_saveData(env) receives env.isNew, env.options.skipNotifier, env.options.notifierQueue, and a mutable env.notifierData that is forwarded to Zotero.Notifier.queue('modify'/'add', 'item', id, env.notifierData) -- Zoplicate injects env.notifierData.refreshDuplicates.",
+        "this._changed.creators and this._changed.itemData expose which fields changed before save; Zoplicate gates the duplicate-refresh flag on them plus this.isRegularItem().",
+        "this.parentID is readable/writable inside _saveData before original.call, so Zoplicate can re-parent a child whose parent was trashed (used with DuplicateFinder/DuplicateItems master selection)."
+      ],
+      "cascade_hints": [
+        "chrome/content/zotero/xpcom/data/item.js: Zotero.Item.prototype._saveData = async function (env) { ... } and its Zotero.Notifier.queue(...) call sites.",
+        "If notifier payload plumbing moves off env.notifierData (e.g. to a structured event), patchItemSaveData.ts must follow the new injection point."
+      ],
       "needs_manual_mapping": false
     },
     {
@@ -246,6 +255,14 @@
       "reason": "Duplicate count rendering depends on Zotero's collection row DOM structure.",
       "risk_level": "medium",
       "recommended_tests": ["tests/duplicateStats.test.ts"],
+      "contracts": [
+        "collectionTree renderItem builds a row whose primary cell is a 'span.cell.label.primary' containing a 'span.cell-text' label node -- Zoplicate queries both selectors to inject a duplicate-count badge.",
+        "The cell element accepts appended child span nodes (Zoplicate adds a '.number' badge) without renderItem overwriting them on re-render of unchanged rows."
+      ],
+      "cascade_hints": [
+        "chrome/content/zotero/collectionTree.jsx: renderItem assignment and the 'cell label primary' / 'cell-text' className construction.",
+        "If the row DOM moves to a different element/class, update the querySelector targets in src/features/duplicateStats/duplicateStats.ts."
+      ],
       "needs_manual_mapping": false
     },
     {
