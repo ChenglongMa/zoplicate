@@ -44,7 +44,7 @@
     "node": ">=24.0.0"
   },
   "dependencies": {
-    "zotero-plugin-toolkit": "^5.1.2"
+    "zotero-plugin-toolkit": "^5.1.4"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
