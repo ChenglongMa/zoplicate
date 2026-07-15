@@ -50,17 +50,12 @@ export function patchGetSearchObject(
                 [tmpTable],
               );
               if (!exists) {
-                ztoolkit.log(
-                  `Zoplicate: temp table ${tmpTable} no longer exists, rebuilding duplicate search`,
-                );
+                ztoolkit.log(`Zoplicate: temp table ${tmpTable} no longer exists, rebuilding duplicate search`);
                 markDuplicateSearchDirty(libraryID);
               }
             }
           } catch (e) {
-            ztoolkit.log(
-              "Zoplicate: error checking temp table, rebuilding duplicate search:",
-              e,
-            );
+            ztoolkit.log("Zoplicate: error checking temp table, rebuilding duplicate search:", e);
             markDuplicateSearchDirty(libraryID);
           }
         }
