@@ -1,9 +1,27 @@
+import { execFileSync } from "node:child_process";
 import { defineConfig } from "zotero-plugin-scaffold";
 import pkg from "./package.json";
 import { ensureZoteroLocaleFallbacks, ZOTERO_LOCALES } from "./scripts/zoteroLocaleFallbacks";
 
 const localeFallbackLocales =
   process.env.ZOPLICATE_LOCALE_FALLBACKS === "minimal" ? (["en-US", "zh-CN"] as const) : ZOTERO_LOCALES;
+
+function removeGeneratedContributors(changelog: string): string {
+  return changelog.replace(/\n###[^\n]*Contributors[\s\S]*?(?=\n### |\n## |$)/, "").trim();
+}
+
+function getContributorThanks(version: string): string {
+  try {
+    return execFileSync("node", ["scripts/release-thanks.mjs", `v${version}`], {
+      encoding: "utf8",
+      env: process.env,
+      stdio: ["ignore", "pipe", "inherit"],
+    }).trim();
+  } catch (error) {
+    console.warn(`Skipping contributor thanks: ${error instanceof Error ? error.message : String(error)}`);
+    return "";
+  }
+}
 
 export default defineConfig({
   source: ["src", "addon"],
@@ -57,6 +75,13 @@ export default defineConfig({
     bumpp: {
       execute: "npm run build",
       all: true,
+    },
+    github: {
+      releaseNote: (ctx) => {
+        const changelog = removeGeneratedContributors(ctx.release.changelog);
+        const thanks = getContributorThanks(ctx.version);
+        return [changelog, thanks].filter(Boolean).join("\n\n");
+      },
     },
   },
 
