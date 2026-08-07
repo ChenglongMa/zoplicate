@@ -443,6 +443,36 @@
         "Run uv run python scripts/ci/check_zotero_upstream.py --check-only to refresh radar status.",
         "Run uv run python scripts/ci/check_stop.py."
       ]
+    },
+    {
+      "id": "M017",
+      "title": "Zotero upstream drift watch (dev radar)",
+      "phase": "Maintenance - Zotero Upstream Compatibility",
+      "status": "planned",
+      "depends_on": [
+        "M016"
+      ],
+      "goal": "Track Zotero dev (main) drift in watched anchors. Released/beta versions are NOT yet affected; do not change release-targeting product code -- record where relocated logic moved for future adaptation.",
+      "in_scope": [
+        "Inspect changed upstream watch targets: item-save-data",
+        "Verify the behavioral contracts of each changed target on the release tier.",
+        "Update Zoplicate compatibility code and tests only where a release/beta contract actually broke.",
+        "Refresh upstream contract snapshots after compatibility work."
+      ],
+      "out_of_scope": [
+        "Unrelated feature work",
+        "Broad refactors not required by upstream compatibility",
+        "Chasing dev-only (radar) drift with product code changes",
+        "Changing release metadata unless Zotero compatibility bounds actually change"
+      ],
+      "acceptance": [
+        "Review .workflow/upstream/zotero_upstream_report.md and classify every changed target by tier severity (urgent/scheduled/radar).",
+        "Verify item-save-data (radar) contracts still hold on the release tier: _saveData(env) receives env.isNew, env.options.skipNotifier, env.options.notifierQueue, and a mutable env.notifierData that is forwarded to Zotero.Notifier.queue('modify'/'add', 'item', id, env.notifierData) -- Zoplicate injects env.notifierData.refreshDuplicates. | this._changed.creators and this._changed.itemData expose which fields changed before save; Zoplicate gates the duplicate-refresh flag on them plus this.isRegularItem(). | this.parentID is readable/writable inside _saveData before original.call, so Zoplicate can re-parent a child whose parent was trashed (used with DuplicateFinder/DuplicateItems master selection).",
+        "Do NOT modify release-targeting product code; the released/beta versions are unaffected.",
+        "For each dev-only change, trace where the relocated logic went (one hop) and record new watch targets.",
+        "Run uv run python scripts/ci/check_zotero_upstream.py --check-only to refresh radar status.",
+        "Run uv run python scripts/ci/check_stop.py."
+      ]
     }
   ],
   "deviation_policy": {
