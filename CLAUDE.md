@@ -17,10 +17,11 @@ A Zotero plugin that detects and manages duplicate items, supports bulk merge fl
 
 ## Architecture constraints
 
-- `src/index.ts`, `src/addon.ts`, `src/hooks.ts`: addon bootstrap and lifecycle hooks only
-- `src/modules/`: feature workflows, Zotero UI integration, and orchestration glue
+- `src/index.ts`, `src/app/addon.ts`, `src/app/hooks.ts`: addon bootstrap and lifecycle hooks only
+- `src/features/`: feature workflows and orchestration glue
+- `src/integrations/`: Zotero UI integration adapters
 - `src/db/`: duplicate and non-duplicate persistence and query logic
-- `src/utils/`: shared helpers, Zotero wrappers, and view utilities
+- `src/shared/`: shared helpers, Zotero wrappers, and view utilities
 - `addon/`: shipped plugin manifest, prefs, locale, and chrome assets
 
 Do not put business logic in thin entrypoint layers.
@@ -44,9 +45,9 @@ Two skills: `/milestone-tdd` (user-level, for product implementation) and `/upst
 
 ## Context loading policy
 
-- Tier 0: `CLAUDE.md`, `.workflow/state/working.json` (if present), `.workflow/project_snapshot.json`
+- Tier 0: `CLAUDE.md`, `.workflow/project_snapshot.json`, and local working-state files when present (gitignored under the workflow state directory)
 - Tier 1: `.workflow/milestone_index.json`, `.workflow/milestones/{ID}.json`, directly implicated code and tests
-- Tier 2: `docs/ai/prompt_audit_log.md`, `docs/ai/claude_operator_guide.md`
+- Tier 2: optional local AI operator notes when present (gitignored under the docs AI directory)
 
 Do not load Tier 2 files at session start.
 
@@ -54,7 +55,7 @@ Do not load Tier 2 files at session start.
 
 Four project-scoped MCP servers in `.mcp.json`: `episodic-memory`, `zoplicate-codebase`, `zoplicate-workflow`, `zotero-reference`. Prefer scoped MCP reads over broad repository scans.
 
-Use `zotero-reference` for upstream Zotero implementation and lifecycle patterns. Treat `.references/zotero/` as read-only. Project hooks refresh `.references/zotero/` on session start and when `/milestone-tdd` or `/upstream-pr-milestone` prompts are submitted.
+Use `zotero-reference` for upstream Zotero implementation and lifecycle patterns. Treat the local Zotero reference checkout as read-only when present (gitignored). Project hooks may refresh that checkout on session start and when `/milestone-tdd` or `/upstream-pr-milestone` prompts are submitted.
 
 ## State update policy
 
