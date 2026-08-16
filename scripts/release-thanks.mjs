@@ -164,7 +164,7 @@ function formatThanks(pulls, excludedContributors, aiKeywords) {
     return "";
   }
 
-  const lines = ["### Thanks", "", "Thanks to external contributors for this release:"];
+  const lines = ["### Thanks", "", "Thanks to the brilliant contributors for this release:"];
   for (const [login, contributions] of entries) {
     const summary = contributions
       .sort((a, b) => a.number - b.number)
