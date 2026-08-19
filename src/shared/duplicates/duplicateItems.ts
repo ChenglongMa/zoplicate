@@ -12,12 +12,15 @@ export class DuplicateItems {
   private readonly _itemTitle: string;
 
   constructor(items: Zotero.Item[] | number[], masterItemPref: MasterItem) {
-    if (items.length < 1) {
+    this._items = items
+      .map((item) => (typeof item === "number" ? Zotero.Items.get(item) : item))
+      .filter((item): item is Zotero.Item => Boolean(item));
+    if (this._items.length < 1) {
       ztoolkit.log("DuplicateItems must have at least one item");
+      throw new Error("DuplicateItems requires at least one available item");
     }
 
     this._masterItemPref = masterItemPref;
-    this._items = items.map((item) => (typeof item === "number" ? Zotero.Items.get(item) : item));
     this._smallestItemID = this._items.reduce((acc, item) => (item.id < acc ? item.id : acc), this._items[0].id);
     this._itemTitle = this._items[0].getDisplayTitle();
   }

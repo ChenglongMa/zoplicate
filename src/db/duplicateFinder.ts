@@ -6,7 +6,11 @@ export class DuplicateFinder {
   private candidateItemIDs: number[];
 
   constructor(item: Zotero.Item | number) {
-    this.item = typeof item === "number" ? Zotero.Items.get(item) : item;
+    const resolvedItem = typeof item === "number" ? Zotero.Items.get(item) : item;
+    if (!resolvedItem) {
+      throw new Error(`Zotero item ${item} is unavailable`);
+    }
+    this.item = resolvedItem;
     this.candidateItemIDs = [];
     this.itemTypeID = this.item.itemTypeID;
   }

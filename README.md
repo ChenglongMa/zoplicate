@@ -3,9 +3,9 @@
 </div>
 
 👉
-[![zotero target version](https://img.shields.io/badge/Zotero-9-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
-[![Version for Zotero 9](https://img.shields.io/github/package-json/v/ChenglongMa/zoplicate)](https://github.com/ChenglongMa/zoplicate/releases/latest)
-[![Downloads for Zotero 9](https://img.shields.io/github/downloads/ChenglongMa/zoplicate/total)](https://github.com/ChenglongMa/zoplicate/releases/latest)👈
+[![zotero target version](https://img.shields.io/badge/Zotero-9%20%7C%2010-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
+[![Version for Zotero 9 and 10](https://img.shields.io/github/package-json/v/ChenglongMa/zoplicate)](https://github.com/ChenglongMa/zoplicate/releases/latest)
+[![Downloads for Zotero 9 and 10](https://img.shields.io/github/downloads/ChenglongMa/zoplicate/total)](https://github.com/ChenglongMa/zoplicate/releases/latest)👈
 
 ![GitHub License](https://img.shields.io/github/license/ChenglongMa/zoplicate)
 [![Using Zotero Plugin Template](https://img.shields.io/badge/Using-Zotero%20Plugin%20Template-blue?style=flat-square&logo=github)](https://github.com/windingwind/zotero-plugin-template)
@@ -77,11 +77,11 @@ This hotfix resolves the Zotero sync error reported as `Invalid setting 'zoplica
 <details markdown="1">
   <summary><i>Click here to show more.</i></summary>
 
-This version focuses on the Zotero 9 migration and data integrity work:
+This version focuses on Zotero 9–10 compatibility and data integrity work:
 
-1. ✨ **NEW!**: Zoplicate now targets **Zotero 9** (`9.0` to `9.*`) and the release manifest is generated for Zotero 9.
+1. ✨ **NEW!**: Zoplicate now targets **Zotero 9 and 10** (`9.0` through `10.0.*`) and the release manifest includes Zotero 10.
 2. ✨ **NEW!**: Non-duplicate pairs can now be synced through `Zotero.SyncedSettings` with key-based storage for cross-device portability.
-3. 🧬 **CHANGE!**: The duplicate detection, dialog rendering, menu registration, window handling, and plugin lifecycle code were reorganized for the Zotero 9 runtime.
+3. 🧬 **CHANGE!**: The duplicate detection, dialog rendering, menu registration, window handling, and plugin lifecycle code were reviewed for the Zotero 9 and 10 runtimes.
 4. 🐛 **FIX!**: Added local DB schema versioning, safer cleanup for merged/deleted items, startup hydration, and conflict-safe union merge for synced non-duplicate pairs.
 5. ✅ **TEST!**: Expanded the automated test suite for duplicate detection, non-duplicate sync, hydration, cleanup, lifecycle, menus, and bulk merge flows.
 
@@ -321,7 +321,7 @@ Thanks [ChinJCheung](https://github.com/ChinJCheung)'s idea mentioned in [issue 
 
 ## From GitHub
 
-1. Zoplicate 5 targets **Zotero 9** (`9.0` to `9.*`).
+1. Zoplicate 5 targets **Zotero 9 and 10** (`9.0` through `10.0.*`).
 2. Visit the [latest release page](https://github.com/ChenglongMa/zoplicate/releases/latest) and download [the latest `zoplicate.xpi` file](https://github.com/ChenglongMa/zoplicate/releases/latest/download/zoplicate.xpi).
    - If you are using FireFox, right-click on the link of the XPI file and select "Save As...".
 3. Then, in Zotero, click `Tools` -> `Plugins` and drag the `.xpi` onto the Plugins window.

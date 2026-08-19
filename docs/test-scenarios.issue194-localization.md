@@ -4,7 +4,7 @@ Purpose: verify enabling Zoplicate does not change Zotero native localized strin
 
 ## Preconditions
 
-- Zotero 9 runtime available.
+- Zotero 9 or 10 runtime available.
 - System or Zotero UI language set to a non-English locale (for example zh-CN or de-DE).
 - Clean startup state with Zoplicate disabled.
 

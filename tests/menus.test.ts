@@ -298,7 +298,10 @@ describe("collection menu onShowing callback", () => {
       setEnabled: jest.fn(),
       setL10nArgs: jest.fn(),
       setIcon: jest.fn(),
-      collectionTreeRow,
+      collectionTreeRows: [collectionTreeRow],
+      get collectionTreeRow() {
+        throw new Error("collectionTreeRow was removed");
+      },
     };
 
     onShowing({} as Event, ctx);
@@ -320,7 +323,7 @@ describe("collection menu onShowing callback", () => {
       setEnabled: jest.fn(),
       setL10nArgs: jest.fn(),
       setIcon: jest.fn(),
-      collectionTreeRow,
+      collectionTreeRows: [collectionTreeRow],
     };
 
     onShowing({} as Event, ctx);

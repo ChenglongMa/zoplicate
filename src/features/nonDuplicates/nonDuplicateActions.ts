@@ -26,7 +26,15 @@ export async function toggleNonDuplicates(
   libraryID?: number,
   options: ToggleNonDuplicatesOptions = {},
 ) {
-  const resolvedItems = items.map((item) => (typeof item === "number" ? Zotero.Items.get(item) : item));
+  const resolvedItems: Zotero.Item[] = [];
+  for (const item of items) {
+    const resolvedItem = typeof item === "number" ? Zotero.Items.get(item) : item;
+    if (!resolvedItem) {
+      ztoolkit.log("toggleNonDuplicates skipped because an item is unavailable", item);
+      return;
+    }
+    resolvedItems.push(resolvedItem);
+  }
   const itemIDs = resolvedItems.map((item) => item.id);
   const resolvedLibraryID = libraryID ?? resolvedItems[0]?.libraryID;
 

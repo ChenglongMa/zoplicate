@@ -3,9 +3,9 @@
 </div>
 
 👉
-[![zotero target version](https://img.shields.io/badge/Zotero-9-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
-[![Version for Zotero 9](https://img.shields.io/github/package-json/v/ChenglongMa/zoplicate)](https://github.com/ChenglongMa/zoplicate/releases/latest)
-[![Downloads for Zotero 9](https://img.shields.io/github/downloads/ChenglongMa/zoplicate/total)](https://github.com/ChenglongMa/zoplicate/releases/latest)👈
+[![zotero target version](https://img.shields.io/badge/Zotero-9%20%7C%2010-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
+[![Version for Zotero 9 and 10](https://img.shields.io/github/package-json/v/ChenglongMa/zoplicate)](https://github.com/ChenglongMa/zoplicate/releases/latest)
+[![Downloads for Zotero 9 and 10](https://img.shields.io/github/downloads/ChenglongMa/zoplicate/total)](https://github.com/ChenglongMa/zoplicate/releases/latest)👈
 
 ![GitHub License](https://img.shields.io/github/license/ChenglongMa/zoplicate)
 [![Using Zotero Plugin Template](https://img.shields.io/badge/Using-Zotero%20Plugin%20Template-blue?style=flat-square&logo=github)](https://github.com/windingwind/zotero-plugin-template)
@@ -73,11 +73,11 @@ _如果你觉得这个插件对你有帮助，欢迎给它一个 ⭐️。感谢
 <details markdown="1">
   <summary><i>点击展开。</i></summary>
 
-这个版本主要完成 Zotero 9 迁移和数据一致性改进：
+这个版本主要完成 Zotero 9–10 兼容和数据一致性改进：
 
-1. ✨ **新增**：Zoplicate 现在面向 **Zotero 9**（`9.0` 到 `9.*`），发布清单也会生成 Zotero 9 的兼容信息。
+1. ✨ **新增**：Zoplicate 现在面向 **Zotero 9 和 10**（`9.0` 到 `10.0.*`），发布清单也包含 Zotero 10 的兼容信息。
 2. ✨ **新增**：非重复条目关系现在可以通过 `Zotero.SyncedSettings` 同步，并使用条目 key 存储，便于跨设备迁移。
-3. 🧬 **变更**：重构了重复检测、弹窗渲染、菜单注册、窗口处理和插件生命周期代码，以适配 Zotero 9 运行环境。
+3. 🧬 **变更**：重新审查了重复检测、弹窗渲染、菜单注册、窗口处理和插件生命周期代码，以适配 Zotero 9 和 10 运行环境。
 4. 🐛 **修复**：增加本地数据库 schema 版本管理、合并/删除后的安全清理、启动水合，以及同步冲突时的并集合并策略。
 5. ✅ **测试**：扩展了重复检测、非重复条目同步、水合、清理、生命周期、菜单和批量合并流程的自动化测试。
 
@@ -87,7 +87,7 @@ _如果你觉得这个插件对你有帮助，欢迎给它一个 ⭐️。感谢
 
 ## 通过 GitHub 安装
 
-1. Zoplicate 5 面向 **Zotero 9**（`9.0` 到 `9.*`）。
+1. Zoplicate 5 面向 **Zotero 9 和 10**（`9.0` 到 `10.0.*`）。
 2. 前往 [最新 release 页面](https://github.com/ChenglongMa/zoplicate/releases/latest)，下载 [最新的 `zoplicate.xpi` 文件](https://github.com/ChenglongMa/zoplicate/releases/latest/download/zoplicate.xpi)。
 3. 打开 Zotero，然后前往 `工具` -> `插件`。选择 `从文件安装插件...`。
    * 详情请参考 [Zotero 官方文档](https://www.zotero.org/support/plugins)。

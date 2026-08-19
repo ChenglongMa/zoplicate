@@ -2,7 +2,10 @@ export async function merge(
   masterItem: Zotero.Item,
   otherItems: Zotero.Item[], // Already sorted
 ): Promise<any> {
-  Zotero.CollectionTreeCache.clear();
+  // Zotero 10 replaced the global CollectionTreeCache with per-row caches
+  // that are invalidated by the item-tree refresh cycle. Keep the explicit
+  // clear for Zotero 9 without requiring the removed global on Zotero 10.
+  Zotero.CollectionTreeCache?.clear?.();
 
   const masterItemType = masterItem.itemTypeID;
   otherItems = otherItems.filter((item) => item.itemTypeID === masterItemType);

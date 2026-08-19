@@ -128,6 +128,16 @@ describe("toggleNonDuplicates", () => {
     expect(fetchDuplicatesMock).not.toHaveBeenCalled();
   });
 
+  test("does nothing when a numbered item is no longer available", async () => {
+    getItemMock.mockImplementation((input: any) => (input === 20 ? false : { id: input, libraryID: 77 }));
+
+    await toggleNonDuplicates("mark", [10, 20], 77);
+
+    expect(insertNonDuplicatesMock).not.toHaveBeenCalled();
+    expect(fetchDuplicatesMock).not.toHaveBeenCalled();
+    expect(invalidateAllMock).not.toHaveBeenCalled();
+  });
+
   test("unmark calls deleteNonDuplicates", async () => {
     await toggleNonDuplicates("unmark", [10, 20]);
 

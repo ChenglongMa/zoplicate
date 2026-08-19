@@ -50,6 +50,12 @@ beforeEach(() => {
 });
 
 describe("DuplicateFinder", () => {
+  test("rejects an item ID that is no longer available", () => {
+    (_Zotero.Items.get as jest.Mock<any>).mockReturnValueOnce(false);
+
+    expect(() => new DuplicateFinder(404)).toThrow("Zotero item 404 is unavailable");
+  });
+
   test("uses parameter placeholders, not quoted placeholders, for year bounds", async () => {
     const item = createMockItem({
       id: 1,

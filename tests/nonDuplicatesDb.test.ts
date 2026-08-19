@@ -75,6 +75,14 @@ describe("NonDuplicatesDB SQL behavior", () => {
     expect(queryAsyncMock.mock.calls[0][1]).toEqual([10, 20, 1, "KEY10", null]);
   });
 
+  test("skips insertion when the library cannot be resolved from a missing item", async () => {
+    (_Zotero.Items.get as jest.Mock<any>).mockReturnValue(false);
+
+    await NonDuplicatesDB.instance.insertNonDuplicatePair(10, 20);
+
+    expect(queryAsyncMock).not.toHaveBeenCalled();
+  });
+
   test("deleteNonDuplicates deletes every pair in both item orders", async () => {
     await NonDuplicatesDB.instance.deleteNonDuplicates([3, 1, 2]);
 

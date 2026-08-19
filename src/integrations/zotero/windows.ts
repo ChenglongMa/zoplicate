@@ -60,7 +60,18 @@ export function getSelectedItems(win: Window): Zotero.Item[] {
 }
 
 export function getSelectedLibraryID(win: Window): number {
-  return getZoteroPane(win).getSelectedLibraryID();
+  const pane = getZoteroPane(win);
+  const libraryIDs = pane.getSelectedLibraryIDs?.();
+  if (Array.isArray(libraryIDs)) {
+    const libraryID = libraryIDs[0];
+    if (typeof libraryID !== "number") {
+      throw new Error("No Zotero library is selected");
+    }
+    return libraryID;
+  }
+
+  // Fallback for older prerelease builds covered by the 8.999 minimum.
+  return pane.getSelectedLibraryID();
 }
 
 export function goToDuplicatesPane(win: Window, libraryID: number = getSelectedLibraryID(win)) {
@@ -73,9 +84,17 @@ export function refreshItemTree(_win?: Window) {
 }
 
 export function isInDuplicatesPane(win: Window, index: number | undefined = undefined): boolean {
-  const row =
-    index !== undefined
-      ? getCollectionsView(win)?.getRow(index)
-      : getZoteroPane(win).getCollectionTreeRow();
-  return row?.isDuplicates?.() ?? false;
+  if (index !== undefined) {
+    return getCollectionsView(win)?.getRow(index)?.isDuplicates?.() ?? false;
+  }
+
+  const pane = getZoteroPane(win);
+  const rows = pane.getCollectionTreeRows?.();
+  if (Array.isArray(rows)) {
+    return rows.some((row) => row?.isDuplicates?.());
+  }
+
+  // Zotero 9 exposes getCollectionTreeRows(), but retain this fallback for
+  // older prerelease builds covered by the add-on's 8.999 minimum version.
+  return pane.getCollectionTreeRow?.()?.isDuplicates?.() ?? false;
 }

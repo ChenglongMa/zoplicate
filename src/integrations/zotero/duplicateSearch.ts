@@ -34,17 +34,27 @@ export async function fetchDuplicates({
  */
 export async function findRetainedDuplicate(deletedItem: Zotero.Item | number) {
   const item = typeof deletedItem === "number" ? Zotero.Items.get(deletedItem) : deletedItem;
+  if (!item) {
+    return undefined;
+  }
   const libraryID = item.libraryID;
   const { duplicatesObj } = await fetchDuplicates({ libraryID, refresh: false });
   const duplicates = duplicatesObj.getSetItemsByItemID(item.id);
-  return duplicates.map((id) => Zotero.Items.get(id)).find((item) => !item.deleted);
+  const retainedItem = duplicates
+    .map((id) => Zotero.Items.get(id))
+    .find((candidate) => candidate && !candidate.deleted);
+  return retainedItem || undefined;
 }
 
 export async function areDuplicates(items: number[] | Zotero.Item[], libraryID?: number) {
   if (items.length < 2) return false;
-  const libraryIDs = new Set(
-    items.map((item) => (typeof item === "number" ? Zotero.Items.get(item).libraryID : item.libraryID)),
-  );
+  const resolvedItems: Zotero.Item[] = [];
+  for (const item of items) {
+    const resolvedItem = typeof item === "number" ? Zotero.Items.get(item) : item;
+    if (!resolvedItem) return false;
+    resolvedItems.push(resolvedItem);
+  }
+  const libraryIDs = new Set(resolvedItems.map((item) => item.libraryID));
 
   if (libraryIDs.size > 1) return false;
   const resolvedLibraryID = libraryID ?? [...libraryIDs][0];

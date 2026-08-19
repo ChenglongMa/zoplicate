@@ -37,10 +37,15 @@ declare namespace _ZoteroTypes {
       key: string,
     ): Promise<Zotero.Item | false>;
   }
+
+  interface ZoteroPane {
+    getCollectionTreeRows(): any[];
+    getSelectedLibraryIDs(): number[];
+  }
 }
 
 // ---------------------------------------------------------------------------
-// Zotero.MenuManager types (Zotero 9 pluginAPI)
+// Zotero.MenuManager types (Zotero 9/10 plugin API)
 // ---------------------------------------------------------------------------
 
 declare namespace Zotero {
@@ -51,6 +56,7 @@ declare namespace Zotero {
     setVisible: (visible: boolean) => void;
     setIcon: (icon: string, darkIcon?: string) => void;
     items?: Zotero.Item[];
+    collectionTreeRows?: any[];
     collectionTreeRow?: any;
     tabType?: string;
     tabSubType?: string;

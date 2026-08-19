@@ -4,8 +4,6 @@ import { execFileSync } from "node:child_process";
 
 const DEFAULT_EXCLUDED_CONTRIBUTORS = ["ChenglongMa", "github-actions[bot]", "dependabot[bot]", "renovate[bot]"];
 
-const DEFAULT_AI_KEYWORDS = ["chatgpt", "claude", "codex", "copilot", "cursor", "openai"];
-
 function git(args) {
   return execFileSync("git", args, {
     encoding: "utf8",
@@ -122,7 +120,7 @@ async function getPullRequestsForCommit(repo, commit, token) {
   return pulls;
 }
 
-function isExcludedContributor(user, excludedContributors, aiKeywords) {
+function isExcludedContributor(user, excludedContributors) {
   const login = user?.login || "";
   const loginLower = login.toLowerCase();
   if (!loginLower) {
@@ -131,21 +129,18 @@ function isExcludedContributor(user, excludedContributors, aiKeywords) {
   if (user?.type === "Bot" || loginLower.endsWith("[bot]")) {
     return true;
   }
-  if (excludedContributors.has(loginLower)) {
-    return true;
-  }
-  return aiKeywords.some((keyword) => loginLower.includes(keyword));
+  return excludedContributors.has(loginLower);
 }
 
 function cleanTitle(title) {
   return String(title).replace(/\s+/g, " ").trim();
 }
 
-function formatThanks(pulls, excludedContributors, aiKeywords) {
+function formatThanks(pulls, excludedContributors) {
   const contributors = new Map();
 
   for (const pull of pulls) {
-    if (isExcludedContributor(pull.user, excludedContributors, aiKeywords)) {
+    if (isExcludedContributor(pull.user, excludedContributors)) {
       continue;
     }
 
@@ -192,10 +187,6 @@ async function main() {
       item.toLowerCase(),
     ),
   );
-  const aiKeywords = splitEnvList(process.env.RELEASE_AI_CONTRIBUTOR_KEYWORDS, DEFAULT_AI_KEYWORDS).map((item) =>
-    item.toLowerCase(),
-  );
-
   const pullsByNumber = new Map();
   for (const commit of commits) {
     const pulls = await getPullRequestsForCommit(repo, commit, token);
@@ -204,7 +195,7 @@ async function main() {
     }
   }
 
-  const thanks = formatThanks([...pullsByNumber.values()], excludedContributors, aiKeywords);
+  const thanks = formatThanks([...pullsByNumber.values()], excludedContributors);
   if (thanks) {
     process.stdout.write(`${thanks}\n`);
   }

@@ -5,6 +5,7 @@ import { createMockItem } from "./__setup__/globals";
 const _Zotero = (globalThis as any).Zotero;
 const _ChromeUtils = (globalThis as any).ChromeUtils;
 const _mergeItemsMock = (globalThis as any)._mergeItemsMock;
+const _legacyCollectionTreeCache = _Zotero.CollectionTreeCache;
 
 /**
  * Tests for the merge() function in mergeItems.ts.
@@ -13,6 +14,7 @@ const _mergeItemsMock = (globalThis as any)._mergeItemsMock;
  */
 
 beforeEach(() => {
+  _Zotero.CollectionTreeCache = _legacyCollectionTreeCache;
   _mergeItemsMock.mockClear();
   (_ChromeUtils.importESModule as jest.Mock<any>).mockClear();
   (_Zotero.CollectionTreeCache.clear as jest.Mock<any>).mockClear();
@@ -105,13 +107,23 @@ describe("merge - itemTypeID filtering", () => {
 });
 
 describe("merge - Zotero API calls", () => {
-  test("calls CollectionTreeCache.clear before merge", async () => {
+  test("clears the legacy Zotero 9 CollectionTreeCache before merge", async () => {
     const master = createMockItem({ id: 1, itemTypeID: 5, json: { title: "M" } });
     const other = createMockItem({ id: 2, itemTypeID: 5, json: { title: "O" } });
 
     await merge(master, [other]);
 
     expect(_Zotero.CollectionTreeCache.clear).toHaveBeenCalledTimes(1);
+  });
+
+  test("merges when Zotero 10 does not expose CollectionTreeCache", async () => {
+    const master = createMockItem({ id: 1, itemTypeID: 5, json: { title: "M" } });
+    const other = createMockItem({ id: 2, itemTypeID: 5, json: { title: "O" } });
+    delete _Zotero.CollectionTreeCache;
+
+    await expect(merge(master, [other])).resolves.toBeUndefined();
+
+    expect(_mergeItemsMock).toHaveBeenCalledWith(master, [other]);
   });
 
   test("excludes relations, collections, and tags from candidate JSON spread", async () => {

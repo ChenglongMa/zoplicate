@@ -60,10 +60,15 @@ export async function warmCache(itemIDs: number[], libraryID?: number): Promise<
     return;
   }
 
+  const firstItem = libraryID === undefined ? Zotero.Items.get(itemIDs[0]) : undefined;
+  const resolvedLibraryID = libraryID ?? (firstItem ? firstItem.libraryID : undefined);
+  if (resolvedLibraryID === undefined) {
+    return;
+  }
+
   const key = menuCache.buildKey(itemIDs);
   const isNonDuplicate = await NonDuplicatesDB.instance.existsNonDuplicates(itemIDs);
 
-  const resolvedLibraryID = libraryID ?? Zotero.Items.get(itemIDs[0]).libraryID;
   const { duplicatesObj } = await fetchDuplicates({ libraryID: resolvedLibraryID, refresh: false });
   const duplicateSet = new Set(duplicatesObj.getSetItemsByItemID(itemIDs[0]));
   const isDuplicateSet = itemIDs.every((id) => duplicateSet.has(id));

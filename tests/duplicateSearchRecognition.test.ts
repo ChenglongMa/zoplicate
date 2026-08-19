@@ -79,6 +79,16 @@ describe("areDuplicates", () => {
     await expect(areDuplicates([10, 30])).resolves.toBe(false);
   });
 
+  test("returns false when a selected item is no longer available", async () => {
+    const DuplicatesMock = installDuplicateSets({ 10: [10, 20] });
+    (_Zotero.Items.get as jest.Mock<any>).mockImplementation((id: number) =>
+      id === 20 ? false : { id, libraryID: 1 },
+    );
+
+    await expect(areDuplicates([10, 20])).resolves.toBe(false);
+    expect(DuplicatesMock).not.toHaveBeenCalled();
+  });
+
   test("returns true when all item IDs are in the same Zotero duplicate set", async () => {
     const DuplicatesMock = installDuplicateSets({ 10: [10, 20, 30] });
 

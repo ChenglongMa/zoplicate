@@ -67,7 +67,11 @@ async function shutdown({ id, version, resourceURI, rootURI }, reason) {
     .getService(Components.interfaces.nsIStringBundleService)
     .flushBundles();
 
-  Cu.unload(`${rootURI}/chrome/content/scripts/__addonRef__.js`);
+  // Cu.unload() was removed in Zotero 10. The add-on's own shutdown hook
+  // releases its globals; keep the explicit module unload for Zotero 9 only.
+  if (typeof Cu.unload === "function") {
+    Cu.unload(`${rootURI}/chrome/content/scripts/__addonRef__.js`);
+  }
 
   if (chromeHandle) {
     chromeHandle.destruct();

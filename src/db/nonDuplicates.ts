@@ -142,7 +142,7 @@ export class NonDuplicatesDB extends SQLiteDB {
     for (const row of rows) {
       const item1 = Zotero.Items.get(row.itemID);
       const item2 = Zotero.Items.get(row.itemID2);
-      if (!item1?.key || !item2?.key) {
+      if (!item1 || !item2 || !item1.key || !item2.key) {
         toDelete.push({ itemID: row.itemID, itemID2: row.itemID2 });
       } else {
         toUpdate.push({ itemID: row.itemID, itemID2: row.itemID2, key1: item1.key, key2: item2.key });
@@ -184,7 +184,7 @@ export class NonDuplicatesDB extends SQLiteDB {
   private resolveKey(itemID: number): string | null {
     try {
       const item = Zotero.Items.get(itemID);
-      return item?.key ?? null;
+      return item ? (item.key ?? null) : null;
     } catch {
       return null;
     }
@@ -195,10 +195,14 @@ export class NonDuplicatesDB extends SQLiteDB {
       return;
     }
     this.clearItemLookupCache();
-    libraryID = libraryID ?? Zotero.Items.get(itemID).libraryID;
+    const firstItem = libraryID === undefined ? Zotero.Items.get(itemID) : undefined;
+    const resolvedLibraryID = libraryID ?? (firstItem ? firstItem.libraryID : undefined);
+    if (resolvedLibraryID === undefined) {
+      return;
+    }
     const key1 = this.resolveKey(itemID);
     const key2 = this.resolveKey(itemID2);
-    const row = this.buildRow(itemID, itemID2, libraryID, key1 ?? undefined, key2 ?? undefined);
+    const row = this.buildRow(itemID, itemID2, resolvedLibraryID, key1 ?? undefined, key2 ?? undefined);
     await this._db.queryAsync(
       `INSERT OR IGNORE INTO ${this.tables.nonDuplicates} (itemID, itemID2, libraryID, itemKey, itemKey2)
        VALUES (?, ?, ?, ?, ?);`,
@@ -212,7 +216,11 @@ export class NonDuplicatesDB extends SQLiteDB {
       return;
     }
     this.clearItemLookupCache();
-    libraryID = libraryID ?? Zotero.Items.get(rows[0].itemID).libraryID;
+    const firstItem = libraryID === undefined ? Zotero.Items.get(rows[0].itemID) : undefined;
+    const resolvedLibraryID = libraryID ?? (firstItem ? firstItem.libraryID : undefined);
+    if (resolvedLibraryID === undefined) {
+      return;
+    }
 
     for (let i = 0; i < rows.length; i += this.batchSize) {
       const batch = rows.slice(i, i + this.batchSize);
@@ -220,7 +228,7 @@ export class NonDuplicatesDB extends SQLiteDB {
       const values = batch.flatMap(({ itemID, itemID2 }) => {
         const key1 = this.resolveKey(itemID);
         const key2 = this.resolveKey(itemID2);
-        return this.buildRow(itemID, itemID2, libraryID, key1 ?? undefined, key2 ?? undefined);
+        return this.buildRow(itemID, itemID2, resolvedLibraryID, key1 ?? undefined, key2 ?? undefined);
       });
       await this._db.queryAsync(
         `INSERT OR IGNORE INTO ${this.tables.nonDuplicates} (itemID, itemID2, libraryID, itemKey, itemKey2)

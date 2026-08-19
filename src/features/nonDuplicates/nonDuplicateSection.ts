@@ -89,7 +89,15 @@ export function registerNonDuplicatesSection(db: NonDuplicatesDB) {
             }
 
             let message: string = "";
-            const libraryIDs = new Set(itemIDs.map((item) => Zotero.Items.get(item).libraryID));
+            const libraryIDs = new Set<number>();
+            for (const itemID of itemIDs) {
+              const selectedItem = Zotero.Items.get(itemID);
+              if (!selectedItem) {
+                ztoolkit.log("add non duplicate skipped because a selected item is unavailable", itemID);
+                return;
+              }
+              libraryIDs.add(selectedItem.libraryID);
+            }
 
             if (libraryIDs.size > 1) {
               message = "add-not-duplicates-alert-error-diff-library";

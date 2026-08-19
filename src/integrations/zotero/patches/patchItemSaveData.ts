@@ -19,7 +19,7 @@ export function patchItemSaveData(): Disposer {
         const parentID = this.parentID;
         if (parentID) {
           const parentItem = Zotero.Items.get(parentID);
-          ztoolkit.log("Parent item", parentID, "deleted?", parentItem?.deleted);
+          ztoolkit.log("Parent item", parentID, "deleted?", parentItem ? parentItem.deleted : undefined);
           if (parentItem && parentItem.deleted) {
             const newParents = await new DuplicateFinder(parentItem).find();
 

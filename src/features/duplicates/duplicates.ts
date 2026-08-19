@@ -457,7 +457,14 @@ export class Duplicates {
       // TODO: Further check if the block is necessary
       try {
         // Wait for potential attachments to be downloaded
-        await waitUntilAsync(() => Zotero.Items.get(newItemID).numAttachments() > 0, 1000, 5000);
+        await waitUntilAsync(
+          () => {
+            const item = Zotero.Items.get(newItemID);
+            return !item || item.numAttachments() > 0;
+          },
+          1000,
+          5000,
+        );
       } catch (e) {
         ztoolkit.log(e);
       }
@@ -469,6 +476,7 @@ export class Duplicates {
     for (const [groupID, { itemIDs, action }] of this.duplicateMaps || []) {
       if (itemIDs.length < 2) continue;
       const item = await Zotero.Items.getAsync(groupID);
+      if (!item) continue;
       rows.push({
         groupID,
         title: item.getDisplayTitle(),

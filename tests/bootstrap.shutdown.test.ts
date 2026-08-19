@@ -5,7 +5,7 @@ import * as vm from "node:vm";
 
 const bootstrapSource = readFileSync(join(__dirname, "../addon/bootstrap.js"), "utf8");
 
-function loadBootstrapContext() {
+function loadBootstrapContext(options: { supportsUnload?: boolean } = {}) {
   const onShutdown = jest.fn(async () => undefined);
   const flushBundles = jest.fn();
   const unload = jest.fn();
@@ -37,9 +37,7 @@ function loadBootstrapContext() {
         getService: jest.fn(() => ({ flushBundles })),
       },
     },
-    Cu: {
-      unload,
-    },
+    Cu: options.supportsUnload === false ? {} : { unload },
   } as any;
 
   vm.createContext(context);
@@ -70,6 +68,18 @@ describe("bootstrap shutdown lifecycle", () => {
     expect(onShutdown).toHaveBeenCalledTimes(1);
     expect(flushBundles).toHaveBeenCalledTimes(1);
     expect(unload).toHaveBeenCalledWith("jar:file:///zoplicate/chrome/content/scripts/__addonRef__.js");
+    expect(destruct).toHaveBeenCalledTimes(1);
+    expect(context.chromeHandle).toBeNull();
+  });
+
+  test("Zotero 10 shutdown succeeds without the removed Cu.unload API", async () => {
+    const { context, destruct, flushBundles, onShutdown, unload } = loadBootstrapContext({ supportsUnload: false });
+
+    await context.shutdown({ rootURI: "jar:file:///zoplicate" }, context.ADDON_DISABLE);
+
+    expect(onShutdown).toHaveBeenCalledTimes(1);
+    expect(flushBundles).toHaveBeenCalledTimes(1);
+    expect(unload).not.toHaveBeenCalled();
     expect(destruct).toHaveBeenCalledTimes(1);
     expect(context.chromeHandle).toBeNull();
   });

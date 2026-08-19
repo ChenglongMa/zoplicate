@@ -22,8 +22,15 @@ export function collectionMenuConfig(): MenuConfig {
             icon: "chrome://zotero/skin/16/universal/sync.svg",
             onShowing(event: Event, context: Zotero.MenuContext) {
               const showStats = showingDuplicateStats();
-              const row = context.collectionTreeRow as { isDuplicates?: () => boolean } | undefined;
-              const inDuplicates = row?.isDuplicates?.() ?? false;
+              if (!showStats) {
+                context.setVisible(false);
+                return;
+              }
+
+              const rows = context.collectionTreeRows;
+              const inDuplicates = Array.isArray(rows)
+                ? rows.some((row) => row?.isDuplicates?.())
+                : (context.collectionTreeRow?.isDuplicates?.() ?? false);
               context.setVisible(showStats && inDuplicates);
             },
             onCommand(event: Event, _context: Zotero.MenuContext) {
