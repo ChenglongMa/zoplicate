@@ -16,9 +16,13 @@ export interface NonDuplicateKeyPair {
 export class NonDuplicatesDB extends SQLiteDB {
   private static _instance: NonDuplicatesDB;
   private readonly batchSize = 100; // Define a batch size to avoid too many parameters
+  private readonly itemLookupCache = new Map<
+    number,
+    Promise<{ itemID: number; itemID2: number }[]>
+  >();
 
   /** Current target schema version. Increment when adding new migrations. */
-  static readonly SCHEMA_VERSION = 1;
+  static readonly SCHEMA_VERSION = 2;
 
   private constructor() {
     super();
@@ -32,8 +36,13 @@ export class NonDuplicatesDB extends SQLiteDB {
   }
 
   async init() {
+    this.clearItemLookupCache();
     await this.createNonDuplicateTable();
     await this.migrateSchema();
+  }
+
+  clearItemLookupCache() {
+    this.itemLookupCache.clear();
   }
 
   private async createNonDuplicateTable() {
@@ -62,7 +71,9 @@ export class NonDuplicatesDB extends SQLiteDB {
       if (currentVersion < 1) {
         await this.migrateToV1();
       }
-      // Future migrations: if (currentVersion < 2) { await this.migrateToV2(); }
+      if (currentVersion < 2) {
+        await this.migrateToV2();
+      }
 
       await this.setSchemaVersion(NonDuplicatesDB.SCHEMA_VERSION);
     });
@@ -100,10 +111,22 @@ export class NonDuplicatesDB extends SQLiteDB {
   }
 
   /**
+   * Migration v1 → v2: Index the second item column used by item-pane lookups.
+   * The composite primary key only indexes itemID as its leading column, so
+   * `itemID = ? OR itemID2 = ?` otherwise scans the whole table/index.
+   */
+  private async migrateToV2() {
+    await this._db.queryAsync(
+      `CREATE INDEX IF NOT EXISTS idx_nonDuplicates_itemID2 ON ${this.tables.nonDuplicates} (itemID2)`,
+    );
+  }
+
+  /**
    * Backfill itemKey/itemKey2 for rows that have NULL keys.
    * Resolves keys via Zotero.Items.get(). Deletes rows where items no longer exist.
    */
   async backfillKeys() {
+    this.clearItemLookupCache();
     const rows = (await this._db.queryAsync(
       `SELECT itemID, itemID2, libraryID FROM ${this.tables.nonDuplicates}
        WHERE itemKey IS NULL OR itemKey2 IS NULL`,
@@ -171,6 +194,7 @@ export class NonDuplicatesDB extends SQLiteDB {
     if (itemID === itemID2) {
       return;
     }
+    this.clearItemLookupCache();
     libraryID = libraryID ?? Zotero.Items.get(itemID).libraryID;
     const key1 = this.resolveKey(itemID);
     const key2 = this.resolveKey(itemID2);
@@ -187,6 +211,7 @@ export class NonDuplicatesDB extends SQLiteDB {
     if (rows.length === 0) {
       return;
     }
+    this.clearItemLookupCache();
     libraryID = libraryID ?? Zotero.Items.get(rows[0].itemID).libraryID;
 
     for (let i = 0; i < rows.length; i += this.batchSize) {
@@ -211,6 +236,7 @@ export class NonDuplicatesDB extends SQLiteDB {
   }
 
   async deleteNonDuplicatePair(itemID: number, itemID2: number) {
+    this.clearItemLookupCache();
     await this._db.queryAsync(
       `DELETE
        FROM ${this.tables.nonDuplicates}
@@ -221,6 +247,9 @@ export class NonDuplicatesDB extends SQLiteDB {
   }
 
   async deleteNonDuplicatePairs(...rows: { itemID: number; itemID2: number }[]) {
+    if (rows.length > 0) {
+      this.clearItemLookupCache();
+    }
     for (let i = 0; i < rows.length; i += this.batchSize) {
       const batch = rows.slice(i, i + this.batchSize);
       const placeholders = batch.map(() => "(?, ?), (?, ?)").join(",");
@@ -240,6 +269,9 @@ export class NonDuplicatesDB extends SQLiteDB {
   }
 
   async deleteRecords(...itemIDs: number[]) {
+    if (itemIDs.length > 0) {
+      this.clearItemLookupCache();
+    }
     for (let i = 0; i < itemIDs.length; i += this.batchSize) {
       const batch = itemIDs.slice(i, i + this.batchSize);
       const placeholders = batch.map(() => "?").join(", ");
@@ -284,6 +316,14 @@ export class NonDuplicatesDB extends SQLiteDB {
   }
 
   async getNonDuplicates({ itemID, libraryID }: { itemID?: number; libraryID?: number }) {
+    const cacheableItemLookup = itemID !== undefined && itemID !== null && libraryID === undefined;
+    if (cacheableItemLookup) {
+      const cached = this.itemLookupCache.get(itemID);
+      if (cached) {
+        return cached;
+      }
+    }
+
     const params: number[] = [];
     const conditions: string[] = [];
     let query = `SELECT itemID, itemID2
@@ -303,7 +343,21 @@ export class NonDuplicatesDB extends SQLiteDB {
       query += ` WHERE ${conditions.join(" AND ")}`;
     }
 
-    return (await this._db.queryAsync(query, params)) as { itemID: number; itemID2: number }[];
+    const queryPromise = this._db.queryAsync(query, params) as Promise<
+      { itemID: number; itemID2: number }[]
+    >;
+
+    if (!cacheableItemLookup) {
+      return queryPromise;
+    }
+
+    this.itemLookupCache.set(itemID, queryPromise);
+    void queryPromise.catch(() => {
+      if (this.itemLookupCache.get(itemID) === queryPromise) {
+        this.itemLookupCache.delete(itemID);
+      }
+    });
+    return queryPromise;
   }
 
   /**

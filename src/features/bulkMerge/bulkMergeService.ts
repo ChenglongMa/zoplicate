@@ -113,7 +113,6 @@ export class BulkMergeController {
     };
 
     const onItemsSelect = async () => {
-      ztoolkit.log("itemsView.onSelect", zoteroPane.getSelectedItems(true));
       await updateDuplicateButtonsVisibilities(win);
     };
 

@@ -141,3 +141,33 @@ describe("non-duplicate section add button", () => {
     expect(toggleNonDuplicatesMock).not.toHaveBeenCalled();
   });
 });
+
+describe("non-duplicate section item selection hot path", () => {
+  test("does not log complete item or DOM objects while changing and rendering items", async () => {
+    jest.clearAllMocks();
+    const getSectionOptions = installItemPaneManager();
+    const db = {
+      getNonDuplicates: jest.fn(async () => []),
+    } as any;
+    registerNonDuplicatesSection(db);
+    const section = getSectionOptions();
+    const item = {
+      id: 10,
+      isRegularItem: jest.fn(() => true),
+    };
+    const body = {
+      dataset: {},
+      replaceChildren: jest.fn(),
+    } as any;
+    const setEnabled = jest.fn();
+
+    section.onItemChange({ body, item, setEnabled });
+    section.onRender({ body, item, editable: true });
+    await section.onAsyncRender({ body, item, editable: true });
+
+    expect(setEnabled).toHaveBeenCalledWith(true);
+    expect(body.dataset.itemID).toBe("10");
+    expect(db.getNonDuplicates).toHaveBeenCalledWith({ itemID: 10 });
+    expect(ztoolkit.log).not.toHaveBeenCalled();
+  });
+});

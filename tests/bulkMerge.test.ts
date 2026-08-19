@@ -99,7 +99,7 @@ describe("BulkMergeController window scope", () => {
   test("registerUIElements disposer removes the same listener refs", () => {
     const controller = new BulkMergeController();
     const win = makeWindow("one", 11);
-    const update = jest.fn(async () => undefined);
+    const update = jest.fn<(win: Window) => Promise<void>>(async () => undefined);
 
     const disposer = controller.registerUIElements(win, update);
     disposer();
@@ -113,5 +113,19 @@ describe("BulkMergeController window scope", () => {
     expect(win.ZoteroPane.itemsView.onSelect.removeListener).toHaveBeenCalledWith(
       win.ZoteroPane.itemsView.onSelect.addListener.mock.calls[0][0],
     );
+  });
+
+  test("item selection does not materialize or log selected item objects", async () => {
+    const controller = new BulkMergeController();
+    const win = makeWindow("one", 11);
+    const update = jest.fn<(win: Window) => Promise<void>>(async () => undefined);
+
+    controller.registerUIElements(win, update);
+    const onItemsSelect = win.ZoteroPane.itemsView.onSelect.addListener.mock.calls[0][0];
+    await onItemsSelect();
+
+    expect(update).toHaveBeenCalledWith(win);
+    expect(win.ZoteroPane.getSelectedItems).not.toHaveBeenCalled();
+    expect(ztoolkit.log).not.toHaveBeenCalled();
   });
 });

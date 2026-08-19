@@ -62,6 +62,7 @@ describe("NonDuplicatesDB schema versioning and migration", () => {
     expect(sqls.some((s) => s.includes("ALTER TABLE nonDuplicates ADD COLUMN itemKey TEXT"))).toBe(true);
     expect(sqls.some((s) => s.includes("ALTER TABLE nonDuplicates ADD COLUMN itemKey2 TEXT"))).toBe(true);
     expect(sqls.some((s) => s.includes("CREATE INDEX IF NOT EXISTS idx_nonDuplicates_libraryID"))).toBe(true);
+    expect(sqls.some((s) => s.includes("CREATE INDEX IF NOT EXISTS idx_nonDuplicates_itemID2"))).toBe(true);
   });
 
   test("migration v0→v1 is idempotent when columns already exist", async () => {
@@ -90,6 +91,20 @@ describe("NonDuplicatesDB schema versioning and migration", () => {
     expect(sqls.some((s) => s.includes("CREATE INDEX IF NOT EXISTS"))).toBe(true);
   });
 
+  test("migration v1→v2 adds the itemID2 lookup index without rerunning v1", async () => {
+    queryAsyncMock.mockImplementation(async (sql: string) => {
+      if (sql.includes("SELECT version FROM schemaVersion")) return [{ version: 1 }];
+      return [];
+    });
+
+    await NonDuplicatesDB.instance.init();
+
+    const sqls = allSqlCalls();
+    expect(sqls.some((s) => s.includes("CREATE INDEX IF NOT EXISTS idx_nonDuplicates_itemID2"))).toBe(true);
+    expect(sqls.some((s) => s.includes("PRAGMA table_info"))).toBe(false);
+    expect(sqls.some((s) => s.includes("ALTER TABLE"))).toBe(false);
+  });
+
   test("migration sets schema version to target after success", async () => {
     queryAsyncMock.mockImplementation(async (sql: string) => {
       if (sql.includes("SELECT version FROM schemaVersion")) return [];
@@ -105,7 +120,7 @@ describe("NonDuplicatesDB schema versioning and migration", () => {
     const sqls = allSqlCalls();
     // Should create schemaVersion table
     expect(sqls.some((s) => s.includes("CREATE TABLE IF NOT EXISTS schemaVersion"))).toBe(true);
-    // Should insert version 1
+    // Should insert the current target version
     expect(
       queryAsyncMock.mock.calls.some(
         (call) =>

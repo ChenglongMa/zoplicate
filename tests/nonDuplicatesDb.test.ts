@@ -16,6 +16,7 @@ const _Zotero = (globalThis as any).Zotero;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  NonDuplicatesDB.instance.clearItemLookupCache();
   queryAsyncMock.mockResolvedValue([]);
   (_Zotero.Items.get as jest.Mock<any>).mockImplementation((itemID: number) => ({
     id: itemID,
@@ -113,6 +114,47 @@ describe("NonDuplicatesDB SQL behavior", () => {
     expect(sql).toContain("itemID = ?");
     expect(sql).toContain("itemID2 = ?");
     expect(queryAsyncMock).toHaveBeenCalledWith(expect.any(String), [5, 5]);
+  });
+
+  test("getNonDuplicates reuses an item lookup without querying SQLite again", async () => {
+    const rows = [{ itemID: 5, itemID2: 10 }];
+    queryAsyncMock.mockResolvedValueOnce(rows);
+
+    await expect(NonDuplicatesDB.instance.getNonDuplicates({ itemID: 5 })).resolves.toEqual(rows);
+    await expect(NonDuplicatesDB.instance.getNonDuplicates({ itemID: 5 })).resolves.toEqual(rows);
+
+    expect(queryAsyncMock).toHaveBeenCalledTimes(1);
+  });
+
+  test("a database mutation invalidates cached item lookups", async () => {
+    queryAsyncMock.mockResolvedValueOnce([{ itemID: 5, itemID2: 10 }]);
+    await NonDuplicatesDB.instance.getNonDuplicates({ itemID: 5 });
+
+    await NonDuplicatesDB.instance.insertNonDuplicatePair(5, 20, 1);
+    queryAsyncMock.mockResolvedValueOnce([
+      { itemID: 5, itemID2: 10 },
+      { itemID: 5, itemID2: 20 },
+    ]);
+    await NonDuplicatesDB.instance.getNonDuplicates({ itemID: 5 });
+
+    const lookupCalls = queryAsyncMock.mock.calls.filter((call) =>
+      (call[0] as string).includes("itemID = ? OR itemID2 = ?"),
+    );
+    expect(lookupCalls).toHaveLength(2);
+  });
+
+  test("a failed item lookup is evicted so the next render can retry", async () => {
+    queryAsyncMock.mockRejectedValueOnce(new Error("temporary database error"));
+    await expect(NonDuplicatesDB.instance.getNonDuplicates({ itemID: 5 })).rejects.toThrow(
+      "temporary database error",
+    );
+
+    queryAsyncMock.mockResolvedValueOnce([{ itemID: 5, itemID2: 10 }]);
+    await expect(NonDuplicatesDB.instance.getNonDuplicates({ itemID: 5 })).resolves.toEqual([
+      { itemID: 5, itemID2: 10 },
+    ]);
+
+    expect(queryAsyncMock).toHaveBeenCalledTimes(2);
   });
 
   test("getNonDuplicates combines itemID and libraryID filters with AND", async () => {
