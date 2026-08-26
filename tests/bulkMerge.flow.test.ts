@@ -39,7 +39,7 @@ let progressWindows: ReturnType<typeof makeProgressWindow>[] = [];
 
 function makeProgressWindow() {
   const progressWindow = {
-    createLine: jest.fn(() => progressWindow),
+    createLine: jest.fn((_options?: any) => progressWindow),
     changeLine: jest.fn(),
     show: jest.fn(() => progressWindow),
     startCloseTimer: jest.fn(),
@@ -163,7 +163,27 @@ describe("BulkMergeController bulk processing", () => {
     expect(mergeMock).toHaveBeenCalledTimes(2);
     expect(mergeMock).toHaveBeenNthCalledWith(1, items[0], [items[1]]);
     expect(mergeMock).toHaveBeenNthCalledWith(2, items[3], [items[4]]);
-    expect(progressWindows[0].startCloseTimer).toHaveBeenCalledWith(5000);
+    expect(_ztoolkit.ProgressWindow).toHaveBeenNthCalledWith(1, "du-progress-text", {
+      window: win,
+      closeOnClick: false,
+      closeTime: -1,
+    });
+    expect(progressWindows[0].close).toHaveBeenCalledTimes(1);
+    expect(_ztoolkit.ProgressWindow).toHaveBeenNthCalledWith(2, "du-progress-text", {
+      window: win,
+      closeOnClick: true,
+      closeTime: 5000,
+    });
+    expect(progressWindows[1].createLine).toHaveBeenCalledWith({
+      text: "du-progress-done",
+      type: "success",
+      progress: 100,
+    });
+    expect(progressWindows[1].show).toHaveBeenCalledTimes(1);
+    expect(progressWindows[0].startCloseTimer).not.toHaveBeenCalled();
+    expect(progressWindows[0].close.mock.invocationCallOrder[0]).toBeLessThan(
+      _ztoolkit.ProgressWindow.mock.invocationCallOrder[1],
+    );
     expect(markDuplicateSearchDirtyMock).toHaveBeenCalledWith(42);
   });
 
@@ -214,7 +234,13 @@ describe("BulkMergeController bulk processing", () => {
     await runPromise;
 
     expect(_Zotero.Prompt.confirm).toHaveBeenCalledTimes(2);
-    expect(_ztoolkit.ProgressWindow).toHaveBeenCalledTimes(2);
+    expect(_ztoolkit.ProgressWindow).toHaveBeenCalledTimes(3);
+    expect(progressWindows[1].close).toHaveBeenCalledTimes(1);
+    expect(_ztoolkit.ProgressWindow).toHaveBeenNthCalledWith(3, "du-progress-text", {
+      window: win,
+      closeOnClick: true,
+      closeTime: 5000,
+    });
     expect(mergeMock).toHaveBeenCalledTimes(2);
     expect(mergeMock).toHaveBeenNthCalledWith(2, items[2], [items[3]]);
     expect(controller.isRunning).toBe(false);
@@ -270,14 +296,55 @@ describe("BulkMergeController bulk processing", () => {
     expect(items[1].deleted).toBe(false);
     expect(items[1].saveTx).toHaveBeenCalledTimes(1);
     expect(mergeMock).not.toHaveBeenCalledWith(items[2], [items[3]]);
+    expect(_ztoolkit.ProgressWindow).toHaveBeenCalledTimes(3);
+    expect(progressWindows[1].close).toHaveBeenCalledTimes(1);
+    expect(progressWindows[2].createLine).toHaveBeenCalledWith({
+      text: "du-progress-done",
+      type: "success",
+      progress: 100,
+    });
+    expect(controller.isRunning).toBe(false);
+  });
+
+  test("cancel without restore closes processing progress without showing a result", async () => {
+    const items = [
+      makeItem(1, "2020-01-01 00:00:00"),
+      makeItem(2, "2024-01-01 00:00:00"),
+      makeItem(3, "2020-01-01 00:00:00"),
+      makeItem(4, "2024-01-01 00:00:00"),
+    ];
+    setItems(items);
+    installDuplicateSearch(
+      {
+        1: [1, 2],
+        3: [3, 4],
+      },
+      [1, 3],
+    );
+
+    const controller = new BulkMergeController();
+    const win = makeWindow();
+    const listener = getBulkMergeListener(controller, win);
+    const firstMerge = createDeferred();
+    mergeMock.mockImplementationOnce(async () => {
+      await firstMerge.promise;
+    });
+    _Zotero.Prompt.confirm = jest.fn().mockReturnValueOnce(0).mockReturnValueOnce(1);
+
+    const runPromise = listener({ target: { disabled: false } });
+    await flushPromises();
+    await listener({ target: { disabled: false } });
+    firstMerge.resolve();
+    await runPromise;
+
+    expect(mergeMock).toHaveBeenCalledTimes(1);
+    expect(_ztoolkit.ProgressWindow).toHaveBeenCalledTimes(1);
+    expect(progressWindows[0].close).toHaveBeenCalledTimes(1);
     expect(controller.isRunning).toBe(false);
   });
 
   test("merge rejection shows failure progress and resets the controller", async () => {
-    const items = [
-      makeItem(1, "2020-01-01 00:00:00"),
-      makeItem(2, "2024-01-01 00:00:00"),
-    ];
+    const items = [makeItem(1, "2020-01-01 00:00:00"), makeItem(2, "2024-01-01 00:00:00")];
     setItems(items);
     installDuplicateSearch({ 1: [1, 2] }, [1]);
 
@@ -287,12 +354,19 @@ describe("BulkMergeController bulk processing", () => {
 
     await clickBulkMergeButton(controller, win);
 
-    expect(progressWindows[0].changeLine).toHaveBeenCalledWith({
+    expect(progressWindows[0].close).toHaveBeenCalledTimes(1);
+    expect(_ztoolkit.ProgressWindow).toHaveBeenNthCalledWith(2, "du-progress-text", {
+      window: win,
+      closeOnClick: true,
+      closeTime: 5000,
+    });
+    expect(progressWindows[1].createLine).toHaveBeenCalledWith({
       text: "bulk-merge-popup-failed",
       type: "fail",
       progress: 100,
     });
-    expect(progressWindows[0].startCloseTimer).toHaveBeenCalledWith(5000);
+    expect(progressWindows[1].show).toHaveBeenCalledTimes(1);
+    expect(progressWindows[0].startCloseTimer).not.toHaveBeenCalled();
     expect(controller.isRunning).toBe(false);
     expect(win.__buttons["zoplicate-bulk-merge-button-inner"].label).toBe("bulk-merge-title");
     expect(win.__buttons["zoplicate-bulk-merge-button-inner"].disabled).toBe(false);

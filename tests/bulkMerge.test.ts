@@ -68,6 +68,7 @@ beforeEach(() => {
     changeLine: jest.fn(),
     show: jest.fn(() => progressWindow),
     startCloseTimer: jest.fn(),
+    close: jest.fn(() => progressWindow),
   };
   (globalThis as any).ztoolkit.ProgressWindow = jest.fn(() => progressWindow);
   (globalThis as any).Zotero.Prompt = {

@@ -185,15 +185,16 @@ export class BulkMergeController {
     ];
   }
 
-  private ensureProgressWindow(run: BulkMergeRun, text = getString("bulk-merge-popup-prepare")) {
+  private ensureProgressWindow(run: BulkMergeRun) {
     if (!this.isCurrentRun(run)) return undefined;
     if (run.progress) return run.progress;
     run.progress = new ztoolkit.ProgressWindow(getString("du-progress-text"), {
+      window: run.win,
       closeOnClick: false,
       closeTime: -1,
     })
       .createLine({
-        text,
+        text: getString("bulk-merge-popup-prepare"),
         type: "default",
         progress: 0,
       })
@@ -216,29 +217,29 @@ export class BulkMergeController {
     run.progress.changeLine(options);
   }
 
+  private showResultProgressWindow(run: BulkMergeRun, text: string, type: "success" | "fail") {
+    if (!this.isCurrentRun(run)) return;
+    this.closeProgressWindow(run);
+    new ztoolkit.ProgressWindow(getString("du-progress-text"), {
+      window: run.win,
+      closeOnClick: true,
+      closeTime: 5000,
+    })
+      .createLine({
+        text,
+        type,
+        progress: 100,
+      })
+      .show();
+  }
+
   private completeProgressWindow(run: BulkMergeRun) {
-    const progress = this.ensureProgressWindow(run, getString("du-progress-done"));
-    if (!progress) return;
-    progress.changeLine({
-      text: getString("du-progress-done"),
-      type: "success",
-      progress: 100,
-    });
-    progress.startCloseTimer(5000);
-    run.progress = undefined;
+    this.showResultProgressWindow(run, getString("du-progress-done"), "success");
   }
 
   private handleBulkMergeFailure(run: BulkMergeRun, error: unknown) {
     ztoolkit.log("Bulk merge failed.", error);
-    const progress = this.ensureProgressWindow(run, getString("bulk-merge-popup-failed"));
-    if (!progress) return;
-    progress.changeLine({
-      text: getString("bulk-merge-popup-failed"),
-      type: "fail",
-      progress: 100,
-    });
-    progress.startCloseTimer(5000);
-    run.progress = undefined;
+    this.showResultProgressWindow(run, getString("bulk-merge-popup-failed"), "fail");
   }
 
   private async bulkMergeDuplicates(run: BulkMergeRun) {
