@@ -4,9 +4,9 @@ import { getPref, MasterItem } from "../../../shared/prefs";
 import { patchMethod, type Disposer } from "../../../app/lifecycle";
 
 /**
- * Patch `Zotero.Item.prototype._saveData` to re-parent child items when
- * a parent is trashed, and to queue duplicate refresh notifications on
- * item modifications.
+ * Patch `Zotero.Item.prototype._saveData` to re-parent newly created child
+ * items when their parent was merged and trashed, and to queue duplicate
+ * refresh notifications on item modifications.
  *
  * Returns a disposer that restores the original method.
  */
@@ -17,7 +17,11 @@ export function patchItemSaveData(): Disposer {
     (original: any) =>
       async function (this: any, event: any) {
         const parentID = this.parentID;
-        if (parentID) {
+        // Re-parenting exists only for attachments/notes that arrive after an
+        // imported parent has already been auto-merged. Never change an
+        // existing or deleted child during a normal save (for example, Move
+        // to Trash), since Zotero owns those lifecycle transitions.
+        if (event.isNew && !this.deleted && parentID) {
           const parentItem = Zotero.Items.get(parentID);
           ztoolkit.log("Parent item", parentID, "deleted?", parentItem ? parentItem.deleted : undefined);
           if (parentItem && parentItem.deleted) {

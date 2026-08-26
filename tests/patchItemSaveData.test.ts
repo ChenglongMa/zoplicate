@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 
 const findMock = jest.fn<() => Promise<any[]>>();
+const duplicateItemsMock = jest.fn().mockImplementation(() => ({ masterItem: { id: 200 } }));
 jest.mock("../src/db/duplicateFinder", () => ({
   DuplicateFinder: jest.fn().mockImplementation(() => ({ find: findMock })),
 }));
 
 jest.mock("../src/shared/duplicates/duplicateItems", () => ({
-  DuplicateItems: jest.fn(),
+  DuplicateItems: duplicateItemsMock,
 }));
 
 jest.mock("../src/shared/prefs", () => ({
@@ -149,6 +150,40 @@ describe("patchItemSaveData", () => {
     await callPatched(ctx, env);
 
     expect(env.notifierData).toEqual(expect.objectContaining({ refreshDuplicates: true }));
+
+    disposer();
+  });
+
+  test("re-parents a new child when its imported parent was merged and trashed", async () => {
+    const disposer = patchItemSaveData();
+    const env = makeEnv({ isNew: true });
+    const ctx = makeCtx({ parentID: 123, deleted: false, isRegularItem: () => false });
+    _Zotero.Items.get = jest.fn(() => ({ deleted: true }));
+    findMock.mockResolvedValue([200]);
+
+    await callPatched(ctx, env);
+
+    expect(findMock).toHaveBeenCalledTimes(1);
+    expect(duplicateItemsMock).toHaveBeenCalledWith([200], undefined);
+    expect(ctx.parentID).toBe(200);
+    expect(originalSaveData).toHaveBeenCalledWith(env);
+
+    disposer();
+  });
+
+  test("does not re-parent an existing child when it is moved to trash", async () => {
+    const disposer = patchItemSaveData();
+    const env = makeEnv({ isNew: false });
+    const ctx = makeCtx({ parentID: 123, deleted: true, isRegularItem: () => false });
+    _Zotero.Items.get = jest.fn(() => ({ deleted: true }));
+    findMock.mockResolvedValue([200]);
+
+    await callPatched(ctx, env);
+
+    expect(findMock).not.toHaveBeenCalled();
+    expect(duplicateItemsMock).not.toHaveBeenCalled();
+    expect(ctx.parentID).toBe(123);
+    expect(originalSaveData).toHaveBeenCalledWith(env);
 
     disposer();
   });
