@@ -25,16 +25,17 @@ const _Zotero = (globalThis as any).Zotero;
 
 describe("createDuplicatesNotifyHandler window selection", () => {
   function createScheduledHandler(getLoadedWindows: () => Window[] = () => []) {
-    let flush: (() => Promise<void>) | undefined;
+    const pendingFlushes: Array<() => Promise<void>> = [];
     const handler = createDuplicatesNotifyHandler(() => false, getLoadedWindows, {
       schedulePendingAddFlush: (callback) => {
-        flush = callback;
+        pendingFlushes.push(callback);
       },
     });
 
     return {
       handler,
       flush: async () => {
+        const flush = pendingFlushes.shift();
         expect(flush).toBeDefined();
         await flush!();
       },
@@ -93,6 +94,27 @@ describe("createDuplicatesNotifyHandler window selection", () => {
 
     expect(fetchDuplicatesMock).toHaveBeenCalledWith({ libraryID: 1, refresh: true });
     expect(whenItemsAddedMock).not.toHaveBeenCalled();
+  });
+
+  test("processes locally saved item additions after Zotero sync finishes", async () => {
+    const { handler, flush } = createScheduledHandler();
+
+    await handler("start", "sync", [], {});
+    await handler("add", "item", [10], {});
+
+    expect(fetchDuplicatesMock).not.toHaveBeenCalled();
+    expect(whenItemsAddedMock).not.toHaveBeenCalled();
+
+    await flush();
+
+    expect(fetchDuplicatesMock).not.toHaveBeenCalled();
+    expect(whenItemsAddedMock).not.toHaveBeenCalled();
+
+    await handler("finish", "sync", [1], {});
+    await flush();
+
+    expect(fetchDuplicatesMock).toHaveBeenCalledWith({ libraryID: 1, refresh: true });
+    expect(whenItemsAddedMock).toHaveBeenCalledWith(expect.anything(), [10], expect.anything());
   });
 
   test("refreshes but does not auto-process sync-saved items identified by notifier data", async () => {

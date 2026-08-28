@@ -218,14 +218,18 @@ export function createDuplicatesNotifyHandler(
         return;
       }
       const libraryID = libraryIDs[0]; // normally only one libraryID
+      const addedItemIDs = toNumericIDs(ids);
+      const isItemAdd = type == "item" && event == "add";
 
       if (syncInProgress || getZoteroSyncInProgress()) {
         markLibrariesDirtyDuringSync(libraryIDs);
+        if (isItemAdd && !isRemoteSyncAdd(addedItemIDs, extraData)) {
+          schedulePendingAddedItems(libraryID, addedItemIDs);
+        }
         return;
       }
 
-      const addedItemIDs = toNumericIDs(ids);
-      if (type == "item" && event == "add") {
+      if (isItemAdd) {
         if (isRemoteSyncAdd(addedItemIDs, extraData)) {
           await fetchDuplicates({ libraryID, refresh: true });
           return;
