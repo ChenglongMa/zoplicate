@@ -215,3 +215,4 @@ __marimo__/
 .tmp/
 coverage/
 dev_space_config.md
+temp/
