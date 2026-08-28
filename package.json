@@ -1,6 +1,6 @@
 {
   "name": "zoplicate",
-  "version": "5.1.0",
+  "version": "5.1.1",
   "description": "Detect and manage duplicate items in Zotero.",
   "config": {
     "addonName": "Zoplicate",
