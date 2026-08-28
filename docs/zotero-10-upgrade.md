@@ -5,6 +5,7 @@ Status: implementation and Zotero 10 smoke testing complete; release acceptance 
 ## Compatibility policy
 
 - Supported Zotero range remains `8.999` through `10.0.*`, preserving Zotero 9 compatibility while adding Zotero 10.
+- Never raise `strict_max_version` for a future Zotero major until Zotero announces that version's feature freeze on [zotero-dev](https://groups.google.com/g/zotero-dev) and Zoplicate completes compatibility verification. Zotero beta builds ignore `strict_max_version`, so beta testing does not require an early compatibility declaration.
 - Dependencies should track current stable releases, with two deliberate runtime/toolchain exceptions:
   - React and React DOM remain on `18.3.1` because the plugin loads Zotero's built-in React 18 runtime.
   - TypeScript remains on `6.0.3` because `typescript-eslint@8.67.0` requires TypeScript `<6.1` and `ts-jest@29.4.12` requires TypeScript `<7`.
