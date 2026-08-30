@@ -399,6 +399,12 @@ You can also find it when you select one or more duplicate items:
 > 1. Before clicking the button, please make sure you have properly configured the _Master Item_ preferences in [Settings](#settings).
 > 2. The **Bulk Merge** functionality will **take a while** to complete if you have a large number of duplicate items.
 
+> [!TIP]
+>
+> To speed up merging a large number of duplicate items, you can increase the **parallel merges** setting
+> (Edit > Settings > Zoplicate, 1–8, default: 3), which merges multiple duplicate groups concurrently.
+> Set it to `1` to restore the previous sequential behavior.
+
 You will see the progress of the bulk merge process:
 ![zoplicate bulk merge process](docs/bulk-merge-progress.png)
 

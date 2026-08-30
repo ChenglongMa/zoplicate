@@ -27,6 +27,9 @@ pref-default-master-item-detailed =
 pref-default-master-item-always-ask =
     .label = [Always Ask]: Ask for master item every time
 
+pref-bulk-merge-concurrency-description = Number of duplicate groups to merge in parallel during Bulk Merge (1–8, default: 3). Set to 1 to restore the previous sequential behavior.
+pref-bulk-merge-concurrency-hint = parallel merges
+
 pref-view-title = View Preferences
 pref-view-description = Choose the widget to display in the main window
 pref-view-duplicate-stats =

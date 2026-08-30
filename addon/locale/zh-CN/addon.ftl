@@ -51,6 +51,7 @@ bulk-merge-popup-process = 正在处理: { $item }
 bulk-merge-suspend = 暂停合并
 bulk-merge-suspending = 正在暂停...
 bulk-merge-popup-failed = 批量合并已停止。请查看 Zotero 日志了解详情。
+bulk-merge-popup-done-with-failures = 批量合并已完成，但有 { $count } 个重复组合并失败。请查看 Zotero 日志了解详情。
 
 bulk-merge-suspend-title = 合并已暂停
 bulk-merge-suspend-message = 合并已暂停。您想继续还是取消该操作？

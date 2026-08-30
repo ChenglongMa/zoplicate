@@ -27,6 +27,9 @@ pref-default-master-item-detailed =
 pref-default-master-item-always-ask =
     .label = [始终询问]: 每次都询问我该如何选择主条目
 
+pref-bulk-merge-concurrency-description = 批量合并时并行处理的重复组数量（1–8，默认：3）。设为 1 可恢复为之前的串行行为。
+pref-bulk-merge-concurrency-hint = 个并行合并
+
 pref-view-title = 视图设置
 pref-view-description = 选择重复条目的显示方式
 pref-view-duplicate-stats =
