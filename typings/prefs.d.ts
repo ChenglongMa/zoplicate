@@ -9,6 +9,7 @@ declare namespace _ZoteroTypes {
     PluginPrefsMap: {
       "duplicate.default.action": string;
       "bulk.master.item": string;
+      "bulk.merge.concurrency": number;
       "duplicate.stats.enable": boolean;
     };
   }

@@ -120,7 +120,7 @@ async function flushPromises(times = 5) {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  getPrefMock.mockReturnValue(MasterItem.OLDEST);
+  getPrefMock.mockImplementation((key: string) => (key === "bulk.merge.concurrency" ? 1 : MasterItem.OLDEST));
   progressWindows = [];
   _ztoolkit.ProgressWindow = jest.fn(() => {
     const progressWindow = makeProgressWindow();
@@ -343,10 +343,21 @@ describe("BulkMergeController bulk processing", () => {
     expect(controller.isRunning).toBe(false);
   });
 
-  test("merge rejection shows failure progress and resets the controller", async () => {
-    const items = [makeItem(1, "2020-01-01 00:00:00"), makeItem(2, "2024-01-01 00:00:00")];
+  test("a failed group is recorded, remaining groups still merge, and the result reports failures", async () => {
+    const items = [
+      makeItem(1, "2020-01-01 00:00:00"),
+      makeItem(2, "2024-01-01 00:00:00"),
+      makeItem(3, "2020-01-01 00:00:00"),
+      makeItem(4, "2024-01-01 00:00:00"),
+    ];
     setItems(items);
-    installDuplicateSearch({ 1: [1, 2] }, [1]);
+    installDuplicateSearch(
+      {
+        1: [1, 2],
+        3: [3, 4],
+      },
+      [1, 3],
+    );
 
     const controller = new BulkMergeController();
     const win = makeWindow();
@@ -354,6 +365,8 @@ describe("BulkMergeController bulk processing", () => {
 
     await clickBulkMergeButton(controller, win);
 
+    // The failing group does not stop the run: the other group still merges.
+    expect(mergeMock).toHaveBeenCalledTimes(2);
     expect(progressWindows[0].close).toHaveBeenCalledTimes(1);
     expect(_ztoolkit.ProgressWindow).toHaveBeenNthCalledWith(2, "du-progress-text", {
       window: win,
@@ -361,7 +374,7 @@ describe("BulkMergeController bulk processing", () => {
       closeTime: 5000,
     });
     expect(progressWindows[1].createLine).toHaveBeenCalledWith({
-      text: "bulk-merge-popup-failed",
+      text: "bulk-merge-popup-done-with-failures",
       type: "fail",
       progress: 100,
     });
@@ -370,5 +383,78 @@ describe("BulkMergeController bulk processing", () => {
     expect(controller.isRunning).toBe(false);
     expect(win.__buttons["zoplicate-bulk-merge-button-inner"].label).toBe("bulk-merge-title");
     expect(win.__buttons["zoplicate-bulk-merge-button-inner"].disabled).toBe(false);
+  });
+
+  test("respects the configured concurrency limit", async () => {
+    const items = Array.from({ length: 16 }, (_, i) => makeItem(i + 1, "2020-01-01 00:00:00"));
+    setItems(items);
+    const groups: Record<number, number[]> = {};
+    const duplicateItems: number[] = [];
+    for (let g = 0; g < 8; g++) {
+      const a = g * 2 + 1;
+      const b = g * 2 + 2;
+      groups[a] = [a, b];
+      groups[b] = [a, b];
+      duplicateItems.push(a);
+    }
+    installDuplicateSearch(groups, duplicateItems);
+    getPrefMock.mockImplementation((key: string) => (key === "bulk.merge.concurrency" ? 3 : MasterItem.OLDEST));
+
+    let inFlight = 0;
+    let maxInFlight = 0;
+    mergeMock.mockImplementation(async () => {
+      inFlight++;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      await flushPromises();
+      inFlight--;
+    });
+
+    const controller = new BulkMergeController();
+    const win = makeWindow();
+    await clickBulkMergeButton(controller, win);
+
+    expect(mergeMock).toHaveBeenCalledTimes(8);
+    expect(maxInFlight).toBe(3);
+    expect(controller.isRunning).toBe(false);
+    expect(progressWindows[1].createLine).toHaveBeenCalledWith({
+      text: "du-progress-done",
+      type: "success",
+      progress: 100,
+    });
+  });
+
+  test("concurrency of 1 merges groups sequentially", async () => {
+    const items = [
+      makeItem(1, "2020-01-01 00:00:00"),
+      makeItem(2, "2024-01-01 00:00:00"),
+      makeItem(3, "2020-01-01 00:00:00"),
+      makeItem(4, "2024-01-01 00:00:00"),
+    ];
+    setItems(items);
+    installDuplicateSearch(
+      {
+        1: [1, 2],
+        3: [3, 4],
+      },
+      [1, 3],
+    );
+
+    let inFlight = 0;
+    let maxInFlight = 0;
+    mergeMock.mockImplementation(async () => {
+      inFlight++;
+      maxInFlight = Math.max(maxInFlight, inFlight);
+      await flushPromises();
+      inFlight--;
+    });
+
+    const controller = new BulkMergeController();
+    const win = makeWindow();
+    await clickBulkMergeButton(controller, win);
+
+    expect(mergeMock).toHaveBeenCalledTimes(2);
+    expect(maxInFlight).toBe(1);
+    expect(mergeMock).toHaveBeenNthCalledWith(1, items[0], [items[1]]);
+    expect(mergeMock).toHaveBeenNthCalledWith(2, items[2], [items[3]]);
   });
 });

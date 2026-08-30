@@ -47,6 +47,18 @@
         <radio data-l10n-id="pref-default-master-item-detailed" value="detailed" />
         <!--            <radio data-l10n-id="pref-default-master-item-always-ask" value="ask" />-->
       </radiogroup>
+
+      <label data-l10n-id="pref-bulk-merge-concurrency-description" />
+      <hbox align="center">
+        <html:input
+          type="number"
+          min="1"
+          max="8"
+          id="zotero-prefpane-__addonRef__-bulk-merge-concurrency"
+          preference="bulk.merge.concurrency"
+        />
+        <label data-l10n-id="pref-bulk-merge-concurrency-hint" />
+      </hbox>
     </groupbox>
   </vbox>
 

@@ -242,6 +242,11 @@ export class BulkMergeController {
     this.showResultProgressWindow(run, getString("bulk-merge-popup-failed"), "fail");
   }
 
+  private getConcurrency(): number {
+    const configured = Number(getPref("bulk.merge.concurrency")) || 3;
+    return Math.max(1, Math.min(8, Math.floor(configured)));
+  }
+
   private async bulkMergeDuplicates(run: BulkMergeRun) {
     const win = run.win;
     const masterItemPref = getPref("bulk.master.item") as MasterItem;
@@ -249,65 +254,92 @@ export class BulkMergeController {
       libraryID: getSelectedLibraryID(win),
       refresh: false,
     });
-    const processedItems: Set<number> = new Set();
     this.ensureProgressWindow(run);
 
-    let toCancel = false;
-    const deletedItems: Zotero.Item[] = [];
-    const restoreCheckbox: { value: boolean } = { value: false };
-    for (let i = 0; i < duplicateItems.length; i++) {
-      if (!this.isCurrentRun(run)) return;
-      if (run.pauseRequested) {
-        const result = Zotero.Prompt.confirm({
-          window: win,
-          title: getString("bulk-merge-suspend-title"),
-          text: getString("bulk-merge-suspend-message"),
-          button0: getString("bulk-merge-suspend-resume"),
-          button1: getString("bulk-merge-suspend-cancel"),
-          checkLabel: getString("bulk-merge-suspend-restore"),
-          checkbox: restoreCheckbox,
-        });
-        if (result == 0) {
-          run.pauseRequested = false;
-          restoreCheckbox.value = false;
-          this.setBulkMergeButtons(win, "bulk-merge-suspend", "pause", false);
-          this.ensureProgressWindow(run);
-        } else {
-          toCancel = true;
-          break;
-        }
-      }
-      const duplicateItem = duplicateItems[i];
+    // Pre-compute duplicate groups up front (in-memory only), so the worker
+    // pool below only spends time on actual merges. processedItems dedupes:
+    // a set of N items appears N times in duplicateItems but is grouped once.
+    const processedItems: Set<number> = new Set();
+    const groups: DuplicateItems[] = [];
+    for (const duplicateItem of duplicateItems) {
       if (processedItems.has(duplicateItem)) continue;
-
       const items: number[] = duplicatesObj.getSetItemsByItemID(duplicateItem);
       if (items.length < 2) {
         processedItems.add(duplicateItem);
         continue;
       }
-      const duItems = new DuplicateItems(items, masterItemPref);
-      this.changeProgressLine(run, {
-        text: getString("bulk-merge-popup-process", {
-          args: { item: truncateString(duItems.itemTitle) },
-        }),
-        progress: Math.floor((i / duplicateItems.length) * 100),
-      });
-      const masterItem = duItems.masterItem;
-      const otherItems = duItems.otherItems;
-      ztoolkit.log("Bulk merge: merging duplicate group.", {
-        runID: run.id,
-        itemIDs: items,
-        title: duItems.itemTitle,
-      });
-      await merge(masterItem, otherItems);
-      ztoolkit.log("Bulk merge: merged duplicate group.", {
-        runID: run.id,
-        itemIDs: items,
-        title: duItems.itemTitle,
-      });
-      if (!this.isCurrentRun(run)) return;
-      deletedItems.push(...otherItems);
       items.forEach((id) => processedItems.add(id));
+      groups.push(new DuplicateItems(items, masterItemPref));
+    }
+
+    const concurrency = this.getConcurrency();
+    const deletedItems: Zotero.Item[] = [];
+    const failedGroups: { itemIDs: number[]; title: string; error: unknown }[] = [];
+    let nextIndex = 0;
+    let completed = 0;
+
+    const worker = async () => {
+      while (true) {
+        if (!this.isCurrentRun(run) || run.pauseRequested) return;
+        const index = nextIndex++;
+        if (index >= groups.length) return;
+        const duItems = groups[index];
+        this.changeProgressLine(run, {
+          text: getString("bulk-merge-popup-process", {
+            args: { item: truncateString(duItems.itemTitle) },
+          }),
+          progress: Math.floor((completed / groups.length) * 100),
+        });
+        const itemIDs = duItems.items.map((item) => item.id);
+        ztoolkit.log("Bulk merge: merging duplicate group.", {
+          runID: run.id,
+          itemIDs,
+          title: duItems.itemTitle,
+        });
+        try {
+          await merge(duItems.masterItem, duItems.otherItems);
+          if (!this.isCurrentRun(run)) return;
+          deletedItems.push(...duItems.otherItems);
+        } catch (error) {
+          ztoolkit.log("Bulk merge: failed to merge duplicate group, continuing.", {
+            runID: run.id,
+            itemIDs,
+            title: duItems.itemTitle,
+            error,
+          });
+          failedGroups.push({ itemIDs, title: duItems.itemTitle, error });
+        }
+        completed++;
+      }
+    };
+
+    const runWorkers = () => Promise.all(Array.from({ length: concurrency }, () => worker()));
+
+    await runWorkers();
+
+    // Suspension is cooperative: workers drain their in-flight merges, then
+    // the confirm dialog is shown once the pool has stopped picking up work.
+    let toCancel = false;
+    const restoreCheckbox: { value: boolean } = { value: false };
+    while (run.pauseRequested && this.isCurrentRun(run) && !toCancel && nextIndex < groups.length) {
+      const result = Zotero.Prompt.confirm({
+        window: win,
+        title: getString("bulk-merge-suspend-title"),
+        text: getString("bulk-merge-suspend-message"),
+        button0: getString("bulk-merge-suspend-resume"),
+        button1: getString("bulk-merge-suspend-cancel"),
+        checkLabel: getString("bulk-merge-suspend-restore"),
+        checkbox: restoreCheckbox,
+      });
+      if (result == 0) {
+        run.pauseRequested = false;
+        restoreCheckbox.value = false;
+        this.setBulkMergeButtons(win, "bulk-merge-suspend", "pause", false);
+        this.ensureProgressWindow(run);
+        await runWorkers();
+      } else {
+        toCancel = true;
+      }
     }
 
     if (toCancel && restoreCheckbox.value) {
@@ -329,6 +361,16 @@ export class BulkMergeController {
 
     if (toCancel && !restoreCheckbox.value) {
       this.closeProgressWindow(run);
+      return;
+    }
+    if (failedGroups.length > 0) {
+      this.showResultProgressWindow(
+        run,
+        getString("bulk-merge-popup-done-with-failures", {
+          args: { count: failedGroups.length },
+        }),
+        "fail",
+      );
       return;
     }
     this.completeProgressWindow(run);
