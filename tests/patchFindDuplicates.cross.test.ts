@@ -91,10 +91,9 @@ describe("patchFindDuplicates non-duplicate cross flow", () => {
     installDuplicateRuntime([[1, 2]]);
     const originalFindDuplicates = _Zotero.Duplicates.prototype._findDuplicates;
     const originalUnion = _Zotero.DisjointSetForest.prototype.union;
-    const disposer = patchFindDuplicates(
-      { getNonDuplicates: jest.fn(async () => []) } as any,
-      () => ({ allNonDuplicates: new Set<string>() }),
-    );
+    const disposer = patchFindDuplicates({ getNonDuplicates: jest.fn(async () => []) } as any, () => ({
+      allNonDuplicates: new Set<string>(),
+    }));
 
     expect(_Zotero.Duplicates.prototype._findDuplicates).not.toBe(originalFindDuplicates);
     expect(_Zotero.DisjointSetForest.prototype.union).not.toBe(originalUnion);
@@ -103,5 +102,32 @@ describe("patchFindDuplicates non-duplicate cross flow", () => {
 
     expect(_Zotero.Duplicates.prototype._findDuplicates).toBe(originalFindDuplicates);
     expect(_Zotero.DisjointSetForest.prototype.union).toBe(originalUnion);
+  });
+
+  test("when mergeDifferentTypes is enabled, detects items sharing same ISBN across types", async () => {
+    (_Zotero.Prefs.get as jest.Mock<any>).mockImplementation((key: string) => {
+      if (key.includes("duplicate.merge.differentTypes")) return true;
+      return false;
+    });
+
+    const unions = installDuplicateRuntime([]);
+    _Zotero.DB = {
+      queryAsync: jest.fn(async () => [
+        { itemID: 10, value: "978-3-16-148410-0" },
+        { itemID: 20, value: "9783161484100" },
+      ]),
+    };
+
+    const disposer = patchFindDuplicates({ getNonDuplicates: jest.fn(async () => []) } as any, () => ({
+      allNonDuplicates: new Set<string>(),
+    }));
+
+    const dup = new _Zotero.Duplicates(1);
+    (dup as any)._sets = new _Zotero.DisjointSetForest();
+    await dup._findDuplicates();
+
+    expect(unions).toContainEqual([10, 20]);
+
+    await disposer();
   });
 });

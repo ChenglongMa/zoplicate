@@ -1,6 +1,12 @@
 export { DuplicateItems } from "./duplicateItems";
 export { merge } from "./mergeItems";
 export {
+  calculateLostFieldsForType,
+  formatLostFieldsNote,
+  selectOptimalTypeAndMaster,
+  isFieldValidForTargetType,
+} from "./typeLossOptimizer";
+export {
   BULK_MERGE_BUTTON_ID,
   BULK_MERGE_INNER_BUTTON_ID,
   BULK_MERGE_EXTERNAL_BUTTON_ID,

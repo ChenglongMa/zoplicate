@@ -32,6 +32,10 @@ export function showingDuplicateStats() {
   return getPref("duplicate.stats.enable") as boolean;
 }
 
+export function mergeDifferentTypesEnabled(): boolean {
+  return Boolean(getPref("duplicate.merge.differentTypes"));
+}
+
 /**
  * NOTE: Corresponding to radio values in addon/chrome/content/preferences.xhtml.
  */

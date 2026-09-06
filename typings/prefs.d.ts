@@ -11,6 +11,7 @@ declare namespace _ZoteroTypes {
       "bulk.master.item": string;
       "bulk.merge.concurrency": number;
       "duplicate.stats.enable": boolean;
+      "duplicate.merge.differentTypes": boolean;
     };
   }
 }
