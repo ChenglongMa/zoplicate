@@ -76,6 +76,68 @@ export function createMockItem(overrides: MockItemOverrides = {}): any {
     getByLibraryAndKeyAsync: jest.fn(async (_libraryID: number, _key: string) => false),
     merge: jest.fn(async () => undefined),
   },
+  Item: jest.fn().mockImplementation(function (this: any, ...args: any[]) {
+    const itemType = args[0];
+    this.id = _nextId++;
+    this.itemType = itemType;
+    this.parentItemID = undefined;
+    this.libraryID = 1;
+    this._note = "";
+    this.setNote = jest.fn((content: string) => {
+      this._note = content;
+    });
+    this.getNote = jest.fn(() => this._note);
+    this.saveTx = jest.fn(async () => {});
+    this.save = jest.fn(async () => {});
+    return this;
+  }),
+  ItemFields: {
+    getID: jest.fn((field: string) => {
+      const ids: Record<string, number> = {
+        title: 1,
+        DOI: 2,
+        ISBN: 3,
+        publicationTitle: 4,
+        volume: 5,
+        issue: 6,
+        pages: 7,
+        abstractNote: 8,
+        url: 9,
+      };
+      return ids[field] ?? 100;
+    }),
+    getName: jest.fn((id: number) => {
+      const names: Record<number, string> = {
+        1: "title",
+        2: "DOI",
+        3: "ISBN",
+        4: "publicationTitle",
+        5: "volume",
+        6: "issue",
+        7: "pages",
+        8: "abstractNote",
+        9: "url",
+      };
+      return names[id] ?? `field_${id}`;
+    }),
+    isValidForType: jest.fn((fieldID: number, itemTypeID: number) => {
+      // By default: type 1 (journalArticle) supports volume(5), issue(6), pages(7), publicationTitle(4)
+      // type 2 (preprint/document) does not support volume(5), issue(6), pages(7)
+      if (itemTypeID === 2 && [4, 5, 6, 7].includes(fieldID)) {
+        return false;
+      }
+      return true;
+    }),
+    getBaseIDFromTypeAndField: jest.fn(() => false),
+    getFieldIDFromTypeAndBase: jest.fn(() => false),
+    getLocalizedString: jest.fn((fieldID: number | string) =>
+      fieldID === 5 || fieldID === "volume" ? "Volume" : `Field ${fieldID}`,
+    ),
+  },
+  ItemTypes: {
+    getID: jest.fn((type: string) => (type === "book" ? 3 : type === "preprint" ? 2 : 1)),
+    getName: jest.fn((id: number) => (id === 3 ? "book" : id === 2 ? "preprint" : "journalArticle")),
+  },
   CollectionTreeCache: {
     clear: jest.fn(),
   },
@@ -84,6 +146,9 @@ export function createMockItem(overrides: MockItemOverrides = {}): any {
       // Minimal DOI regex extraction matching Zotero behaviour
       const match = str.match(/10\.\d{4,9}\/[^\s]+/);
       return match ? match[0] : false;
+    }),
+    cleanISBN: jest.fn((str: string) => {
+      return str ? str.replace(/[^0-9X]/gi, "") : "";
     }),
   },
   Prefs: {
@@ -128,9 +193,7 @@ export function createMockItem(overrides: MockItemOverrides = {}): any {
     };
   })(),
   Libraries: {
-    getAll: jest.fn(() => [
-      { libraryID: 1, libraryType: "user" },
-    ]),
+    getAll: jest.fn(() => [{ libraryID: 1, libraryType: "user" }]),
   },
   debug: jest.fn(),
 };

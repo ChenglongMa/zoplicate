@@ -30,6 +30,11 @@ pref-default-master-item-always-ask =
 pref-bulk-merge-concurrency-description = Number of duplicate groups to merge in parallel during Bulk Merge (1–8, default: 3). Set to 1 to restore the previous sequential behavior.
 pref-bulk-merge-concurrency-hint = parallel merges
 
+pref-different-types-title = Item Types Preferences
+pref-different-types-description = Allow merging duplicate documents with different item types
+pref-merge-different-types =
+    .label = Enable merging items of different types (choosing the type that minimizes lost fields)
+
 pref-view-title = View Preferences
 pref-view-description = Choose the widget to display in the main window
 pref-view-duplicate-stats =

@@ -30,6 +30,11 @@ pref-default-master-item-always-ask =
 pref-bulk-merge-concurrency-description = 批量合并时并行处理的重复组数量（1–8，默认：3）。设为 1 可恢复为之前的串行行为。
 pref-bulk-merge-concurrency-hint = 个并行合并
 
+pref-different-types-title = 条目类型设置
+pref-different-types-description = 允许合并不同类型的重复条目
+pref-merge-different-types =
+    .label = 允许合并不同类型的条目（自动选择损失字段最少的类型）
+
 pref-view-title = 视图设置
 pref-view-description = 选择重复条目的显示方式
 pref-view-duplicate-stats =

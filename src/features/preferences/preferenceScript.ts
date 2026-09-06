@@ -9,7 +9,7 @@ export function registerPrefs() {
     src: rootURI + "chrome/content/preferences.xhtml",
     label: getString("prefs-title"),
     image: `chrome://${config.addonRef}/content/icons/preficon.svg`,
-    stylesheets:[`chrome://${config.addonRef}/content/prefs.css`],
+    stylesheets: [`chrome://${config.addonRef}/content/prefs.css`],
     helpURL: homepage,
   });
 }
@@ -38,6 +38,13 @@ function bindPrefEvents() {
       }
       // refreshCollectionView(); // Not respond to mouse click event
       // Show `unique/total` UI in collection tree
-      await Zotero.Notifier.trigger('redraw', 'collection', []);
+      await Zotero.Notifier.trigger("redraw", "collection", []);
+    });
+
+  getPrefs()
+    ?.window.document.querySelector(`#zotero-prefpane-${config.addonRef}-merge-different-types`)
+    ?.addEventListener("command", async () => {
+      await fetchAllDuplicates(true);
+      await Zotero.Notifier.trigger("redraw", "collection", []);
     });
 }

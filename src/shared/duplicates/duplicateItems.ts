@@ -1,4 +1,5 @@
-import { MasterItem } from "../prefs";
+import { MasterItem, mergeDifferentTypesEnabled } from "../prefs";
+import { compareItemsByPref, selectOptimalTypeAndMaster } from "./typeLossOptimizer";
 
 /**
  * This class is used to store duplicate items.
@@ -60,29 +61,21 @@ export class DuplicateItems {
   }
 
   private analyze() {
-    let compare: (a: Zotero.Item, b: Zotero.Item) => number;
-    switch (this._masterItemPref) {
-      default:
-      case MasterItem.OLDEST:
-        compare = (a: Zotero.Item, b: Zotero.Item) => (b.dateAdded < a.dateAdded ? 1 : -1);
-        break;
-      case MasterItem.NEWEST:
-        compare = (a: Zotero.Item, b: Zotero.Item) => (b.dateAdded > a.dateAdded ? 1 : -1);
-        break;
-      case MasterItem.MODIFIED:
-        compare = (a: Zotero.Item, b: Zotero.Item) => (b.dateModified > a.dateModified ? 1 : -1);
-        break;
-      case MasterItem.DETAILED:
-        compare = (a: Zotero.Item, b: Zotero.Item) => {
-          const fieldDiff = b.getUsedFields(false).length - a.getUsedFields(false).length;
-          if (fieldDiff !== 0) {
-            return fieldDiff;
-          }
-          return b.dateAdded < a.dateAdded ? 1 : -1;
-        };
-        break;
+    const hasDifferentTypes = new Set(this._items.map((item) => item.itemTypeID)).size > 1;
+
+    if (mergeDifferentTypesEnabled() && hasDifferentTypes) {
+      const { masterItem } = selectOptimalTypeAndMaster(this._items, this._masterItemPref);
+      this._masterItem = masterItem;
+      // Re-order _items so that masterItem is at index 0, followed by other items sorted by preference
+      const others = this._items
+        .filter((it) => it.id !== masterItem.id)
+        .sort((a, b) => compareItemsByPref(a, b, this._masterItemPref));
+      this._items.length = 0;
+      this._items.push(masterItem, ...others);
+      return;
     }
-    this._items.sort(compare);
+
+    this._items.sort((a, b) => compareItemsByPref(a, b, this._masterItemPref));
     this._masterItem = this._items[0];
   }
 }
